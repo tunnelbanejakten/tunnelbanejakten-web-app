@@ -1,5 +1,20 @@
 <template>
-  <div class="about">
-    <h1>This is an about page</h1>
-  </div>
+  <Page title="About">
+    This is the About page.
+    <template v-slot:footer>
+      Footer
+    </template>
+  </Page>
 </template>
+
+<script lang="ts">
+import { Component, Vue } from 'vue-property-decorator'
+import Page from '@/components/layout/Page.vue'
+
+@Component({
+  components: {
+    Page
+  }
+})
+export default class About extends Vue {}
+</script>

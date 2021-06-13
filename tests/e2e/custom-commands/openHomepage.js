@@ -17,7 +17,7 @@ module.exports = {
     this.init()
     this.waitForElementVisible('#app')
 
-    const result = await this.elements('css selector', '#app ul')
-    this.assert.strictEqual(result.value.length, 3)
+    const result = await this.elements('css selector', '#app #nav a')
+    this.assert.strictEqual(result.value.length, 2)
   }
 }
