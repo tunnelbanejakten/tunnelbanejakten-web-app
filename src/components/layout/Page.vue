@@ -30,23 +30,34 @@ export default class Page extends Vue {
     display: flex;
     flex-direction: column;
 }
+h1 {
+  font-size: 20px;
+  margin: 0;
+  padding: 0;
+}
 .header {
     display: flex;
     flex-direction: row;
     justify-content: center;
 
-    background-color: #b3ffdd;
+    padding: 10px;
+
+    background-color: #eeeeee;
 }
 .body {
     display: flex;
     flex-direction: column;
     flex: 1;
+
+    padding: 10px;
 }
 .footer {
     display: flex;
     flex-direction: row;
     justify-content: center;
 
-    background-color: #b3ffdd;
+    padding: 10px;
+
+    background-color: #eeeeee;
 }
 </style>
