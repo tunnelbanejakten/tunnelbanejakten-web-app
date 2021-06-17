@@ -1,28 +1,38 @@
 <template>
   <div class="wrapper">
     <div class="markers">
-      <div v-for="value in stepStatuses" :key="value.key" :class="getClass(value.active)" />
+      <div
+        v-for="stepStatus in stepStatuses"
+        :key="stepStatus.key"
+        :class="getClass(stepStatus.active, stepStatus.status)"
+      />
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue, Prop } from 'vue-property-decorator'
+import { Status } from '@/store'
 
 @Component({
   components: {
   }
 })
 export default class StepbystepProgress extends Vue {
-  @Prop() private currentStep!: number
-  @Prop() private stepCount!: number
+  @Prop() private currentIndex!: number
+  @Prop({ default: [] }) private statuses!: Status[]
 
-  get stepStatuses(): any[] {
-    return new Array(this.stepCount).fill(false).map((_, index)=> ({key: index, active: index===this.currentStep-1}))
+  get stepStatuses (): any[] {
+    return this.statuses
+      .map((status, key) => ({
+        key,
+        status,
+        active: this.currentIndex === key
+      }))
   }
 
-  getClass(active: boolean) {
-    return active ? 'active' : 'inactive'
+  getClass (active: boolean, status: Status) {
+    return `${active ? 'active' : 'inactive'} ${String(Status[status]).toLowerCase()}`
   }
 }
 </script>
@@ -37,15 +47,23 @@ export default class StepbystepProgress extends Vue {
   width: 10px;
   border-radius: 10px;
   border: 1px solid #aaa;
-  margin-left: 5px;
-}
-.markers div:first-child {
-  margin-left: 0px;
 }
 .markers div.active {
-  background-color: #aaa;
+  border-width: 3px;
+  margin: 5px;
 }
 .markers div.inactive {
+  border-width: 1px;
+  margin: 7px;
+}
+.markers div.pending,
+.markers div.user_interaction_required {
   background-color: #fff;
+}
+.markers div.success {
+  background-color: hsl(73, 78%, 57%);
+}
+.markers div.failure {
+  background-color: hsl(4, 78%, 57%);
 }
 </style>
