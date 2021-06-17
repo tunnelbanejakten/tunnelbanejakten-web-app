@@ -1,11 +1,14 @@
 <template>
-  <button @click="onClick" :class="buttonClass">
+  <button
+    @click="onClick"
+    :class="buttonClass"
+  >
     {{ label }}
   </button>
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Emit} from 'vue-property-decorator'
+import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 
 export enum Type {
   PRIMARY = 'primary',
@@ -17,14 +20,14 @@ export enum Type {
 })
 export default class Button extends Vue {
   @Prop() private label!: string
-  @Prop({default: Type.PRIMARY}) readonly type!: Type
+  @Prop({ default: Type.PRIMARY }) readonly type!: Type
 
   @Emit('click')
-  onClick() {
-
+  onClick () {
+    return true
   }
 
-  get buttonClass(): string {
+  get buttonClass (): string {
     return `type-${this.type}`
   }
 }
