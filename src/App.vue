@@ -1,7 +1,14 @@
 <template>
   <div id="app">
     <div class="header-image">
-      <img src="https://new.tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked.png" width="1080" height="190" alt="Tunnelbanejakten" srcset="https://tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked.png 1080w, https://tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked-300x53.png 300w, https://tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked-1024x180.png 1024w, https://tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked-768x135.png 768w" sizes="(max-width: 1080px) 100vw, 1080px">
+      <img
+        src="https://new.tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked.png"
+        width="1080"
+        height="190"
+        alt="Tunnelbanejakten"
+        srcset="https://tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked.png 1080w, https://tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked-300x53.png 300w, https://tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked-1024x180.png 1024w, https://tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked-768x135.png 768w"
+        sizes="(max-width: 1080px) 100vw, 1080px"
+      >
     </div>
     <div id="nav">
       <router-link to="/">

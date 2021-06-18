@@ -41,13 +41,13 @@ module.exports = {
         body: {
           // the equivalent css selector for the "welcome" sub-section would be:
           //  '#app div.hello'
-          selector: 'div.body',
+          selector: 'div.body'
         },
 
         footer: {
           // the equivalent css selector for the "welcome" sub-section would be:
           //  '#app div.hello'
-          selector: 'div.footer',
+          selector: 'div.footer'
         }
       }
     }

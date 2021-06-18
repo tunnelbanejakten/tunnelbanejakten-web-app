@@ -35,22 +35,20 @@ export default class Button extends Vue {
 
 <style scoped>
 button {
-  border-radius: 3px;
+  border-radius: 10px;
 }
 
 button.type-primary {
   background-color: #e2c7ec;
-  border: 2px solid #977ca1;
-  color: #2d2530;
+  border: 1px solid #977ca1;
+  color: #000;
   padding: 9px;
-
-  font-weight: bold;
 }
 
 button.type-secondary {
-  background-color: #eed2f8;
-  border: 1px solid #c6a3d3;
-  color: #413646;
-  padding: 10px;
+  background-color: #fff;
+  border: 1px solid #977ca1;
+  color: #000;
+  padding: 9px;
 }
 </style>

@@ -1,10 +1,10 @@
 <template>
-    <div class="fullscreen">
-        <div class="background"></div>
-        <div class="content">
-            <slot name="default" />
-        </div>
+  <div class="fullscreen">
+    <div class="background" />
+    <div class="content">
+      <slot name="default" />
     </div>
+  </div>
 </template>
 
 <script lang="ts">
@@ -20,11 +20,12 @@ export default class Fullscreen extends Vue {
 
 <style scoped>
 .fullscreen {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     height: 100%;
     width: 100%;
+    z-index: 1;
 }
 
 .background {
@@ -42,6 +43,8 @@ export default class Fullscreen extends Vue {
     left: 20px;
     bottom: 20px;
     right: 20px;
+
+    overflow: scroll;
 
     /* Theme from tunnelbanejakten.se: */
     background-color: #fff;

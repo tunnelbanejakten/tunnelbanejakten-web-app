@@ -4,7 +4,7 @@ import Page from '@/components/layout/Page.vue'
 describe('Page', () => {
   it('renders title prop and two slots', () => {
     const wrapper = shallowMount(Page, {
-      propsData: { 
+      propsData: {
         title: 'The title'
       },
       slots: {
