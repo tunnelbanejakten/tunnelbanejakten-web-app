@@ -1,6 +1,5 @@
 <template>
   <div>
-    Självtest
     <p>Här kan du testa om din mobil kommer fungera under tävlingen.</p>
     <p>Genom att gå vidare godkänner du att vi...</p>
     <ul>

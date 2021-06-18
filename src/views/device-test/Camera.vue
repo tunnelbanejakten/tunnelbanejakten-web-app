@@ -1,6 +1,5 @@
 <template>
   <div>
-    Camera
     <p>Flera uppgifter under tävlingen besvaras med foton.</p>
     <Button
       label="Okej, ta en bild"

@@ -1,6 +1,5 @@
 <template>
   <div>
-    Summary
     <p>Här är resultatet av testet:</p>
     <ul>
       <li />

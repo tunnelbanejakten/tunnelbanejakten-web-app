@@ -1,6 +1,5 @@
 <template>
   <div>
-    Discord
     <p>Under tävlingen, men även inför den, så kommer vi använda Discord för att chatta och prata med varandra.</p>
     <Button label="Jag har ett Discord-konto. Skicka en inbjudning." />
   </div>

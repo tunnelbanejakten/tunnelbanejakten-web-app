@@ -1,6 +1,5 @@
 <template>
   <div>
-    Connectity
     <p>Ett par automatiska test:</p>
     <p>Uppkoppling till Tunnelbanejaktens server</p>
     <p>Spara kaka med anonymt</p>

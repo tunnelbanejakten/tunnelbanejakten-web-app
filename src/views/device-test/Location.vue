@@ -1,6 +1,5 @@
 <template>
   <div>
-    Location
     <p>Vissa uppgifter under tävlingen kräver att ni befinner er på vissa platser.</p>
     <p>Därför behöver vi få tillgång till din GPS.</p>
     <Button
