@@ -7,10 +7,26 @@
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
     <title><%= htmlWebpackPlugin.options.title %></title>
     <style>
+      /* Theme from tunnelbanejakten.se: */
+      @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=PT+Serif:wght@700&display=swap');
+
       html, body {
         height: 100%;
         padding: 0;
         margin: 0;
+
+        /* Theme from tunnelbanejakten.se: */
+        background-color: #fff;
+        font: 16px/1.4 'Open Sans', Tahoma, Verdana, Segoe, sans-serif
+      }
+
+      h1, h2, h3, h4 {
+        /* Theme from tunnelbanejakten.se: */
+        margin: 0;
+        padding: 0 0 0.5em;
+        line-height: 1.1;
+        font-family: 'PT Serif', TimesNewRoman, "Times New Roman", Times, Baskerville, Georgia, serif;
+        font-weight: bold;
       }
     </style>
   </head>

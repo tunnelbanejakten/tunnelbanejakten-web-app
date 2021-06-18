@@ -1,8 +1,8 @@
 <template>
-  <Page title="Home">
-    This is the Home page.
+  <Page title="Svara">
+    <p>När tävlingen startar kommer du ser era uppdrag här.</p>
     <template v-slot:footer>
-      Footer
+      Tunnelbanejakten &copy; 2021
     </template>
   </Page>
 </template>

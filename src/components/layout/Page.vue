@@ -9,7 +9,9 @@
       <slot name="default" />
     </div>
     <div class="footer">
-      <slot name="footer" />
+      <div>
+        <slot name="footer" />
+      </div>
     </div>
   </div>
 </template>
@@ -30,20 +32,22 @@ export default class Page extends Vue {
     display: flex;
     flex-direction: column;
 }
+
 h1 {
-  font-size: 20px;
-  margin: 0;
-  padding: 0;
+  /* Theme from tunnelbanejakten.se: */
+  font-size: 30px;
+  padding-top: 30px;
+  padding-bottom: 10px;
 }
+
 .header {
     display: flex;
     flex-direction: row;
     justify-content: center;
 
     padding: 10px;
-
-    background-color: #eeeeee;
 }
+
 .body {
     display: flex;
     flex-direction: column;
@@ -51,13 +55,29 @@ h1 {
 
     padding: 10px;
 }
+
 .footer {
     display: flex;
     flex-direction: row;
     justify-content: center;
 
-    padding: 10px;
+    /* Theme from tunnelbanejakten.se: */
+    padding: 20px 0;
+    margin: 0;
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.25;
+    text-decoration: none;
+    background-color: #738489;
+}
 
-    background-color: #eeeeee;
+.footer div {
+  /* Theme from tunnelbanejakten.se: */
+  opacity: 0.8;
+}
+
+.footer a {
+  /* Theme from tunnelbanejakten.se: */
+  color: #fff;
 }
 </style>

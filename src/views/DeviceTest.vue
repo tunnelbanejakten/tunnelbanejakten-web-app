@@ -1,5 +1,5 @@
 <template>
-  <Page title="DeviceTest">
+  <Page title="Testa din mobil">
     <StepbystepProgress
       :current-index="currentIndex"
       :statuses="statuses"
@@ -25,7 +25,7 @@
       </div>
     </div>
     <template v-slot:footer>
-      Footer
+      Tunnelbanejakten &copy; 2021
     </template>
   </Page>
 </template>

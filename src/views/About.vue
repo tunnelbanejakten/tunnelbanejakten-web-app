@@ -1,8 +1,13 @@
 <template>
-  <Page title="About">
-    This is the About page.
+  <Page title="Info">
+    <h2>Så här funkar det</h2>
+    <p>...</p>
+    <h2>Att tänka på</h2>
+    <p>...</p>
+    <h2>Tider att passa</h2>
+    <p>...</p>
     <template v-slot:footer>
-      Footer
+      Tunnelbanejakten &copy; 2021
     </template>
   </Page>
 </template>
