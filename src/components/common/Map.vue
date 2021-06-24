@@ -18,6 +18,7 @@ export enum MarkerType {
 export type Marker = {
   latitude: number;
   longitude: number;
+  accuracy?: number;
   label?: string;
   type?: MarkerType;
 };
@@ -46,15 +47,26 @@ export default class Map extends Vue {
       [this.currentPosition.latitude, this.currentPosition.longitude],
       15
     );
-    L.marker([
-      this.currentPosition.latitude,
-      this.currentPosition.longitude,
-    ]).addTo(map);
+    // L.marker([
+    //   this.currentPosition.latitude,
+    //   this.currentPosition.longitude,
+    // ]).addTo(map);
+    L.circle([this.currentPosition.latitude, this.currentPosition.longitude], {
+      stroke: true,
+      radius: (this.currentPosition.accuracy || 0) * 1000,
 
-    this.markers.forEach(({ label, latitude, longitude, type }) => {
+      color: "#000",
+      opacity: 0.5,
+      weight: 1,
+
+      fillColor: "#0F0",
+      fillOpacity: 0.5,
+    }).addTo(map);
+
+    this.markers?.forEach(({ label, latitude, longitude, type, accuracy }) => {
       L.circle([latitude, longitude], {
         stroke: true,
-        radius: 50,
+        radius: (accuracy || 0.01) * 1000,
 
         color: type === MarkerType.ACTIVE ? "#F00" : "#000",
         opacity: 0.5,
@@ -66,7 +78,7 @@ export default class Map extends Vue {
     });
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 18,
+      zoom: 15,
       id: "openstreetmap",
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
