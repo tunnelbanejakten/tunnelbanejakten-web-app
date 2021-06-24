@@ -41,10 +41,10 @@ import Button from '@/components/common/Button.vue'
 import Intro from '@/views/device-test/Intro.vue'
 import Camera from '@/views/device-test/Camera.vue'
 import Location from '@/views/device-test/Location.vue'
-import Forms from '@/views/device-test/Forms.vue'
+// import Forms from '@/views/device-test/Forms.vue'
 import Summary from '@/views/device-test/Summary.vue'
 import Connectivity from '@/views/device-test/Connectivity.vue'
-import Discord from '@/views/device-test/Discord.vue'
+// import Discord from '@/views/device-test/Discord.vue'
 
 type Step = {
   label: string
@@ -61,7 +61,8 @@ type Step = {
     Connectivity,
     Camera,
     Location,
-    Forms,
+    // Forms,
+    // Discord,
     Summary
   }
 })
@@ -88,16 +89,16 @@ export default class DeviceTest extends Vue {
       component: Location,
       stateKey: 'location'
     },
-    {
-      label: 'Forms',
-      component: Forms,
-      stateKey: 'forms'
-    },
-    {
-      label: 'Discord',
-      component: Discord,
-      stateKey: 'discord'
-    },
+    // {
+    //   label: 'Forms',
+    //   component: Forms,
+    //   stateKey: 'forms'
+    // },
+    // {
+    //   label: 'Discord',
+    //   component: Discord,
+    //   stateKey: 'discord'
+    // },
     {
       label: 'Summary',
       component: Summary,
@@ -108,7 +109,7 @@ export default class DeviceTest extends Vue {
   private state = store.state.deviceTest
 
   get statuses (): Status[] {
-    return this.steps.map(({ stateKey }: Step) => this.state[stateKey]?.status)
+    return this.steps.map(({ stateKey }: Step) => this.state[stateKey]?.status || Status.PENDING)
   }
 
   currentComponent () {

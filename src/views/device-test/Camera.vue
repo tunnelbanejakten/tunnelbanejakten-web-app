@@ -2,7 +2,7 @@
   <div>
     <p>Flera uppgifter under tävlingen besvaras med foton.</p>
     <Button
-      label="Okej, ta en bild"
+      label="Testa kamera"
       @click="onStartTest"
     />
     <Fullscreen v-if="isCameraShown">
