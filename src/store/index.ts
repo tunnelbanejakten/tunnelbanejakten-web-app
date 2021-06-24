@@ -15,12 +15,13 @@ type State = {
 
 const state : State = {
   deviceTest: {
-    intro: { status: Status.PENDING },
+    // intro: { status: Status.PENDING },
     connectivity: { status: Status.PENDING },
     camera: { status: Status.PENDING },
     location: { status: Status.PENDING },
-    forms: { status: Status.PENDING },
-    summary: { status: Status.PENDING }
+    // forms: { status: Status.PENDING },
+    // discord: { status: Status.PENDING },
+    // summary: { status: Status.PENDING }
   }
 }
 
