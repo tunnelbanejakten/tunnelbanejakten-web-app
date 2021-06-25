@@ -94,6 +94,6 @@ export default class Map extends Vue {
 <style scoped>
 #map-container {
   width: 100%;
-  height: 400px;
+  height: 100%;
 }
 </style>

@@ -19,12 +19,14 @@
           <Button label="Ok" @click="onDone" />
         </div>
       </div>
-      <div v-if="isPositioningDone">
+      <div v-if="isPositioningDone" class="done-container">
         <Map :markers="markers" :currentPosition="currentPosition" />
-        <p>Befinner du dig i den gröna cirkeln?</p>
-        <div>
-          <Button label="Ja" @click="onUserAccept" />
-          <Button label="Nej" @click="onUserReject" type="secondary" />
+        <div class="buttons-container">
+          <p>Befinner du dig i den gröna cirkeln?</p>
+          <div class="buttons">
+            <Button label="Ja" @click="onUserAccept" />
+            <Button label="Nej" @click="onUserReject" type="secondary" />
+          </div>
         </div>
       </div>
     </Fullscreen>
@@ -204,5 +206,43 @@ export default class Location extends Vue {
 }
 .waiting-container div {
   margin: 0 20px;
+  text-align: center;
 }
+
+.done-container,
+.done-container .container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  flex-direction: column;
+  align-content: center;
+  justify-content: flex-end;
+}
+
+.buttons-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  width: 100%;
+
+  z-index: 1000; /* To put it above the map */
+
+  text-align: center;
+}
+
+.buttons-container p {
+  margin: 10px;
+}
+
+.buttons-container .buttons {
+  margin-bottom: 10px;
+}
+
+.buttons-container .buttons button {
+  margin-left: 10px;
+}
+.buttons-container .buttons button:first-child {
+  margin-left: 0px;
+}
+
 </style>
