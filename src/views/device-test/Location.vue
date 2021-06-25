@@ -4,7 +4,11 @@
       Vissa uppgifter under tävlingen kräver att ni befinner er på vissa
       platser. Därför behöver vi få tillgång till din GPS.
     </p>
-    <Button label="Testa GPS" @click="onStartTest" :type="!isPositioningSuccessful ? 'primary' : 'secondary'" />
+    <Button
+      label="Testa GPS"
+      @click="onStartTest"
+      :type="!isPositioningSuccessful ? 'huge' : 'secondary'"
+    />
     <Fullscreen v-if="isTestStarted">
       <div v-if="isPositioningPending" class="waiting-container">
         <div>
@@ -21,13 +25,13 @@
       </div>
       <div v-if="isPositioningDone" class="done-container">
         <Map :markers="markers" :currentPosition="currentPosition" />
-        <div class="buttons-container">
-          <p>Befinner du dig i den gröna cirkeln?</p>
-          <div class="buttons">
-            <Button label="Ja" @click="onUserAccept" />
-            <Button label="Nej" @click="onUserReject" type="secondary" />
-          </div>
-        </div>
+        <ConfirmationOverlay
+          question="Befinner du dig i den gröna cirkeln?"
+          acceptLabel="Ja"
+          @accept="onUserAccept"
+          rejectLabel="Nej"
+          @reject="onUserReject"
+        />
       </div>
     </Fullscreen>
   </div>
@@ -37,6 +41,7 @@
 import { Component, Vue, Watch } from "vue-property-decorator";
 import Button from "@/components/common/Button.vue";
 import Fullscreen from "@/components/common/Fullscreen.vue";
+import ConfirmationOverlay from "@/components/common/ConfirmationOverlay.vue";
 import Map, { Marker, MarkerType } from "@/components/common/Map.vue";
 import store, { Status } from "@/store";
 
@@ -57,6 +62,7 @@ const GeolocationStatus = {
     Button,
     Map,
     Fullscreen,
+    ConfirmationOverlay,
   },
 })
 export default class Location extends Vue {
@@ -64,7 +70,7 @@ export default class Location extends Vue {
   private geolocationMessage = "";
   private currentPosition?: Marker;
   private isTestStarted: boolean = false;
-  private testStatus: Status = Status.USER_INTERACTION_REQUIRED
+  private testStatus: Status = Status.USER_INTERACTION_REQUIRED;
 
   onStartTest() {
     this.isTestStarted = true;
@@ -81,28 +87,31 @@ export default class Location extends Vue {
 
   onUserAccept() {
     this.testStatus = Status.SUCCESS;
-    this.onDone()
+    this.onDone();
   }
 
   onUserReject() {
     this.testStatus = Status.FAILURE;
-    this.onDone()
+    this.onDone();
   }
 
   get isPositioningDone() {
-    return this.testStatus === Status.USER_INTERACTION_REQUIRED && this.geolocationStatus === GeolocationStatus.LOCATION_REQUEST_SUCCEEDED
+    return (
+      this.testStatus === Status.USER_INTERACTION_REQUIRED &&
+      this.geolocationStatus === GeolocationStatus.LOCATION_REQUEST_SUCCEEDED
+    );
   }
 
   get isPositioningSuccessful() {
-    return this.testStatus === Status.SUCCESS
+    return this.testStatus === Status.SUCCESS;
   }
 
   get isPositioningPending() {
-    return this.testStatus === Status.PENDING
+    return this.testStatus === Status.PENDING;
   }
 
   get isPositioningFailed() {
-    return this.testStatus === Status.FAILURE
+    return this.testStatus === Status.FAILURE;
   }
 
   @Watch("geolocationStatus")
@@ -218,31 +227,4 @@ export default class Location extends Vue {
   align-content: center;
   justify-content: flex-end;
 }
-
-.buttons-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  width: 100%;
-
-  z-index: 1000; /* To put it above the map */
-
-  text-align: center;
-}
-
-.buttons-container p {
-  margin: 10px;
-}
-
-.buttons-container .buttons {
-  margin-bottom: 10px;
-}
-
-.buttons-container .buttons button {
-  margin-left: 10px;
-}
-.buttons-container .buttons button:first-child {
-  margin-left: 0px;
-}
-
 </style>

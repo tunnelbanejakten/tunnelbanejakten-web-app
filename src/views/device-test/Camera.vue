@@ -1,93 +1,73 @@
 <template>
   <div>
     <p>Flera uppgifter under tävlingen besvaras med foton.</p>
-    <Button
-      label="Testa kamera"
-      @click="onStartTest"
-    />
+    <Button label="Testa kamera" type="huge" @click="onStartTest" />
     <Fullscreen v-if="isCameraShown">
       <div class="camera-container">
         <div class="camera">
           <CameraComponent @captured="onCaptured" />
         </div>
         <div class="buttons">
-          <Button
-            label="Stäng"
-            @click="onEndTest"
-            type="secondary"
-          />
+          <Button label="Stäng" @click="onEndTest" type="secondary" />
         </div>
       </div>
-      <div
-        v-if="!!img"
-        class="review"
-      >
-        <p>Blev bilden bra?</p>
-        <div>
-          <img
-            :src="img"
-            class="captured-photo"
-          >
-        </div>
-        <div>
-          <Button
-            label="Ja"
-            @click="onAcceptPhoto"
-          />
-        </div>
-        <div>
-          <Button
-            label="Nej, ta en ny"
-            @click="onRejectPhoto"
-            type="secondary"
-          />
-        </div>
+      <div v-if="!!img" class="review">
+        <img :src="img" class="captured-photo" />
+        <ConfirmationOverlay
+          question="Blev bilden bra?"
+          acceptLabel="Ja"
+          @accept="onAcceptPhoto"
+          rejectLabel="Nej"
+          @reject="onRejectPhoto"
+        />
       </div>
     </Fullscreen>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator'
-import Button from '@/components/common/Button.vue'
-import Fullscreen from '@/components/common/Fullscreen.vue'
-import CameraComponent from '@/components/common/Camera.vue'
-import store, { Status } from '@/store'
+import { Component, Vue } from "vue-property-decorator";
+import Button from "@/components/common/Button.vue";
+import ConfirmationOverlay from "@/components/common/ConfirmationOverlay.vue";
+import Fullscreen from "@/components/common/Fullscreen.vue";
+import CameraComponent from "@/components/common/Camera.vue";
+import store, { Status } from "@/store";
 
 @Component({
   components: {
     Button,
     Fullscreen,
-    CameraComponent
-  }
+    CameraComponent,
+    ConfirmationOverlay,
+  },
 })
 export default class Camera extends Vue {
   private isCameraShown = false;
 
-  private img? = '';
+  private img? = "";
 
-  onStartTest () {
-    this.isCameraShown = true
-    this.img = ''
+  onStartTest() {
+    this.isCameraShown = true;
+    this.img = "";
     // this.start()
   }
 
-  onEndTest () {
-    this.isCameraShown = false
+  onEndTest() {
+    this.isCameraShown = false;
   }
 
-  onCaptured (event: string) {
-    this.img = event
+  onCaptured(event: string) {
+    this.img = event;
   }
 
-  onRejectPhoto () {
-    this.img = ''
+  onRejectPhoto() {
+    this.img = "";
     // this.start()
   }
 
-  onAcceptPhoto () {
-    store.setDeviceTestStatus('camera', Status.SUCCESS)
-    this.onEndTest()
+  onAcceptPhoto() {
+    store.setDeviceTestStatus("camera", Status.SUCCESS);
+    this.onEndTest();
   }
 }
 </script>
@@ -116,10 +96,9 @@ export default class Camera extends Vue {
 }
 
 .captured-photo {
-  border: 10px solid white;
-  box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2);
-  width: 300px;
-  height: auto;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .review {
