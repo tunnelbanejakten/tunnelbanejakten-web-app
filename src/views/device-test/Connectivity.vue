@@ -4,6 +4,7 @@
     <Button
       v-if="!isChecking"
       label="Testa uppkopplingen"
+      type="huge"
       @click="onStartTest"
     />
     <p v-if="isCheckInitiated">{{ backendStatus }}</p>

@@ -4,9 +4,11 @@
       :current-index="currentIndex"
       :statuses="statuses"
     />
-    <component
-      :is="currentComponent()"
-    />
+    <div class="test-component-wrapper">
+      <component
+        :is="currentComponent()"
+      />
+    </div>
     <div class="step-navigation">
       <div class="step-navigate-button">
         <Button
@@ -143,5 +145,8 @@ export default class DeviceTest extends Vue {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+}
+.test-component-wrapper {
+  text-align: center;
 }
 </style>

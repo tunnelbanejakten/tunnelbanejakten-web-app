@@ -1,11 +1,9 @@
 <template>
   <div>
-    <p>Här är resultatet av testet:</p>
-    <ul>
-      <li v-for="test in statuses" :key="test">
-        {{ test.label }}: {{ test.status }}
-      </li>
-    </ul>
+    <p>Så här gick det...</p>
+    <p v-for="test in statuses" :key="test">
+      {{ test.label }}: {{ test.status }}
+    </p>
   </div>
 </template>
 

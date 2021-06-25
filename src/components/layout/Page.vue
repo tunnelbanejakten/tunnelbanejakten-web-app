@@ -1,10 +1,5 @@
 <template>
   <div class="page">
-    <div class="header">
-      <h1>
-        {{ title }}
-      </h1>
-    </div>
     <div class="body">
       <slot name="default" />
     </div>

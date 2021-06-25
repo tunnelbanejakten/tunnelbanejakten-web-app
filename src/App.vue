@@ -33,6 +33,9 @@
   width: 100%;
 }
 
+.header-image {
+  display: none
+}
 .header-image img {
   /* Theme from tunnelbanejakten.se: */
   height: auto;

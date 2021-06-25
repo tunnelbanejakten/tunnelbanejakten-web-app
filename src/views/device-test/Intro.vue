@@ -1,11 +1,7 @@
 <template>
   <div>
     <p>Här kan du testa om din mobil kommer fungera under tävlingen.</p>
-    <p>Genom att gå vidare godkänner du att vi...</p>
-    <ul>
-      <li>sparar en anonym kaka på din mobil,</li>
-      <li>sparar data i enlighet med vår <a href="">Integritetspolicy</a>.</li>
-    </ul>
+    <p>Genom att gå vidare godkänner du att vi sparar data i enlighet med vår <a href="">Integritetspolicy</a>.</p>
   </div>
 </template>
 
