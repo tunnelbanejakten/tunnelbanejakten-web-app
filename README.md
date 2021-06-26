@@ -53,6 +53,13 @@ yarn test:unit
 yarn test:e2e
 ```
 
+### Test prodution build locally
+```
+yarn build
+npm install -g serve
+serve -s dist
+```
+
 ### Lints and fixes files
 ```
 yarn lint

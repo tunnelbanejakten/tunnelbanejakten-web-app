@@ -1,5 +1,12 @@
 <template>
   <div id="app">
+    <div v-if="isUpdatePending" class="new-version-container">
+      <div>
+        Det finns en <strong>ny version</strong> av den här sidan.
+      </div>
+      <Button @click="onUpdateApp" label="Uppdatera nu" />
+      <div><small>Spara dina svar innan du uppdaterar.</small></div>
+    </div>
     <div class="header-image">
       <img
         src="https://new.tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked.png"
@@ -24,6 +31,24 @@
     <router-view />
   </div>
 </template>
+
+<script lang="ts">
+import { Component, Mixins } from 'vue-property-decorator'
+import ServiceWorkerMixin from '@/mixins/ServiceWorkerMixin'
+import Button from "@/components/common/Button.vue";
+
+@Component({
+  name: 'App',
+  components: {
+    Button,
+  },
+})
+export default class App extends Mixins(ServiceWorkerMixin) {
+  onUpdateApp () {
+    this.refreshApplication()
+  }
+}
+</script>
 
 <style>
 #app {
@@ -69,5 +94,18 @@
 }
 
 #nav a.router-link-exact-active {
+}
+
+.new-version-container {
+  padding: 0 10px;
+  text-align: center;
+  background-color: #eedfaf;
+}
+.new-version-container div {
+  padding: 10px 0;
+}
+.new-version-container small {
+  font-size: 80%;
+  opacity: 0.4;
 }
 </style>
