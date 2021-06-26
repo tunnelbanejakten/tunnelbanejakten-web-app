@@ -6,9 +6,6 @@
     <p>...</p>
     <h2>Tider att passa</h2>
     <p>...</p>
-    <template v-slot:footer>
-      Tunnelbanejakten &copy; 2021
-    </template>
   </Page>
 </template>
 

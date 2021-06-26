@@ -3,7 +3,7 @@
     <div class="body">
       <slot name="default" />
     </div>
-    <div class="footer">
+    <div class="footer" v-if="isFooterDefined">
       <div>
         <slot name="footer" />
       </div>
@@ -17,6 +17,10 @@ import { Component, Prop, Vue } from 'vue-property-decorator'
 @Component
 export default class Page extends Vue {
     @Prop() private title!: string
+
+    get isFooterDefined() {
+      return !!this.$slots.footer
+    }
 }
 </script>
 

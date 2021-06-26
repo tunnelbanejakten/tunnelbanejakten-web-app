@@ -1,9 +1,6 @@
 <template>
   <Page title="Svara">
     <p>När tävlingen startar kommer du ser era uppdrag här.</p>
-    <template v-slot:footer>
-      Tunnelbanejakten &copy; 2021
-    </template>
   </Page>
 </template>
 

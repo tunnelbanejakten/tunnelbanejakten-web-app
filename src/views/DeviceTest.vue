@@ -26,9 +26,6 @@
         />
       </div>
     </div>
-    <template v-slot:footer>
-      Tunnelbanejakten &copy; 2021
-    </template>
   </Page>
 </template>
 
