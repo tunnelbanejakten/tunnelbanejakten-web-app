@@ -4,6 +4,7 @@
       :current-index="currentIndex"
       :statuses="statuses"
     />
+    <Message v-if="isStatusMessageAvailable" :message="statusMessage" :type="statusType" />
     <div class="test-component-wrapper">
       <component
         :is="currentComponent()"
@@ -36,6 +37,7 @@ import store, { Status } from '@/store'
 
 import StepbystepProgress from '@/components/common/StepbystepProgress.vue'
 import Button from '@/components/common/Button.vue'
+import Message, {Type as MessageType} from '@/components/common/Message.vue'
 
 import Intro from '@/views/device-test/Intro.vue'
 import Camera from '@/views/device-test/Camera.vue'
@@ -62,7 +64,8 @@ type Step = {
     Location,
     // Forms,
     // Discord,
-    Summary
+    Summary,
+    Message
   }
 })
 export default class DeviceTest extends Vue {
@@ -108,11 +111,43 @@ export default class DeviceTest extends Vue {
   private state = store.state.deviceTest
 
   get statuses (): Status[] {
-    return this.steps.map(({ stateKey }: Step) => this.state[stateKey]?.status || Status.PENDING)
+    return this.steps.map(({ stateKey }: Step) => Status.PENDING)
   }
 
   currentComponent () {
     return this.steps[this.currentIndex].component
+  }
+
+  get isStatusMessageAvailable() {
+    switch (this.state[this.steps[this.currentIndex].stateKey]?.status) {
+      case Status.SUCCESS:
+      case Status.FAILURE:
+        return true
+      default:
+        return false
+    }
+  }
+
+  get statusType() {
+    switch (this.state[this.steps[this.currentIndex].stateKey]?.status) {
+      case Status.SUCCESS:
+        return MessageType.SUCCESS
+      case Status.FAILURE:
+        return MessageType.FAILURE
+      default:
+        return MessageType.INFO
+    }
+  }
+
+  get statusMessage() {
+    switch (this.state[this.steps[this.currentIndex].stateKey]?.status) {
+      case Status.SUCCESS:
+        return 'Testet gick bra.'
+      case Status.FAILURE:
+        return 'Testet misslyckades.'
+      default:
+        return 'Lite oklar status just nu...'
+    }
   }
 
   stepCount () {
