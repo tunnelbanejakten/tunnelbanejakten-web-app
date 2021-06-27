@@ -51,6 +51,7 @@ import Fullscreen from "@/components/common/Fullscreen.vue";
 import ConfirmationOverlay from "@/components/common/ConfirmationOverlay.vue";
 import Map, { Marker, MarkerType } from "@/components/common/Map.vue";
 import store, { Status } from "@/store";
+import logEvent, { AnalyticsEventType } from "@/utils/Analytics";
 
 const GeolocationStatus = {
   UNKNOWN: "UNKNOWN",
@@ -63,6 +64,15 @@ const GeolocationStatus = {
   LOCATION_REQUEST_SUCCEEDED: "LOCATION_REQUEST_SUCCEEDED",
   LOCATION_REQUEST_FAILED: "LOCATION_REQUEST_FAILED",
 };
+
+const LOGGED_STATUS = [
+  GeolocationStatus.NO_BROWSER_API,
+  GeolocationStatus.NO_USER_APPROVAL,
+  GeolocationStatus.NO_POSITION,
+  GeolocationStatus.NO_RESPONSE,
+  GeolocationStatus.LOCATION_REQUEST_SUCCEEDED,
+  GeolocationStatus.LOCATION_REQUEST_FAILED,
+];
 
 @Component({
   components: {
@@ -78,7 +88,7 @@ export default class Location extends Vue {
   private currentPosition: Marker = {
     latitude: 0.0,
     longitude: 0.0,
-    accuracy: 0
+    accuracy: 0,
   };
   private isTestStarted: boolean = false;
   private testStatus: Status = Status.USER_INTERACTION_REQUIRED;
@@ -108,8 +118,8 @@ export default class Location extends Vue {
   }
 
   get isAccuratePosition() {
-    const accuracy = this.currentPosition?.accuracy || 0
-    return accuracy > 0 && accuracy < 0.050
+    const accuracy = this.currentPosition?.accuracy || 0;
+    return accuracy > 0 && accuracy < 0.05;
   }
 
   get isPositioningDone() {
@@ -132,17 +142,27 @@ export default class Location extends Vue {
   }
 
   get curPos() {
-    return {...this.currentPosition}
+    return { ...this.currentPosition };
   }
 
   unmouted() {
     if (this.watchId) {
-      navigator.geolocation.clearWatch(this.watchId)
+      navigator.geolocation.clearWatch(this.watchId);
     }
   }
 
   @Watch("geolocationStatus")
   onStatusChange(geolocationStatus: string) {
+    if (LOGGED_STATUS.includes(geolocationStatus)) {
+      const additionalProps =
+        geolocationStatus === GeolocationStatus.LOCATION_REQUEST_SUCCEEDED
+          ? { accuracy: this.currentPosition.accuracy }
+          : {};
+      logEvent(AnalyticsEventType.LOCATION_REQUEST, {
+        status: geolocationStatus,
+        ...additionalProps,
+      });
+    }
     switch (geolocationStatus) {
       case GeolocationStatus.UNKNOWN:
         this.testStatus = Status.PENDING;
@@ -172,18 +192,18 @@ export default class Location extends Vue {
       case GeolocationStatus.BROWSER_API_AVAILABLE:
         this.testStatus = Status.PENDING;
         this.geolocationMessage =
-        "Vi jobbar på att ta reda på var du befinner dig.";
+          "Vi jobbar på att ta reda på var du befinner dig.";
         this.geolocationStatus = GeolocationStatus.LOCATION_REQUEST_INITIATED;
 
         this.watchId = navigator.geolocation.watchPosition(
           (position) => {
-            console.log('🌍 New position from geolocation API:', position);
+            console.log("🌍 New position from geolocation API:", position);
             const {
               coords: { accuracy, latitude, longitude },
             } = position;
-              this.currentPosition.accuracy = (1.0 * accuracy) / 1000;
-              this.currentPosition.latitude = latitude;
-              this.currentPosition.longitude = longitude;
+            this.currentPosition.accuracy = (1.0 * accuracy) / 1000;
+            this.currentPosition.latitude = latitude;
+            this.currentPosition.longitude = longitude;
             this.geolocationStatus =
               GeolocationStatus.LOCATION_REQUEST_SUCCEEDED;
           },
