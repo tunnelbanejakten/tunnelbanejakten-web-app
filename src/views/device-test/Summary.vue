@@ -1,8 +1,8 @@
 <template>
   <div>
-    <p>Så här gick det...</p>
-    <p v-for="test in statuses" :key="test">
-      {{ test.label }}: {{ test.status }}
+    <p>Så här gick det:</p>
+    <p v-for="test in statuses" :key="test.key">
+      <Message :message="test.message"  :header="test.header" :type="test.messageType" />
     </p>
   </div>
 </template>
@@ -10,6 +10,7 @@
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
 import store, { Status } from "@/store";
+import Message, {Type as MessageType} from '@/components/common/Message.vue'
 
 const LABELS: Record<string, string> = {
   connectivity: "Uppkoppling",
@@ -18,14 +19,21 @@ const LABELS: Record<string, string> = {
 };
 
 const STATUSES: Record<Status, string> = {
-  [Status.PENDING]: "Inte klart",
-  [Status.USER_INTERACTION_REQUIRED]: "Inte klart",
-  [Status.FAILURE]: "Nepp",
-  [Status.SUCCESS]: "Okej",
+  [Status.PENDING]: "Testet gjordes inte klart",
+  [Status.USER_INTERACTION_REQUIRED]: "Testet gjordes inte klart",
+  [Status.FAILURE]: "Testet misslyckades",
+  [Status.SUCCESS]: "Testet gick bra",
+};
+
+const MESSAGE_TYPES: Record<Status, MessageType> = {
+  [Status.PENDING]: MessageType.INFO,
+  [Status.USER_INTERACTION_REQUIRED]: MessageType.INFO,
+  [Status.FAILURE]: MessageType.FAILURE,
+  [Status.SUCCESS]: MessageType.SUCCESS,
 };
 
 @Component({
-  components: {},
+  components: {Message},
 })
 export default class Summary extends Vue {
   private state = store.state.deviceTest;
@@ -33,8 +41,10 @@ export default class Summary extends Vue {
   get statuses() {
     return Object.keys(this.state).map((key: string) => {
       return {
-        label: LABELS[key],
-        status: STATUSES[this.state[key].status],
+        key,
+        header: LABELS[key],
+        message: STATUSES[this.state[key].status],
+        messageType: MESSAGE_TYPES[this.state[key].status],
       };
     });
   }
