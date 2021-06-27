@@ -2,8 +2,8 @@
   <div class="overlay-container">
     <p>{{ question }}</p>
     <div class="buttons">
-      <Button :label="acceptLabel" @click="onUserAccept" />
-      <Button :label="rejectLabel" @click="onUserReject" type="secondary" />
+      <Button v-if="!!acceptLabel" :label="acceptLabel" @click="onUserAccept" />
+      <Button v-if="!!rejectLabel" :label="rejectLabel" @click="onUserReject" type="secondary" />
     </div>
   </div>
 </template>

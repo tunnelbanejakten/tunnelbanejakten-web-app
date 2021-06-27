@@ -26,10 +26,17 @@
       <div v-if="isPositioningDone" class="done-container">
         <Map :currentPosition="curPos" />
         <ConfirmationOverlay
+          v-if="isAccuratePosition"
           question="Befinner du dig i den gröna cirkeln?"
           acceptLabel="Ja"
           @accept="onUserAccept"
           rejectLabel="Nej"
+          @reject="onUserReject"
+        />
+        <ConfirmationOverlay
+          v-if="!isAccuratePosition"
+          question="Vi försöker ta reda på var du är. Håll ut."
+          rejectLabel="Avbryt"
           @reject="onUserReject"
         />
       </div>
@@ -100,6 +107,11 @@ export default class Location extends Vue {
     this.onDone();
   }
 
+  get isAccuratePosition() {
+    const accuracy = this.currentPosition?.accuracy || 0
+    return accuracy > 0 && accuracy < 0.050
+  }
+
   get isPositioningDone() {
     return (
       this.testStatus === Status.USER_INTERACTION_REQUIRED &&
@@ -160,7 +172,7 @@ export default class Location extends Vue {
       case GeolocationStatus.BROWSER_API_AVAILABLE:
         this.testStatus = Status.PENDING;
         this.geolocationMessage =
-          "Vi jobbar på att ta reda på var du befinner dig.";
+        "Vi jobbar på att ta reda på var du befinner dig.";
         this.geolocationStatus = GeolocationStatus.LOCATION_REQUEST_INITIATED;
 
         this.watchId = navigator.geolocation.watchPosition(
