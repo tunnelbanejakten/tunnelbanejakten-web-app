@@ -1,3 +1,5 @@
+import logEvent, { AnalyticsEventType } from "@/utils/Analytics"
+
 export enum Status {
     PENDING,
     FAILURE,
@@ -29,6 +31,10 @@ const store = {
   state,
   setDeviceTestStatus (testName: string, status: Status) {
     console.log(`Set status for ${testName} to ${status}. `)
+    logEvent(AnalyticsEventType.SET_DEVICE_TEST_STATUS, {
+      test: testName,
+      status: Status[status]
+    })
     this.state.deviceTest[testName].status = status
   }
 }

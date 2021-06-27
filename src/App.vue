@@ -36,6 +36,7 @@
 import { Component, Mixins } from 'vue-property-decorator'
 import ServiceWorkerMixin from '@/mixins/ServiceWorkerMixin'
 import Button from "@/components/common/Button.vue";
+import logEvent, { AnalyticsEventType } from "@/utils/Analytics";
 
 @Component({
   name: 'App',
@@ -44,8 +45,12 @@ import Button from "@/components/common/Button.vue";
   },
 })
 export default class App extends Mixins(ServiceWorkerMixin) {
-  onUpdateApp () {
-    this.refreshApplication()
+  onUpdateApp() {
+    this.refreshApplication();
+  }
+
+  mounted() {
+    logEvent(AnalyticsEventType.APP_MOUNTED)
   }
 }
 </script>
@@ -92,9 +97,10 @@ export default class App extends Mixins(ServiceWorkerMixin) {
   text-transform: uppercase;
   color: #fff;
 }
-
+/* 
 #nav a.router-link-exact-active {
 }
+*/
 
 .new-version-container {
   padding: 0 10px;

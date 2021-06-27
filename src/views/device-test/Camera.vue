@@ -73,12 +73,6 @@ export default class Camera extends Vue {
 </script>
 
 <style scoped>
-.camera-container {
-  /* display: flex; */
-}
-.camera-container .camera {
-  /* flex: 1; */
-}
 .camera-container .buttons {
   position: absolute;
   top: 10px;

@@ -11,6 +11,7 @@
     "deploy": "./deploy.sh"
   },
   "dependencies": {
+    "amplitude-js": "^8.3.1",
     "core-js": "^3.6.5",
     "leaflet": "^1.7.1",
     "register-service-worker": "^1.7.1",
@@ -21,6 +22,7 @@
     "vue-web-cam": "^1.9.0"
   },
   "devDependencies": {
+    "@types/amplitude-js": "^8.0.0",
     "@types/jest": "^24.0.19",
     "@typescript-eslint/eslint-plugin": "^4.18.0",
     "@typescript-eslint/parser": "^4.18.0",

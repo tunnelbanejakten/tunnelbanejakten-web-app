@@ -67,3 +67,10 @@ yarn lint
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
+
+### Analytics
+
+User events can be collected and analyzed using Amplitude.
+
+Enable Amplitude tracking by putting your Amplitude API key into 
+the `VUE_APP_AMPLITUDE_APIKEY` property ofin the appropriate `.env` file(s).
