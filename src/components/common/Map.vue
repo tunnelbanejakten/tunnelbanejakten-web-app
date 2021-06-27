@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from "vue-property-decorator";
+import { Component, Vue, Prop, Watch } from "vue-property-decorator";
 import Button from "@/components/common/Button.vue";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -29,6 +29,8 @@ export type Marker = {
 export default class Map extends Vue {
   @Prop() private markers!: Marker[];
   @Prop() private currentPosition!: Marker;
+  private currentPositionMapRef: any;
+  private mapRef: any;
 
   // Credits: https://github.com/Leaflet/Leaflet/issues/4968#issuecomment-483402699
   applyDeadIconFix() {
@@ -40,28 +42,42 @@ export default class Map extends Vue {
     });
   }
 
+  @Watch("currentPosition")
+  updatePosition(newPosition: Marker) {
+    console.log("🌍 Update map marker:", newPosition);
+    const accuracy = newPosition.accuracy || 10000;
+    const zoomLevel =
+      accuracy < 100 ? 17 : accuracy < 500 ? 15 : accuracy < 1000 ? 13 : 10;
+
+    this.currentPositionMapRef.setRadius((newPosition.accuracy || 0) * 1000);
+    this.mapRef.setView([newPosition.latitude, newPosition.longitude], zoomLevel);
+  }
+
   initMap() {
     this.applyDeadIconFix();
 
-    const map = L.map("map-container").setView(
-      [this.currentPosition.latitude, this.currentPosition.longitude],
-      15
-    );
+    this.mapRef = L.map("map-container");
     // L.marker([
     //   this.currentPosition.latitude,
     //   this.currentPosition.longitude,
     // ]).addTo(map);
-    L.circle([this.currentPosition.latitude, this.currentPosition.longitude], {
-      stroke: true,
-      radius: (this.currentPosition.accuracy || 0) * 1000,
+    this.currentPositionMapRef = L.circle(
+      [this.currentPosition.latitude, this.currentPosition.longitude],
+      {
+        stroke: true,
+        radius: (this.currentPosition.accuracy || 0) * 1000,
 
-      color: "#000",
-      opacity: 0.5,
-      weight: 1,
+        color: "#000",
+        opacity: 0.5,
+        weight: 1,
 
-      fillColor: "#0F0",
-      fillOpacity: 0.5,
-    }).addTo(map);
+        fillColor: "#0F0",
+        fillOpacity: 0.5,
+      }
+    );
+    this.currentPositionMapRef.addTo(this.mapRef);
+
+    this.updatePosition(this.currentPosition)
 
     this.markers?.forEach(({ label, latitude, longitude, type, accuracy }) => {
       L.circle([latitude, longitude], {
@@ -74,7 +90,7 @@ export default class Map extends Vue {
 
         fillColor: type === MarkerType.ACTIVE ? "#FCC" : "#FFF",
         fillOpacity: 0.5,
-      }).addTo(map);
+      }).addTo(this.mapRef);
     });
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -82,7 +98,7 @@ export default class Map extends Vue {
       id: "openstreetmap",
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map);
+    }).addTo(this.mapRef);
   }
 
   mounted() {

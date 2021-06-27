@@ -24,7 +24,7 @@
         </div>
       </div>
       <div v-if="isPositioningDone" class="done-container">
-        <Map :markers="markers" :currentPosition="currentPosition" />
+        <Map :currentPosition="curPos" />
         <ConfirmationOverlay
           question="Befinner du dig i den gröna cirkeln?"
           acceptLabel="Ja"
@@ -68,9 +68,14 @@ const GeolocationStatus = {
 export default class Location extends Vue {
   private geolocationStatus = "";
   private geolocationMessage = "";
-  private currentPosition?: Marker;
+  private currentPosition: Marker = {
+    latitude: 0.0,
+    longitude: 0.0,
+    accuracy: 0
+  };
   private isTestStarted: boolean = false;
   private testStatus: Status = Status.USER_INTERACTION_REQUIRED;
+  private watchId: number = 0;
 
   onStartTest() {
     this.isTestStarted = true;
@@ -114,6 +119,16 @@ export default class Location extends Vue {
     return this.testStatus === Status.FAILURE;
   }
 
+  get curPos() {
+    return {...this.currentPosition}
+  }
+
+  unmouted() {
+    if (this.watchId) {
+      navigator.geolocation.clearWatch(this.watchId)
+    }
+  }
+
   @Watch("geolocationStatus")
   onStatusChange(geolocationStatus: string) {
     switch (geolocationStatus) {
@@ -148,16 +163,15 @@ export default class Location extends Vue {
           "Vi jobbar på att ta reda på var du befinner dig.";
         this.geolocationStatus = GeolocationStatus.LOCATION_REQUEST_INITIATED;
 
-        navigator.geolocation.getCurrentPosition(
+        this.watchId = navigator.geolocation.watchPosition(
           (position) => {
+            console.log('🌍 New position from geolocation API:', position);
             const {
               coords: { accuracy, latitude, longitude },
             } = position;
-            this.currentPosition = {
-              accuracy: (1.0 * accuracy) / 1000,
-              latitude: latitude,
-              longitude: longitude,
-            };
+              this.currentPosition.accuracy = (1.0 * accuracy) / 1000;
+              this.currentPosition.latitude = latitude;
+              this.currentPosition.longitude = longitude;
             this.geolocationStatus =
               GeolocationStatus.LOCATION_REQUEST_SUCCEEDED;
           },
