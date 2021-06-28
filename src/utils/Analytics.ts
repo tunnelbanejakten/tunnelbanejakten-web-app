@@ -1,11 +1,12 @@
 import amplitude from 'amplitude-js'
 
 const APIKEY = process.env.VUE_APP_AMPLITUDE_APIKEY
+const APP_VERSION = process.env.VUE_APP_VERSION
 
 export enum AnalyticsEventType {
-  APP_MOUNTED,
-  SET_DEVICE_TEST_STATUS,
-  LOCATION_REQUEST
+  APP,
+  DEVICE_TEST,
+  LOCATION
 }
 
 let isAnalyticsInitialized = false
@@ -15,12 +16,20 @@ const initAmplitude = () => {
   isAnalyticsInitialized = true
 }
 
-export default (type: AnalyticsEventType, props?: Record<string, any>) => {
+export default (type: AnalyticsEventType, eventVerb: string, eventObject: string, props?: Record<string, any>) => {
+  const actionName = eventVerb.toLowerCase() + ' ' + eventObject.toLowerCase()
+  const eventName = AnalyticsEventType[type].toLowerCase() + ': ' + actionName
+  const patchedProps = {
+    ...props,
+    appVersion: APP_VERSION,
+    actionCategory: AnalyticsEventType[type].toLowerCase(),
+    actionName: actionName
+  }
   if (APIKEY) {
     if (!isAnalyticsInitialized) {
       initAmplitude()
     }
-    amplitude.getInstance().logEvent(AnalyticsEventType[type], props)
+    amplitude.getInstance().logEvent(eventName, patchedProps)
   }
-  console.log(AnalyticsEventType[type], props)
+  console.log(eventName, patchedProps)
 }

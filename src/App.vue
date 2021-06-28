@@ -1,10 +1,14 @@
 <template>
   <div id="app">
-    <div v-if="isUpdatePending" class="new-version-container">
-      <div>
-        Det finns en <strong>ny version</strong> av den här sidan.
-      </div>
-      <Button @click="onUpdateApp" label="Uppdatera nu" />
+    <div
+      v-if="isUpdatePending"
+      class="new-version-container"
+    >
+      <div>Det finns en <strong>ny version</strong> av den här sidan.</div>
+      <Button
+        @click="onUpdateApp"
+        label="Uppdatera nu"
+      />
       <div><small>Spara dina svar innan du uppdaterar.</small></div>
     </div>
     <div class="header-image">
@@ -13,7 +17,12 @@
         width="1080"
         height="190"
         alt="Tunnelbanejakten"
-        srcset="https://tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked.png 1080w, https://tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked-300x53.png 300w, https://tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked-1024x180.png 1024w, https://tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked-768x135.png 768w"
+        srcset="
+          https://tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked.png          1080w,
+          https://tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked-300x53.png    300w,
+          https://tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked-1024x180.png 1024w,
+          https://tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked-768x135.png   768w
+        "
         sizes="(max-width: 1080px) 100vw, 1080px"
       >
     </div>
@@ -35,22 +44,22 @@
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator'
 import ServiceWorkerMixin from '@/mixins/ServiceWorkerMixin'
-import Button from "@/components/common/Button.vue";
-import logEvent, { AnalyticsEventType } from "@/utils/Analytics";
+import Button from '@/components/common/Button.vue'
+import logEvent, { AnalyticsEventType } from '@/utils/Analytics'
 
 @Component({
   name: 'App',
   components: {
-    Button,
-  },
+    Button
+  }
 })
 export default class App extends Mixins(ServiceWorkerMixin) {
-  onUpdateApp() {
-    this.refreshApplication();
+  onUpdateApp () {
+    this.refreshApplication()
   }
 
-  mounted() {
-    logEvent(AnalyticsEventType.APP_MOUNTED)
+  mounted () {
+    logEvent(AnalyticsEventType.APP, 'load', 'page')
   }
 }
 </script>
@@ -64,7 +73,7 @@ export default class App extends Mixins(ServiceWorkerMixin) {
 }
 
 .header-image {
-  display: none
+  display: none;
 }
 .header-image img {
   /* Theme from tunnelbanejakten.se: */
@@ -97,7 +106,7 @@ export default class App extends Mixins(ServiceWorkerMixin) {
   text-transform: uppercase;
   color: #fff;
 }
-/* 
+/*
 #nav a.router-link-exact-active {
 }
 */

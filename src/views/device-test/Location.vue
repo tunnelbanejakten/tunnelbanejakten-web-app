@@ -158,7 +158,7 @@ export default class Location extends Vue {
         geolocationStatus === GeolocationStatus.LOCATION_REQUEST_SUCCEEDED
           ? { accuracy: this.currentPosition.accuracy }
           : {};
-      logEvent(AnalyticsEventType.LOCATION_REQUEST, {
+      logEvent(AnalyticsEventType.LOCATION, 'set', 'status', {
         status: geolocationStatus,
         ...additionalProps,
       });
