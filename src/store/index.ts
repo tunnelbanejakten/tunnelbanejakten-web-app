@@ -18,7 +18,7 @@ const state : State = {
     // intro: { status: Status.PENDING },
     connectivity: { status: Status.PENDING },
     camera: { status: Status.PENDING },
-    location: { status: Status.PENDING },
+    location: { status: Status.PENDING }
     // forms: { status: Status.PENDING },
     // discord: { status: Status.PENDING },
     // summary: { status: Status.PENDING }
@@ -27,7 +27,7 @@ const state : State = {
 
 const store = {
   state,
-  setDeviceTestStatus (testName: string, status: Status) {
+  setDeviceTestStatus(testName: string, status: Status) {
     console.log(`Set status for ${testName} to ${status}. `)
     this.state.deviceTest[testName].status = status
   }

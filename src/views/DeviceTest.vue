@@ -4,7 +4,11 @@
       :current-index="currentIndex"
       :statuses="statuses"
     />
-    <Message v-if="isStatusMessageAvailable" :message="statusMessage" :type="statusType" />
+    <Message
+      v-if="isStatusMessageAvailable"
+      :message="statusMessage"
+      :type="statusType"
+    />
     <div class="test-component-wrapper">
       <component
         :is="currentComponent()"
@@ -37,7 +41,7 @@ import store, { Status } from '@/store'
 
 import StepbystepProgress from '@/components/common/StepbystepProgress.vue'
 import Button from '@/components/common/Button.vue'
-import Message, {Type as MessageType} from '@/components/common/Message.vue'
+import Message, { Type as MessageType } from '@/components/common/Message.vue'
 
 import Intro from '@/views/device-test/Intro.vue'
 import Camera from '@/views/device-test/Camera.vue'
@@ -49,7 +53,7 @@ import Connectivity from '@/views/device-test/Connectivity.vue'
 
 type Step = {
   label: string
-  component: any
+  component: string
   stateKey: string
 }
 
@@ -73,22 +77,22 @@ export default class DeviceTest extends Vue {
   private steps: Step[] = [
     {
       label: 'Intro',
-      component: Intro,
+      component: 'Intro',
       stateKey: 'intro'
     },
     {
       label: 'Connectivity',
-      component: Connectivity,
+      component: 'Connectivity',
       stateKey: 'connectivity'
     },
     {
       label: 'Camera',
-      component: Camera,
+      component: 'Camera',
       stateKey: 'camera'
     },
     {
       label: 'Location',
-      component: Location,
+      component: 'Location',
       stateKey: 'location'
     },
     // {
@@ -103,18 +107,18 @@ export default class DeviceTest extends Vue {
     // },
     {
       label: 'Summary',
-      component: Summary,
+      component: 'Summary',
       stateKey: 'summary'
     }
   ]
 
   private state = store.state.deviceTest
 
-  get statuses (): Status[] {
+  get statuses(): Status[] {
     return this.steps.map(({ stateKey }: Step) => Status.PENDING)
   }
 
-  currentComponent () {
+  currentComponent() {
     return this.steps[this.currentIndex].component
   }
 
@@ -150,23 +154,23 @@ export default class DeviceTest extends Vue {
     }
   }
 
-  stepCount () {
+  stepCount() {
     return this.steps.length
   }
 
-  next () {
+  next() {
     this.currentIndex++
   }
 
-  previous () {
+  previous() {
     this.currentIndex--
   }
 
-  isPreviousStepAvailable () {
+  isPreviousStepAvailable() {
     return this.currentIndex > 0
   }
 
-  isNextStepAvailable () {
+  isNextStepAvailable() {
     return this.currentIndex < this.stepCount() - 1
   }
 }

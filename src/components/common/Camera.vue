@@ -62,12 +62,12 @@ export default class Camera extends Vue {
   private camera? = '';
 
   @Watch('camera')
-  onCameraValueChange (id: string) {
+  onCameraValueChange(id: string) {
     this.deviceId = id
   }
 
   @Watch('devices')
-  onDevicesValueChange () {
+  onDevicesValueChange() {
     // Once we have a list select the first one
     const [first, ...tail]: any[] = this.devices
     if (first) {
@@ -77,7 +77,7 @@ export default class Camera extends Vue {
   }
 
   @Watch('videoActualDimensions')
-  onVideoActualDimensionsChange (videoActualDimensions: Dimensions) {
+  onVideoActualDimensionsChange(videoActualDimensions: Dimensions) {
     const { width, height } = videoActualDimensions.width
       ? videoActualDimensions
       : { width: 1980, height: 1080 }
@@ -93,24 +93,24 @@ export default class Camera extends Vue {
     }
   }
 
-  capture () {
+  capture() {
     const cam: any = this.$refs.webcam
     const image = cam.capture()
     console.log(`📷 Captured photo. Got ${image.length} bytes.`)
     this.$emit('captured', image)
   }
 
-  unmounted () {
+  unmounted() {
     const cam: any = this.$refs.webcam
     cam.stop()
   }
 
-  mounted () {
+  mounted() {
     const cam: any = this.$refs.webcam
     cam.start()
   }
 
-  switchCamera () {
+  switchCamera() {
     const currentIndex = this.devices.findIndex(
       (device) => device.deviceId === this.deviceId
     )
@@ -118,7 +118,7 @@ export default class Camera extends Vue {
       this.devices[(currentIndex + 1) % this.devices.length].deviceId
   }
 
-  onStarted (mediaStream: any) {
+  onStarted(mediaStream: any) {
     console.log('On Started Event', mediaStream)
     this.isPlaying = true
 
@@ -132,21 +132,21 @@ export default class Camera extends Vue {
     })
   }
 
-  onStopped (stream: any) {
+  onStopped(stream: any) {
     console.log('On Stopped Event', stream)
     this.isPlaying = false
   }
 
-  onError (error: any) {
+  onError(error: any) {
     console.log('On Error Event', error)
   }
 
-  onCameras (cameras: any) {
+  onCameras(cameras: any) {
     this.devices = cameras
     console.log('On Cameras Event', cameras)
   }
 
-  onCameraChange (deviceId: string) {
+  onCameraChange(deviceId: string) {
     this.deviceId = deviceId
     this.camera = deviceId
     console.log('On Camera Change Event', deviceId)

@@ -3,7 +3,10 @@
     <div class="body">
       <slot name="default" />
     </div>
-    <div class="footer" v-if="isFooterDefined">
+    <div
+      class="footer"
+      v-if="isFooterDefined"
+    >
       <div>
         <slot name="footer" />
       </div>

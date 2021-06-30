@@ -1,10 +1,16 @@
 <template>
   <div id="app">
-    <div v-if="isUpdatePending" class="new-version-container">
+    <div
+      v-if="isUpdatePending"
+      class="new-version-container"
+    >
       <div>
         Det finns en <strong>ny version</strong> av den här sidan.
       </div>
-      <Button @click="onUpdateApp" label="Uppdatera nu" />
+      <Button
+        @click="onUpdateApp"
+        label="Uppdatera nu"
+      />
       <div><small>Spara dina svar innan du uppdaterar.</small></div>
     </div>
     <div class="header-image">
@@ -35,16 +41,16 @@
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator'
 import ServiceWorkerMixin from '@/mixins/ServiceWorkerMixin'
-import Button from "@/components/common/Button.vue";
+import Button from '@/components/common/Button.vue'
 
 @Component({
   name: 'App',
   components: {
-    Button,
-  },
+    Button
+  }
 })
 export default class App extends Mixins(ServiceWorkerMixin) {
-  onUpdateApp () {
+  onUpdateApp() {
     this.refreshApplication()
   }
 }
