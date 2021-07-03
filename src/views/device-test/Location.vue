@@ -63,7 +63,7 @@ import Fullscreen from '@/components/common/Fullscreen.vue'
 import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
 import Map, { Marker } from '@/components/common/Map.vue'
 import store, { Status } from '@/store'
-import logEvent, { AnalyticsEventType } from '@/utils/Analytics'
+import * as Analytics from '@/utils/Analytics'
 
 const GeolocationStatus = {
   UNKNOWN: 'UNKNOWN',
@@ -171,7 +171,7 @@ export default class Location extends Vue {
         geolocationStatus === GeolocationStatus.LOCATION_REQUEST_SUCCEEDED
           ? { accuracy: this.currentPosition.accuracy }
           : {}
-      logEvent(AnalyticsEventType.LOCATION, 'set', 'status', {
+      Analytics.logEvent(Analytics.AnalyticsEventType.LOCATION, 'set', 'status', {
         status: geolocationStatus,
         ...additionalProps
       })
