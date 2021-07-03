@@ -3,12 +3,13 @@
     <p>För att allt ska fungera måste din mobil få kontakt med vår server.</p>
     <Button
       v-if="!isChecking"
-      label="Testa uppkopplingen"
-      type="huge"
+      :label="startTestButtonLabel"
+      :type="startTestButtonType"
+      size="huge"
       @click="onStartTest"
     />
-    <p v-if="isCheckInitiated">
-      {{ backendStatus }}
+    <p v-if="isChecking">
+      {{ message }}
     </p>
   </div>
 </template>
@@ -17,14 +18,18 @@
 import store, { Status } from '@/store'
 import { Component, Vue, Watch } from 'vue-property-decorator'
 import Button from '@/components/common/Button.vue'
+import * as AuthUtils from '@/utils/Auth'
 
-const BackendStatus = {
-  UNKNOWN: 'Vi vet inte om vår server är vaken eller inte.',
-  CHECKING: 'Vi kollar om du har kontakt med vår server.',
-  ONLINE: 'Vi har kontakt med vår server.',
-  INVALID_RESPONSE: 'Något är fel med vår server.',
-  FAILED: 'Det gick inte att få kontakt med vår server.'
+enum BackendStatus {
+  UNKNOWN,
+  CHECKING,
+  CONNECTED,
+  CONNECTED_AUTHENTICATED,
+  INVALID_RESPONSE,
+  FAILED,
 }
+
+const apiHost = process.env.VUE_APP_API_HOST
 
 @Component({
   components: {
@@ -32,39 +37,97 @@ const BackendStatus = {
   }
 })
 export default class Connectity extends Vue {
-  private backendStatus = BackendStatus.UNKNOWN;
+  private backendStatus: BackendStatus = BackendStatus.UNKNOWN;
+  private profilePayload: any = null;
 
-  get isChecking(): boolean {
+  get isChecking() {
     return this.backendStatus === BackendStatus.CHECKING
   }
 
-  get isCheckInitiated(): boolean {
+  get isCheckInitiated() {
     return this.backendStatus !== BackendStatus.UNKNOWN
   }
 
-  async onStartTest(): Promise<void> {
-    this.backendStatus = BackendStatus.CHECKING
+  get startTestButtonLabel() {
+    return [Status.PENDING, Status.USER_INTERACTION_REQUIRED].includes(store.state.deviceTest.connectivity.status)
+      ? 'Testa uppkopplingen'
+      : 'Testa uppkopplingen igen'
+  }
 
+  get startTestButtonType() {
+    return [Status.PENDING, Status.USER_INTERACTION_REQUIRED].includes(store.state.deviceTest.connectivity.status)
+      ? 'primary'
+      : 'secondary'
+  }
+
+  get message() {
+    switch (this.backendStatus) {
+      case BackendStatus.UNKNOWN:
+        return 'Vi vet inte om vår server är vaken eller inte.'
+      case BackendStatus.CHECKING:
+        return 'Vi kollar om du har kontakt med vår server.'
+      case BackendStatus.CONNECTED:
+        return 'Du har kontakt med vår server.'
+      case BackendStatus.CONNECTED_AUTHENTICATED:
+        return `Du har kontakt med vår server. Vi ser också att du är inloggad som ${this.profilePayload.name}.`
+      case BackendStatus.INVALID_RESPONSE:
+        return 'Något är fel med vår server.'
+      case BackendStatus.FAILED:
+        return 'Det gick inte att få kontakt med vår server.'
+    }
+  }
+
+  async onStartTest() {
+    this.backendStatus = BackendStatus.CHECKING
     try {
-      const resp = await fetch(`${process.env.VUE_APP_API_HOST}/wp-json/tuja/v1/ping`)
-      this.backendStatus = resp.ok ? BackendStatus.ONLINE : BackendStatus.INVALID_RESPONSE
+      const resp = await fetch(`${apiHost}/wp-json/tuja/v1/ping`)
+      const pingPayload = await resp.json()
+      if (resp.ok && pingPayload.status === 'ok') {
+        const token = AuthUtils.getTokenCookie()
+        if (token) {
+          const profileResp = await fetch(
+            `${apiHost}/wp-json/tuja/v1/profile?token=${token}`
+          )
+          if (profileResp.ok) {
+            this.profilePayload = await profileResp.json()
+            this.backendStatus = BackendStatus.CONNECTED_AUTHENTICATED
+          } else {
+            this.backendStatus = BackendStatus.INVALID_RESPONSE
+          }
+        } else {
+          this.backendStatus = BackendStatus.CONNECTED
+        }
+      } else {
+        this.backendStatus = BackendStatus.INVALID_RESPONSE
+      }
     } catch (e) {
       this.backendStatus = BackendStatus.FAILED
     }
   }
 
   @Watch('backendStatus')
-  onStatusChange(backendStatus: string): void {
-    store.setDeviceTestStatus(
-      'connectivity',
-      {
-        [BackendStatus.UNKNOWN]: Status.PENDING,
-        [BackendStatus.CHECKING]: Status.PENDING,
-        [BackendStatus.ONLINE]: Status.SUCCESS,
-        [BackendStatus.FAILED]: Status.FAILURE,
-        [BackendStatus.INVALID_RESPONSE]: Status.FAILURE
-      }[backendStatus] || Status.PENDING
-    )
+  onStatusChange(backendStatus: string) {
+    const statusMessage = this.message
+    switch (this.backendStatus) {
+      case BackendStatus.UNKNOWN:
+        store.setDeviceTestStatus('connectivity', Status.PENDING, this.message)
+        break
+      case BackendStatus.CHECKING:
+        store.setDeviceTestStatus('connectivity', Status.PENDING, this.message)
+        break
+      case BackendStatus.CONNECTED:
+        store.setDeviceTestStatus('connectivity', Status.SUCCESS, this.message)
+        break
+      case BackendStatus.CONNECTED_AUTHENTICATED:
+        store.setDeviceTestStatus('connectivity', Status.SUCCESS, this.message)
+        break
+      case BackendStatus.INVALID_RESPONSE:
+        store.setDeviceTestStatus('connectivity', Status.FAILURE, this.message)
+        break
+      case BackendStatus.FAILED:
+        store.setDeviceTestStatus('connectivity', Status.FAILURE, this.message)
+        break
+    }
   }
 }
 </script>

@@ -5,9 +5,10 @@
       platser. Därför behöver vi få tillgång till din GPS.
     </p>
     <Button
-      label="Testa GPS"
       @click="onStartTest"
-      :type="!isPositioningSuccessful ? 'huge' : 'secondary'"
+      size="huge"
+      :label="startTestButtonLabel"
+      :type="startTestButtonType"
     />
     <Fullscreen v-if="isTestStarted">
       <div
@@ -106,6 +107,18 @@ export default class Location extends Vue {
   private isTestStarted = false;
   private testStatus: Status = Status.USER_INTERACTION_REQUIRED;
   private watchId = 0;
+
+  get startTestButtonLabel() {
+    return [Status.PENDING, Status.USER_INTERACTION_REQUIRED].includes(store.state.deviceTest.location.status)
+      ? 'Testa GPS'
+      : 'Testa GPS igen'
+  }
+
+  get startTestButtonType() {
+    return [Status.PENDING, Status.USER_INTERACTION_REQUIRED].includes(store.state.deviceTest.location.status)
+      ? 'primary'
+      : 'secondary'
+  }
 
   onStartTest() {
     this.isTestStarted = true

@@ -64,6 +64,12 @@ export default class Message extends Vue {
 
 .header {
     font-weight: bold;
-    margin: 0 0 10px 0;
+}
+
+.message-container div {
+    margin: 10px 0 0 0;
+}
+.message-container div:first-child {
+    margin: 0 0 0 0;
 }
 </style>
