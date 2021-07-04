@@ -29,7 +29,7 @@ export const setUserProperties = (props: UserProperties) => {
     .set('groupKey', props.group_key || '')
     .set('groupName', props.group_name || '')
     .set('userKey', props.user_key || '')
-  amplitude.getInstance().identify(identify);
+  amplitude.getInstance().identify(identify)
 }
 
 export const logEvent = (type: AnalyticsEventType, eventVerb: string, eventObject: string, props?: Record<string, any>) => {

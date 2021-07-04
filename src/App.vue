@@ -60,7 +60,7 @@ export default class App extends Mixins(ServiceWorkerMixin) {
     this.refreshApplication()
   }
 
-  mounted () {
+  mounted() {
     Analytics.logEvent(Analytics.AnalyticsEventType.APP, 'load', 'page')
   }
 }

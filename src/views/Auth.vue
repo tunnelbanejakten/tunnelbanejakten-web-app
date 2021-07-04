@@ -6,12 +6,12 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator";
-import Page from "@/components/layout/Page.vue";
-import * as AuthUtils from "@/utils/Auth";
-import * as Analytics from "@/utils/Analytics";
+import { Component, Vue } from 'vue-property-decorator'
+import Page from '@/components/layout/Page.vue'
+import * as AuthUtils from '@/utils/Auth'
+import * as Analytics from '@/utils/Analytics'
 
-const apiHost = process.env.VUE_APP_API_HOST;
+const apiHost = process.env.VUE_APP_API_HOST
 
 enum GetTokenStatus {
   NOT_STARTED,
@@ -22,8 +22,8 @@ enum GetTokenStatus {
 
 @Component({
   components: {
-    Page,
-  },
+    Page
+  }
 })
 export default class Auth extends Vue {
   private tokenStatus: GetTokenStatus = GetTokenStatus.NOT_STARTED;
@@ -31,74 +31,74 @@ export default class Auth extends Vue {
   get authStatus(): string {
     switch (this.tokenStatus) {
       case GetTokenStatus.NOT_STARTED:
-        return "NOT_STARTED";
+        return 'NOT_STARTED'
       case GetTokenStatus.PENDING:
-        return "Loggar in...";
+        return 'Loggar in...'
       case GetTokenStatus.SUCCESS:
-        return "Inloggningen gick bra.";
+        return 'Inloggningen gick bra.'
       case GetTokenStatus.FAILURE:
-        return "Något gick fel.";
+        return 'Något gick fel.'
       default:
-        return "UNKNOWN";
+        return 'UNKNOWN'
     }
   }
 
   get nextRoute(): string {
-    return String(this.$route.query.newPath);
+    return String(this.$route.query.newPath)
   }
 
   setToken(token: string | null) {
     if (token) {
-      AuthUtils.setTokenCookie(token);
+      AuthUtils.setTokenCookie(token)
     } else {
-      AuthUtils.unsetTokenCookie();
+      AuthUtils.unsetTokenCookie()
     }
   }
 
   async logIn(id: string) {
     try {
-      this.tokenStatus = GetTokenStatus.PENDING;
+      this.tokenStatus = GetTokenStatus.PENDING
       const resp = await fetch(`${apiHost}/wp-json/tuja/v1/tokens`, {
-        method: "POST",
+        method: 'POST',
         body: JSON.stringify({ id }),
         headers: {
-          "Content-Type": "application/json",
-        },
-      });
+          'Content-Type': 'application/json'
+        }
+      })
       if (resp.ok) {
-        const payload = await resp.json();
-        this.setToken(payload.token);
-        this.tokenStatus = GetTokenStatus.SUCCESS;
+        const payload = await resp.json()
+        this.setToken(payload.token)
+        this.tokenStatus = GetTokenStatus.SUCCESS
 
-        const token = AuthUtils.getTokenCookie();
+        const token = AuthUtils.getTokenCookie()
         if (token) {
           const profileResp = await fetch(
             `${apiHost}/wp-json/tuja/v1/profile?token=${token}`
-          );
+          )
           if (profileResp.ok) {
-            const profilePayload = await profileResp.json();
+            const profilePayload = await profileResp.json()
             Analytics.setUserProperties({
               group_key: profilePayload.key,
-              group_name: profilePayload.name,
-            });
+              group_name: profilePayload.name
+            })
           }
         }
 
         if (this.nextRoute) {
-          await this.$router.push({ path: this.nextRoute });
+          await this.$router.push({ path: this.nextRoute })
         }
       } else {
-        this.setToken(null);
-        this.tokenStatus = GetTokenStatus.FAILURE;
+        this.setToken(null)
+        this.tokenStatus = GetTokenStatus.FAILURE
       }
     } catch (e) {
-      this.tokenStatus = GetTokenStatus.FAILURE;
+      this.tokenStatus = GetTokenStatus.FAILURE
     }
   }
 
   mounted() {
     if (this.$route.query.id) {
-      this.logIn(String(this.$route.query.id));
+      this.logIn(String(this.$route.query.id))
     }
   }
 }

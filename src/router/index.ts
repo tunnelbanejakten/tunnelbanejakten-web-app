@@ -46,7 +46,7 @@ router.beforeEach((to, from, next) => {
     const newPath = to.fullPath.replace('/' + to.params.id, '')
     next({
       path: '/auth',
-      query: {newPath, id},
+      query: { newPath, id }
     })
   } else {
     next()
