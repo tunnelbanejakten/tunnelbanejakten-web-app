@@ -1,24 +1,30 @@
 <template>
   <div :class="containerClass">
-    <div v-if="!!header" class="header">
+    <div
+      v-if="!!header"
+      class="header"
+    >
       {{ header }}
     </div>
-    <div v-if="!!message" class="message">
+    <div
+      v-if="!!message"
+      class="message"
+    >
       {{ message }}
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from "vue-property-decorator";
+import { Component, Vue, Prop } from 'vue-property-decorator'
 
 export enum Type {
-  INFO = "info",
-  SUCCESS = "success",
-  FAILURE = "failure",
+  INFO = 'info',
+  SUCCESS = 'success',
+  FAILURE = 'failure',
 }
 @Component({
-  components: {},
+  components: {}
 })
 export default class Message extends Vue {
   @Prop() private readonly message!: string;
@@ -26,7 +32,7 @@ export default class Message extends Vue {
   @Prop({ default: Type.INFO }) private readonly type!: Type;
 
   get containerClass(): string {
-    return `message-container type-${this.type}`;
+    return `message-container type-${this.type}`
   }
 }
 </script>

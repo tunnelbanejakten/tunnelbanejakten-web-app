@@ -4,7 +4,9 @@
       v-if="isUpdatePending"
       class="new-version-container"
     >
-      <div>Det finns en <strong>ny version</strong> av den här sidan.</div>
+      <div>
+        Det finns en <strong>ny version</strong> av den här sidan.
+      </div>
       <Button
         @click="onUpdateApp"
         label="Uppdatera nu"
@@ -54,7 +56,7 @@ import logEvent, { AnalyticsEventType } from '@/utils/Analytics'
   }
 })
 export default class App extends Mixins(ServiceWorkerMixin) {
-  onUpdateApp () {
+  onUpdateApp() {
     this.refreshApplication()
   }
 

@@ -5,9 +5,10 @@ import { Component, Vue } from 'vue-property-decorator'
 export default class ServiceWorkerMixin extends Vue {
   private isUpdatePending = false
   private isUpdating = false
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private pendingRegistration: any = null
 
-  created () {
+  created() {
     // Listen for event when new service worker is available (emitted by ServiceWorkerMixin)
     document.addEventListener('serviceWorkerUpdate', this.onServiceWorkerUpdated, { once: true })
 
@@ -18,7 +19,7 @@ export default class ServiceWorkerMixin extends Vue {
   /**
    * Event handler for when browser has swapped old service worker for new one
    */
-  onControllerChange () {
+  onControllerChange() {
     if (this.isUpdating) {
       return
     }
@@ -31,7 +32,7 @@ export default class ServiceWorkerMixin extends Vue {
   /**
    * Event handler for when a new version of the service worker has been detected (but not yet activated/used).
    */
-  onServiceWorkerUpdated (event: any) {
+  onServiceWorkerUpdated(event: any) {
     this.isUpdatePending = true
     this.pendingRegistration = event.detail
   }
@@ -39,7 +40,7 @@ export default class ServiceWorkerMixin extends Vue {
   /**
    * Function to start the process of swapping out old service worker for new one (assumed to be triggered by user).
    */
-  refreshApplication () {
+  refreshApplication() {
     this.isUpdatePending = false
     console.log('refreshApplication', this.pendingRegistration, this.pendingRegistration.waiting)
     if (this.pendingRegistration && this.pendingRegistration.waiting) {

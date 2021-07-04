@@ -17,7 +17,9 @@ module.exports = {
 
   rules: {
     'no-console': 'off',
-    'no-debugger': 'off'
+    'no-debugger': 'off',
+    'space-before-function-paren': ['error', 'never'],
+    '@typescript-eslint/explicit-module-boundary-types': 'off'
   },
 
   overrides: [

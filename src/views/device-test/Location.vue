@@ -10,33 +10,45 @@
       :type="!isPositioningSuccessful ? 'huge' : 'secondary'"
     />
     <Fullscreen v-if="isTestStarted">
-      <div v-if="isPositioningPending" class="waiting-container">
+      <div
+        v-if="isPositioningPending"
+        class="waiting-container"
+      >
         <div>
           {{ geolocationMessage }}
         </div>
       </div>
-      <div v-if="isPositioningFailed" class="waiting-container">
+      <div
+        v-if="isPositioningFailed"
+        class="waiting-container"
+      >
         <div>
           {{ geolocationMessage }}
         </div>
         <div>
-          <Button label="Ok" @click="onDone" />
+          <Button
+            label="Ok"
+            @click="onDone"
+          />
         </div>
       </div>
-      <div v-if="isPositioningDone" class="done-container">
-        <Map :currentPosition="curPos" />
+      <div
+        v-if="isPositioningDone"
+        class="done-container"
+      >
+        <Map :current-position="curPos" />
         <ConfirmationOverlay
           v-if="isAccuratePosition"
           question="Befinner du dig i den gröna cirkeln?"
-          acceptLabel="Ja"
+          accept-label="Ja"
           @accept="onUserAccept"
-          rejectLabel="Nej"
+          reject-label="Nej"
           @reject="onUserReject"
         />
         <ConfirmationOverlay
           v-if="!isAccuratePosition"
           question="Vi försöker ta reda på var du är. Håll ut."
-          rejectLabel="Avbryt"
+          reject-label="Avbryt"
           @reject="onUserReject"
         />
       </div>
@@ -45,25 +57,25 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Watch } from "vue-property-decorator";
-import Button from "@/components/common/Button.vue";
-import Fullscreen from "@/components/common/Fullscreen.vue";
-import ConfirmationOverlay from "@/components/common/ConfirmationOverlay.vue";
-import Map, { Marker, MarkerType } from "@/components/common/Map.vue";
-import store, { Status } from "@/store";
-import logEvent, { AnalyticsEventType } from "@/utils/Analytics";
+import { Component, Vue, Watch } from 'vue-property-decorator'
+import Button from '@/components/common/Button.vue'
+import Fullscreen from '@/components/common/Fullscreen.vue'
+import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
+import Map, { Marker } from '@/components/common/Map.vue'
+import store, { Status } from '@/store'
+import logEvent, { AnalyticsEventType } from "@/utils/Analytics"
 
 const GeolocationStatus = {
-  UNKNOWN: "UNKNOWN",
-  NO_BROWSER_API: "NO_BROWSER_API",
-  NO_USER_APPROVAL: "NO_USER_APPROVAL",
-  NO_POSITION: "NO_POSITION",
-  NO_RESPONSE: "NO_RESPONSE",
-  BROWSER_API_AVAILABLE: "BROWSER_API_AVAILABLE",
-  LOCATION_REQUEST_INITIATED: "LOCATION_REQUEST_INITIATED",
-  LOCATION_REQUEST_SUCCEEDED: "LOCATION_REQUEST_SUCCEEDED",
-  LOCATION_REQUEST_FAILED: "LOCATION_REQUEST_FAILED",
-};
+  UNKNOWN: 'UNKNOWN',
+  NO_BROWSER_API: 'NO_BROWSER_API',
+  NO_USER_APPROVAL: 'NO_USER_APPROVAL',
+  NO_POSITION: 'NO_POSITION',
+  NO_RESPONSE: 'NO_RESPONSE',
+  BROWSER_API_AVAILABLE: 'BROWSER_API_AVAILABLE',
+  LOCATION_REQUEST_INITIATED: 'LOCATION_REQUEST_INITIATED',
+  LOCATION_REQUEST_SUCCEEDED: 'LOCATION_REQUEST_SUCCEEDED',
+  LOCATION_REQUEST_FAILED: 'LOCATION_REQUEST_FAILED'
+}
 
 const LOGGED_STATUS = [
   GeolocationStatus.NO_BROWSER_API,
@@ -79,42 +91,43 @@ const LOGGED_STATUS = [
     Button,
     Map,
     Fullscreen,
-    ConfirmationOverlay,
-  },
+    ConfirmationOverlay
+  }
 })
 export default class Location extends Vue {
-  private geolocationStatus = "";
-  private geolocationMessage = "";
+  private geolocationStatus = '';
+  private geolocationMessage = '';
   private currentPosition: Marker = {
     latitude: 0.0,
     longitude: 0.0,
     accuracy: 0,
   };
-  private isTestStarted: boolean = false;
+
+  private isTestStarted = false;
   private testStatus: Status = Status.USER_INTERACTION_REQUIRED;
-  private watchId: number = 0;
+  private watchId = 0;
 
   onStartTest() {
-    this.isTestStarted = true;
+    this.isTestStarted = true
     this.geolocationStatus =
-      "geolocation" in navigator
+      'geolocation' in navigator
         ? GeolocationStatus.BROWSER_API_AVAILABLE
-        : GeolocationStatus.NO_BROWSER_API;
+        : GeolocationStatus.NO_BROWSER_API
   }
 
   onDone() {
-    this.isTestStarted = false;
-    store.setDeviceTestStatus("location", this.testStatus);
+    this.isTestStarted = false
+    store.setDeviceTestStatus('location', this.testStatus)
   }
 
   onUserAccept() {
-    this.testStatus = Status.SUCCESS;
-    this.onDone();
+    this.testStatus = Status.SUCCESS
+    this.onDone()
   }
 
   onUserReject() {
-    this.testStatus = Status.FAILURE;
-    this.onDone();
+    this.testStatus = Status.FAILURE
+    this.onDone()
   }
 
   get isAccuratePosition() {
@@ -126,23 +139,23 @@ export default class Location extends Vue {
     return (
       this.testStatus === Status.USER_INTERACTION_REQUIRED &&
       this.geolocationStatus === GeolocationStatus.LOCATION_REQUEST_SUCCEEDED
-    );
+    )
   }
 
   get isPositioningSuccessful() {
-    return this.testStatus === Status.SUCCESS;
+    return this.testStatus === Status.SUCCESS
   }
 
   get isPositioningPending() {
-    return this.testStatus === Status.PENDING;
+    return this.testStatus === Status.PENDING
   }
 
   get isPositioningFailed() {
-    return this.testStatus === Status.FAILURE;
+    return this.testStatus === Status.FAILURE
   }
 
   get curPos() {
-    return { ...this.currentPosition };
+    return { ...this.currentPosition }
   }
 
   unmouted() {
@@ -151,7 +164,7 @@ export default class Location extends Vue {
     }
   }
 
-  @Watch("geolocationStatus")
+  @Watch('geolocationStatus')
   onStatusChange(geolocationStatus: string) {
     if (LOGGED_STATUS.includes(geolocationStatus)) {
       const additionalProps =
@@ -165,86 +178,86 @@ export default class Location extends Vue {
     }
     switch (geolocationStatus) {
       case GeolocationStatus.UNKNOWN:
-        this.testStatus = Status.PENDING;
+        this.testStatus = Status.PENDING
         this.geolocationMessage =
-          "Vi vet inte om vi kan ta reda på din position.";
-        break;
+          'Vi vet inte om vi kan ta reda på din position.'
+        break
       case GeolocationStatus.NO_BROWSER_API:
-        this.testStatus = Status.FAILURE;
+        this.testStatus = Status.FAILURE
         this.geolocationMessage =
-          "Din webbläsare kan inte ta reda på din position.";
-        break;
+          'Din webbläsare kan inte ta reda på din position.'
+        break
       case GeolocationStatus.NO_USER_APPROVAL:
-        this.testStatus = Status.FAILURE;
+        this.testStatus = Status.FAILURE
         this.geolocationMessage =
-          "Antingen är din GPS inte påslagen eller så blockerade du den.";
-        break;
+          'Antingen är din GPS inte påslagen eller så blockerade du den.'
+        break
       case GeolocationStatus.NO_POSITION:
-        this.testStatus = Status.FAILURE;
+        this.testStatus = Status.FAILURE
         this.geolocationMessage =
-          "Det gick inte att fixera din position. Kanske åker du bil eller är på en plats med dålig mottagning?";
-        break;
+          'Det gick inte att fixera din position. Kanske åker du bil eller är på en plats med dålig mottagning?'
+        break
       case GeolocationStatus.NO_RESPONSE:
-        this.testStatus = Status.FAILURE;
+        this.testStatus = Status.FAILURE
         this.geolocationMessage =
-          "Det tog för lång tid att ta reda på din position så vi gav upp.";
-        break;
+          'Det tog för lång tid att ta reda på din position så vi gav upp.'
+        break
       case GeolocationStatus.BROWSER_API_AVAILABLE:
-        this.testStatus = Status.PENDING;
+        this.testStatus = Status.PENDING
         this.geolocationMessage =
-          "Vi jobbar på att ta reda på var du befinner dig.";
-        this.geolocationStatus = GeolocationStatus.LOCATION_REQUEST_INITIATED;
+        'Vi jobbar på att ta reda på var du befinner dig.'
+        this.geolocationStatus = GeolocationStatus.LOCATION_REQUEST_INITIATED
 
         this.watchId = navigator.geolocation.watchPosition(
           (position) => {
-            console.log("🌍 New position from geolocation API:", position);
+            console.log('🌍 New position from geolocation API:', position)
             const {
-              coords: { accuracy, latitude, longitude },
-            } = position;
-            this.currentPosition.accuracy = (1.0 * accuracy) / 1000;
-            this.currentPosition.latitude = latitude;
-            this.currentPosition.longitude = longitude;
+              coords: { accuracy, latitude, longitude }
+            } = position
+            this.currentPosition.accuracy = (1.0 * accuracy) / 1000
+            this.currentPosition.latitude = latitude
+            this.currentPosition.longitude = longitude
             this.geolocationStatus =
-              GeolocationStatus.LOCATION_REQUEST_SUCCEEDED;
+              GeolocationStatus.LOCATION_REQUEST_SUCCEEDED
           },
           (error) => {
             switch (error.code) {
               // 1 PERMISSION_DENIED The acquisition of the geolocation information failed because the page didn't have the permission to do it.
               case 1:
-                this.geolocationStatus = GeolocationStatus.NO_USER_APPROVAL;
-                break;
+                this.geolocationStatus = GeolocationStatus.NO_USER_APPROVAL
+                break
               // 2 POSITION_UNAVAILABLE The acquisition of the geolocation failed because one or several internal sources of position returned an internal error.
               case 2:
-                this.geolocationStatus = GeolocationStatus.NO_POSITION;
-                break;
+                this.geolocationStatus = GeolocationStatus.NO_POSITION
+                break
               // 3 TIMEOUT The time allowed to acquire the geolocation, defined by PositionOptions.timeout information that was reached before the information was obtained.
               case 3:
-                this.geolocationStatus = GeolocationStatus.NO_RESPONSE;
-                break;
+                this.geolocationStatus = GeolocationStatus.NO_RESPONSE
+                break
               default:
                 this.geolocationStatus =
-                  GeolocationStatus.LOCATION_REQUEST_FAILED;
-                break;
+                  GeolocationStatus.LOCATION_REQUEST_FAILED
+                break
             }
           }
-        );
-        break;
+        )
+        break
       case GeolocationStatus.LOCATION_REQUEST_INITIATED:
-        this.testStatus = Status.PENDING;
-        break;
+        this.testStatus = Status.PENDING
+        break
       case GeolocationStatus.LOCATION_REQUEST_SUCCEEDED:
-        this.testStatus = Status.USER_INTERACTION_REQUIRED;
-        this.geolocationMessage = "Vi tror oss veta var du befinner dig.";
-        break;
+        this.testStatus = Status.USER_INTERACTION_REQUIRED
+        this.geolocationMessage = 'Vi tror oss veta var du befinner dig.'
+        break
       case GeolocationStatus.LOCATION_REQUEST_FAILED:
-        this.testStatus = Status.FAILURE;
+        this.testStatus = Status.FAILURE
         this.geolocationMessage =
-          "Av någon anledning kunde vi inte ta reda på din position.";
-        break;
+          'Av någon anledning kunde vi inte ta reda på din position.'
+        break
       default:
-        this.testStatus = Status.FAILURE;
-        this.geolocationMessage = "Okänd status.";
-        break;
+        this.testStatus = Status.FAILURE
+        this.geolocationMessage = 'Okänd status.'
+        break
     }
   }
 }

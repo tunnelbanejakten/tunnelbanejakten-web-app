@@ -22,7 +22,7 @@ export default class StepbystepProgress extends Vue {
   @Prop() private currentIndex!: number
   @Prop({ default: [] }) private statuses!: Status[]
 
-  get stepStatuses (): any[] {
+  get stepStatuses(): any[] {
     return this.statuses
       .map((status, key) => ({
         key,
@@ -31,7 +31,7 @@ export default class StepbystepProgress extends Vue {
       }))
   }
 
-  getClass (active: boolean, status: Status) {
+  getClass(active: boolean, status: Status) {
     return `${active ? 'active' : 'inactive'} ${String(Status[status]).toLowerCase()}`
   }
 }

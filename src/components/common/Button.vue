@@ -24,11 +24,11 @@ export default class Button extends Vue {
   @Prop({ default: Type.PRIMARY }) readonly type!: Type
 
   @Emit('click')
-  onClick () {
+  onClick() {
     return true
   }
 
-  get buttonClass (): string {
+  get buttonClass(): string {
     return `type-${this.type}`
   }
 }

@@ -2,33 +2,42 @@
   <div class="overlay-container">
     <p>{{ question }}</p>
     <div class="buttons">
-      <Button v-if="!!acceptLabel" :label="acceptLabel" @click="onUserAccept" />
-      <Button v-if="!!rejectLabel" :label="rejectLabel" @click="onUserReject" type="secondary" />
+      <Button
+        v-if="!!acceptLabel"
+        :label="acceptLabel"
+        @click="onUserAccept"
+      />
+      <Button
+        v-if="!!rejectLabel"
+        :label="rejectLabel"
+        @click="onUserReject"
+        type="secondary"
+      />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue, Emit, Prop } from "vue-property-decorator";
-import Button from "@/components/common/Button.vue";
+import { Component, Vue, Emit, Prop } from 'vue-property-decorator'
+import Button from '@/components/common/Button.vue'
 @Component({
   components: {
-    Button,
-  },
+    Button
+  }
 })
 export default class ConfirmationOverlay extends Vue {
-  @Prop() private question!: String;
-  @Prop() private acceptLabel!: String;
-  @Prop() private rejectLabel!: String;
+  @Prop() private question!: string;
+  @Prop() private acceptLabel!: string;
+  @Prop() private rejectLabel!: string;
 
-  @Emit("accept")
+  @Emit('accept')
   onUserAccept() {
-    return true;
+    return true
   }
 
-  @Emit("reject")
+  @Emit('reject')
   onUserReject() {
-    return true;
+    return true
   }
 }
 </script>
