@@ -63,7 +63,7 @@ import Fullscreen from '@/components/common/Fullscreen.vue'
 import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
 import Map, { Marker } from '@/components/common/Map.vue'
 import store, { Status } from '@/store'
-import logEvent, { AnalyticsEventType } from "@/utils/Analytics"
+import logEvent, { AnalyticsEventType } from '@/utils/Analytics'
 
 const GeolocationStatus = {
   UNKNOWN: 'UNKNOWN',
@@ -83,8 +83,8 @@ const LOGGED_STATUS = [
   GeolocationStatus.NO_POSITION,
   GeolocationStatus.NO_RESPONSE,
   GeolocationStatus.LOCATION_REQUEST_SUCCEEDED,
-  GeolocationStatus.LOCATION_REQUEST_FAILED,
-];
+  GeolocationStatus.LOCATION_REQUEST_FAILED
+]
 
 @Component({
   components: {
@@ -100,7 +100,7 @@ export default class Location extends Vue {
   private currentPosition: Marker = {
     latitude: 0.0,
     longitude: 0.0,
-    accuracy: 0,
+    accuracy: 0
   };
 
   private isTestStarted = false;
@@ -131,8 +131,8 @@ export default class Location extends Vue {
   }
 
   get isAccuratePosition() {
-    const accuracy = this.currentPosition?.accuracy || 0;
-    return accuracy > 0 && accuracy < 0.05;
+    const accuracy = this.currentPosition?.accuracy || 0
+    return accuracy > 0 && accuracy < 0.05
   }
 
   get isPositioningDone() {
@@ -160,7 +160,7 @@ export default class Location extends Vue {
 
   unmouted() {
     if (this.watchId) {
-      navigator.geolocation.clearWatch(this.watchId);
+      navigator.geolocation.clearWatch(this.watchId)
     }
   }
 
@@ -170,11 +170,11 @@ export default class Location extends Vue {
       const additionalProps =
         geolocationStatus === GeolocationStatus.LOCATION_REQUEST_SUCCEEDED
           ? { accuracy: this.currentPosition.accuracy }
-          : {};
+          : {}
       logEvent(AnalyticsEventType.LOCATION, 'set', 'status', {
         status: geolocationStatus,
-        ...additionalProps,
-      });
+        ...additionalProps
+      })
     }
     switch (geolocationStatus) {
       case GeolocationStatus.UNKNOWN:
