@@ -2,8 +2,9 @@
   <div>
     <p>Flera uppgifter under tävlingen besvaras med foton.</p>
     <Button
-      label="Testa kamera"
-      type="huge"
+      :label="startTestButtonLabel"
+      :type="startTestButtonType"
+      size="huge"
       @click="onStartTest"
     />
     <Fullscreen v-if="isCameraShown">
@@ -59,6 +60,18 @@ export default class Camera extends Vue {
   private isCameraShown = false;
 
   private img? = '';
+
+  get startTestButtonLabel() {
+    return [Status.PENDING, Status.USER_INTERACTION_REQUIRED].includes(store.state.deviceTest.camera.status)
+      ? 'Testa kamera'
+      : 'Testa kamera igen'
+  }
+
+  get startTestButtonType() {
+    return [Status.PENDING, Status.USER_INTERACTION_REQUIRED].includes(store.state.deviceTest.camera.status)
+      ? 'primary'
+      : 'secondary'
+  }
 
   onStartTest() {
     this.isCameraShown = true

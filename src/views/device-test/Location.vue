@@ -5,9 +5,10 @@
       platser. Därför behöver vi få tillgång till din GPS.
     </p>
     <Button
-      label="Testa GPS"
       @click="onStartTest"
-      :type="!isPositioningSuccessful ? 'huge' : 'secondary'"
+      size="huge"
+      :label="startTestButtonLabel"
+      :type="startTestButtonType"
     />
     <Fullscreen v-if="isTestStarted">
       <div
@@ -63,7 +64,7 @@ import Fullscreen from '@/components/common/Fullscreen.vue'
 import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
 import Map, { Marker } from '@/components/common/Map.vue'
 import store, { Status } from '@/store'
-import logEvent, { AnalyticsEventType } from '@/utils/Analytics'
+import * as Analytics from '@/utils/Analytics'
 
 const GeolocationStatus = {
   UNKNOWN: 'UNKNOWN',
@@ -106,6 +107,18 @@ export default class Location extends Vue {
   private isTestStarted = false;
   private testStatus: Status = Status.USER_INTERACTION_REQUIRED;
   private watchId = 0;
+
+  get startTestButtonLabel() {
+    return [Status.PENDING, Status.USER_INTERACTION_REQUIRED].includes(store.state.deviceTest.location.status)
+      ? 'Testa GPS'
+      : 'Testa GPS igen'
+  }
+
+  get startTestButtonType() {
+    return [Status.PENDING, Status.USER_INTERACTION_REQUIRED].includes(store.state.deviceTest.location.status)
+      ? 'primary'
+      : 'secondary'
+  }
 
   onStartTest() {
     this.isTestStarted = true
@@ -171,7 +184,7 @@ export default class Location extends Vue {
         geolocationStatus === GeolocationStatus.LOCATION_REQUEST_SUCCEEDED
           ? { accuracy: this.currentPosition.accuracy }
           : {}
-      logEvent(AnalyticsEventType.LOCATION, 'set', 'status', {
+      Analytics.logEvent(Analytics.AnalyticsEventType.LOCATION, 'set', 'status', {
         status: geolocationStatus,
         ...additionalProps
       })

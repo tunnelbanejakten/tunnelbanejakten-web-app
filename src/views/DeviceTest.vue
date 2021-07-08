@@ -4,22 +4,23 @@
       :current-index="currentIndex"
       :statuses="statuses"
     />
-    <Message
-      v-if="isStatusMessageAvailable"
-      :message="statusMessage"
-      :type="statusType"
-    />
     <div class="test-component-wrapper">
       <component
         :is="currentComponent()"
       />
     </div>
+    <Message
+      v-if="isStatusMessageAvailable"
+      :header="statusHeader"
+      :message="statusMessage"
+      :type="statusType"
+    />
     <div class="step-navigation">
       <div class="step-navigate-button">
         <Button
           v-if="isPreviousStepAvailable()"
           @click="previous"
-          label="Tillbaka"
+          label="Bakåt"
           type="secondary"
         />
       </div>
@@ -143,7 +144,7 @@ export default class DeviceTest extends Vue {
     }
   }
 
-  get statusMessage() {
+  get statusHeader() {
     switch (this.state[this.steps[this.currentIndex].stateKey]?.status) {
       case Status.SUCCESS:
         return 'Testet gick bra.'
@@ -152,6 +153,10 @@ export default class DeviceTest extends Vue {
       default:
         return 'Lite oklar status just nu...'
     }
+  }
+
+  get statusMessage() {
+    return this.state[this.steps[this.currentIndex].stateKey]?.statusMessage
   }
 
   stepCount() {

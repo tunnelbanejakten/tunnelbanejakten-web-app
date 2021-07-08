@@ -1,4 +1,4 @@
-import logEvent, { AnalyticsEventType } from '@/utils/Analytics'
+import * as Analytics from '@/utils/Analytics'
 
 export enum Status {
   PENDING,
@@ -9,6 +9,7 @@ export enum Status {
 
 type DeviceTestStatus = {
   status: Status
+  statusMessage?: string
 }
 
 type State = {
@@ -29,13 +30,14 @@ const state: State = {
 
 const store = {
   state,
-  setDeviceTestStatus(testName: string, status: Status) {
-    console.log(`Set status for ${testName} to ${status}. `)
-    logEvent(AnalyticsEventType.DEVICE_TEST, 'set', 'status', {
+  setDeviceTestStatus(testName: string, status: Status, message?: string) {
+    console.log(`Set status for ${testName} to ${status} with message '${message}'.`)
+    Analytics.logEvent(Analytics.AnalyticsEventType.DEVICE_TEST, 'set', 'status', {
       test: testName,
       status: Status[status]
     })
     this.state.deviceTest[testName].status = status
+    this.state.deviceTest[testName].statusMessage = message
   }
 }
 

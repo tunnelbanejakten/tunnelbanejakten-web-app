@@ -16,7 +16,23 @@ const initAmplitude = () => {
   isAnalyticsInitialized = true
 }
 
-export default (type: AnalyticsEventType, eventVerb: string, eventObject: string, props?: Record<string, any>) => {
+export type UserProperties = {
+  group_key?: string
+  group_name?: string
+  user_key?: string
+  competition_key?: string
+}
+
+export const setUserProperties = (props: UserProperties) => {
+  const identify = new amplitude.Identify()
+    .set('competitionKey', props.competition_key || '')
+    .set('groupKey', props.group_key || '')
+    .set('groupName', props.group_name || '')
+    .set('userKey', props.user_key || '')
+  amplitude.getInstance().identify(identify)
+}
+
+export const logEvent = (type: AnalyticsEventType, eventVerb: string, eventObject: string, props?: Record<string, any>) => {
   const actionName = eventVerb.toLowerCase() + ' ' + eventObject.toLowerCase()
   const eventName = AnalyticsEventType[type].toLowerCase() + ': ' + actionName
   const patchedProps = {

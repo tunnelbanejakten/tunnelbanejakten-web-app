@@ -12,9 +12,14 @@ import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 
 export enum Type {
   PRIMARY = 'primary',
-  SECONDARY = 'secondary',
+  SECONDARY = 'secondary'
+}
+
+export enum Size {
+  NORMAL = 'normal',
   HUGE = 'huge'
 }
+
 @Component({
   components: {
   }
@@ -22,6 +27,7 @@ export enum Type {
 export default class Button extends Vue {
   @Prop() private label!: string
   @Prop({ default: Type.PRIMARY }) readonly type!: Type
+  @Prop({ default: Size.NORMAL }) readonly size!: Size
 
   @Emit('click')
   onClick() {
@@ -29,7 +35,7 @@ export default class Button extends Vue {
   }
 
   get buttonClass(): string {
-    return `type-${this.type}`
+    return `type-${this.type} size-${this.size}`
   }
 }
 </script>
@@ -39,10 +45,11 @@ button {
   border-radius: 10px;
 }
 
-button.type-huge {
-  background-color: #e2c7ec;
-  border: 1px solid #977ca1;
-  color: #000;
+button.size-normal {
+  padding: 9px;
+}
+
+button.size-huge {
   padding: 14px;
   font-size: 100%;
 }
@@ -51,13 +58,11 @@ button.type-primary {
   background-color: #e2c7ec;
   border: 1px solid #977ca1;
   color: #000;
-  padding: 9px;
 }
 
 button.type-secondary {
   background-color: #fff;
   border: 1px solid #977ca1;
   color: #000;
-  padding: 9px;
 }
 </style>

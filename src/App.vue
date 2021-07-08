@@ -47,7 +47,7 @@
 import { Component, Mixins } from 'vue-property-decorator'
 import ServiceWorkerMixin from '@/mixins/ServiceWorkerMixin'
 import Button from '@/components/common/Button.vue'
-import logEvent, { AnalyticsEventType } from '@/utils/Analytics'
+import * as Analytics from '@/utils/Analytics'
 
 @Component({
   name: 'App',
@@ -61,7 +61,7 @@ export default class App extends Mixins(ServiceWorkerMixin) {
   }
 
   mounted() {
-    logEvent(AnalyticsEventType.APP, 'load', 'page')
+    Analytics.logEvent(Analytics.AnalyticsEventType.APP, 'load', 'page')
   }
 }
 </script>
