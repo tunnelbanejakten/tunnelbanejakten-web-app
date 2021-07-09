@@ -171,7 +171,7 @@ export default class Map extends Vue {
   initMap() {
     this.applyDeadIconFix();
 
-    this.mapRef = L.map("map-container");
+    this.mapRef = L.map("map-container", { tap: false });
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       zoom: 15,
       id: "openstreetmap",

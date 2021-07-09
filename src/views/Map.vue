@@ -15,11 +15,29 @@
       <ConfirmationOverlay
         v-if="activeMarkers.length"
         :question="atLocationText"
+        @accept="onShowArrivalPopup"
+        acceptLabel="Visa"
       />
-      <NotificationOverlay
-        v-if="!!notification"
-        :message="notification"
-      />
+      <NotificationOverlay v-if="!!notification" :message="notification" />
+      <Fullscreen v-if="isCheckpointArrivalShown">
+        <div class="arrival-container">
+          <p>Du är framme!</p>
+          <div v-for="marker in activeMarkers" :key="marker.label">
+            <Button
+              :label="marker.label"
+              @click="onSelectCheckpoint(marker)"
+              :size="checkpointButtonSize"
+            />
+          </div>
+          <div class="buttons">
+            <Button
+              label="Stäng"
+              @click="onCloseArrivalPopup"
+              type="secondary"
+            />
+          </div>
+        </div>
+      </Fullscreen>
     </div>
   </Page>
 </template>
@@ -35,8 +53,10 @@ import MapComponent, {
 } from "@/components/common/Map.vue";
 import ConfirmationOverlay from "@/components/common/ConfirmationOverlay.vue";
 import NotificationOverlay from "@/components/common/NotificationOverlay.vue";
+import Button, { Size as ButtonSize } from "@/components/common/Button.vue";
+import Fullscreen from "@/components/common/Fullscreen.vue";
 import Message, { Type as MessageType } from "@/components/common/Message.vue";
-import * as LocationUtils from '@/utils/Location'
+import * as LocationUtils from "@/utils/Location";
 
 const apiHost = process.env.VUE_APP_API_HOST;
 
@@ -88,6 +108,8 @@ const deg2rad = (deg: number) => {
     Message,
     ConfirmationOverlay,
     NotificationOverlay,
+    Fullscreen,
+    Button,
   },
 })
 export default class Map extends Vue {
@@ -95,7 +117,9 @@ export default class Map extends Vue {
   private notification: string = "";
   private stateMessage: string = "";
   private stateMessageType: MessageType = MessageType.FAILURE;
+  private checkpointButtonSize: ButtonSize = ButtonSize.HUGE;
   private watchId = 0;
+  private isCheckpointArrivalShown: boolean = false;
 
   private markers: Marker[] = [];
   private activeMarkers: Marker[] = [];
@@ -124,13 +148,30 @@ export default class Map extends Vue {
   }
 
   get atLocationText(): string {
-    return this.activeMarkers.map(({ label }: Marker) => label).join(", ");
+    if (this.activeMarkers.length === 1) {
+      return "Du befinner dig vid en kontroll.";
+    } else {
+      return `Du befinner dig vid ${this.activeMarkers.length} kontroller.`;
+    }
+  }
+
+  onSelectCheckpoint(e: Marker) {
+    console.log(e);
+  }
+
+  onCloseArrivalPopup() {
+    this.isCheckpointArrivalShown = false;
+  }
+
+  onShowArrivalPopup() {
+    this.isCheckpointArrivalShown = true;
   }
 
   updateActiveMarkers(markers: Marker[], position: Marker) {
     if (!LocationUtils.isAccuratePosition(position.meterAccuracy)) {
       return [];
     }
+    const isMarkerActiveBefore = this.activeMarkers.length > 0;
     this.activeMarkers = markers.filter((marker: Marker) => {
       const distance = coordinateDistance(
         {
@@ -148,6 +189,11 @@ export default class Map extends Vue {
       const isWithinMarker = distance - marginOfError <= 0;
       return isWithinMarker;
     });
+    const isMarkerActiveAfter = this.activeMarkers.length > 0;
+    if (!isMarkerActiveBefore && isMarkerActiveAfter) {
+      // User has walked into a "checkpoint region" (as opposed to walking out of it or walking around inside of it)
+      this.isCheckpointArrivalShown = true;
+    }
   }
 
   @Watch("curPos")
@@ -212,7 +258,9 @@ export default class Map extends Vue {
           };
           this.state = State.POSITION_ACQUIRED;
           this.stateMessage = "Vi har hittat dig på kartan.";
-          this.notification = !LocationUtils.isAccuratePosition(accuracy) ? 'Vi är osäkra på din position. Om du står still ett litet tag till så löser dit sig säkert.' : ''
+          this.notification = !LocationUtils.isAccuratePosition(accuracy)
+            ? "Vi är osäkra på din position. Om du står still ett litet tag till så löser det sig säkert."
+            : "";
         },
         (error) => {
           this.state = State.ERROR;
@@ -274,6 +322,14 @@ export default class Map extends Vue {
   height: 100%;
   width: 100%;
   justify-content: center;
+  align-items: center;
+}
+.arrival-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  height: 100%;
+  width: 100%;
   align-items: center;
 }
 </style>
