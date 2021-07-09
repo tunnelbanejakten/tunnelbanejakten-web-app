@@ -10,9 +10,63 @@ import Button from '@/components/common/Button.vue'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 
+const getAccuracyLevel = (meterAccuracy: number): AccuracyLevel => {
+  return meterAccuracy < 100
+    ? AccuracyLevel.HIGHEST
+    : meterAccuracy < 200
+      ? AccuracyLevel.HIGH
+      : meterAccuracy < 500
+        ? AccuracyLevel.MEDIUM
+        : AccuracyLevel.LOW
+}
+
+const getZoomLevel = (accuracyLevel: AccuracyLevel) => {
+  switch (accuracyLevel) {
+    case AccuracyLevel.HIGHEST:
+      return 18
+    case AccuracyLevel.HIGH:
+      return 16
+    case AccuracyLevel.MEDIUM:
+      return 15
+    default:
+      return 13
+  }
+}
+
+const MARKER_BASE_STYLE = {
+  stroke: true,
+
+  color: '#000',
+  opacity: 0.5,
+  weight: 5,
+
+  fillColor: '#0F0',
+  fillOpacity: 0.5
+}
+
+const getMarkerStyle = (meterAccuracy: number) : any => ({
+  ...MARKER_BASE_STYLE,
+  radius: meterAccuracy,
+  fillColor:
+    getAccuracyLevel(meterAccuracy) === AccuracyLevel.HIGHEST
+      ? 'green'
+      : getAccuracyLevel(meterAccuracy) === AccuracyLevel.HIGH
+        ? 'yellow'
+        : getAccuracyLevel(meterAccuracy) === AccuracyLevel.MEDIUM
+          ? 'yellow'
+          : 'orange'
+})
+
 export enum MarkerType {
   NORMAL,
   ACTIVE,
+}
+
+enum AccuracyLevel {
+  HIGHEST,
+  HIGH,
+  MEDIUM,
+  LOW,
 }
 
 export type Marker = {
@@ -42,44 +96,41 @@ export default class Map extends Vue {
     })
   }
 
+  @Watch('markers')
+  updateMarkers(newMarkers: Marker[]) {
+    console.log('Update markers')
+  }
+
   @Watch('currentPosition')
   updatePosition(newPosition: Marker) {
     console.log('🌍 Update map marker:', newPosition)
     const accuracy = newPosition.accuracy || 10000
-    const zoomLevel =
-      accuracy < 100 ? 17 : accuracy < 500 ? 15 : accuracy < 1000 ? 13 : 10
+    const zoomLevel = getZoomLevel(getAccuracyLevel((newPosition.accuracy || 0) * 1000))
 
     this.currentPositionMapRef.setRadius((newPosition.accuracy || 0) * 1000)
-    this.mapRef.setView([newPosition.latitude, newPosition.longitude], zoomLevel)
+    this.currentPositionMapRef.setLatLng([
+      newPosition.latitude,
+      newPosition.longitude
+    ])
+
+    this.mapRef.setZoom(zoomLevel)
+    this.mapRef.panTo([newPosition.latitude, newPosition.longitude], {
+      animate: true,
+      duration: 0.5
+    })
   }
 
   initMap() {
     this.applyDeadIconFix()
 
     this.mapRef = L.map('map-container')
-    // L.marker([
-    //   this.currentPosition.latitude,
-    //   this.currentPosition.longitude,
-    // ]).addTo(map);
-    this.currentPositionMapRef = L.circle(
-      [this.currentPosition.latitude, this.currentPosition.longitude],
-      {
-        stroke: true,
-        radius: (this.currentPosition.accuracy || 0) * 1000,
-
-        color: '#000',
-        opacity: 0.5,
-        weight: 1,
-
-        fillColor: '#0F0',
-        fillOpacity: 0.5
-      }
-    )
-    this.currentPositionMapRef.addTo(this.mapRef)
-
-    this.updatePosition(this.currentPosition)
-
-    for (const marker of (this.markers || [])) {
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      zoom: 15,
+      id: 'openstreetmap',
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(this.mapRef)
+    for (const marker of this.markers || []) {
       const { label, latitude, longitude, type, accuracy } = marker
 
       L.circle([latitude, longitude], {
@@ -95,12 +146,13 @@ export default class Map extends Vue {
       }).addTo(this.mapRef)
     }
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      zoom: 15,
-      id: 'openstreetmap',
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(this.mapRef)
+    this.currentPositionMapRef = L.circle(
+      [this.currentPosition.latitude, this.currentPosition.longitude],
+      getMarkerStyle((this.currentPosition.accuracy || 0) * 1000)
+    )
+    this.currentPositionMapRef.addTo(this.mapRef)
+
+    this.updatePosition(this.currentPosition)
   }
 
   mounted() {
