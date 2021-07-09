@@ -9,8 +9,11 @@
       />
     </div>
     <div class="map-container" v-if="isMarkerListLoaded && !isError">
-      <MapComponent :markers="checkpoints" :currentPosition="curPos" />
-      <ConfirmationOverlay v-if="activeMarkers.length" :question="atLocationText" />
+      <MapComponent :markers="checkpoints" />
+      <ConfirmationOverlay
+        v-if="activeMarkers.length"
+        :question="atLocationText"
+      />
     </div>
   </Page>
 </template>
@@ -19,7 +22,12 @@
 import { Component, Vue, Watch } from "vue-property-decorator";
 import Page from "@/components/layout/Page.vue";
 import * as AuthUtils from "@/utils/Auth";
-import MapComponent, { Marker, MarkerType } from "@/components/common/Map.vue";
+import MapComponent, {
+  Coord,
+  HIGH_ACCURACY_THRESHOLD,
+  Marker,
+  MarkerType,
+} from "@/components/common/Map.vue";
 import ConfirmationOverlay from "@/components/common/ConfirmationOverlay.vue";
 import Message, { Type as MessageType } from "@/components/common/Message.vue";
 
@@ -47,7 +55,7 @@ type ApiMarker = {
 //   Earth is a perfect sphere (which it isn't...). Because of this, it can lead to
 //   errors of up to 0.5%."
 
-const coordinateDistance = (coord1: Marker, coord2: Marker) => {
+const coordinateDistance = (coord1: Coord, coord2: Coord) => {
   const R = 6371; // Radius of the Earth (in km)
   const dLat = deg2rad(coord2.latitude - coord1.latitude);
   const dLon = deg2rad(coord2.longitude - coord1.longitude);
@@ -59,7 +67,7 @@ const coordinateDistance = (coord1: Marker, coord2: Marker) => {
       Math.sin(dLon / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // Distance (in km)
+  return (R * c) * 1000.0; // Distance (in meter)
 };
 
 const deg2rad = (deg: number) => {
@@ -81,11 +89,13 @@ export default class Map extends Vue {
   private watchId = 0;
 
   private markers: Marker[] = [];
+  private activeMarkers: Marker[] = [];
   private currentPosition: Marker = {
     longitude: 17.833718,
     // longitude: 17.832718,
     latitude: 59.361201,
-    accuracy: 0.01,
+    meterAccuracy: 10,
+    type: MarkerType.USER_POSITION,
   };
 
   get curPos() {
@@ -100,39 +110,46 @@ export default class Map extends Vue {
     return this.activeMarkers.map(({ label }: Marker) => label).join(", ");
   }
 
-  @Watch("curPos")
-  onPositionChange(newPosition: Marker) {
-    console.log("New position is", newPosition);
-  }
-
-  get checkpoints(): Marker[] {
-    return this.markers.map((marker: Marker) => {
+  updateActiveMarkers(markers: Marker[], position: Marker) {
+    if (position.meterAccuracy > HIGH_ACCURACY_THRESHOLD){
+      return []
+    }
+    this.activeMarkers = markers.filter((marker: Marker) => {
       const distance = coordinateDistance(
         {
-          latitude: this.currentPosition?.latitude || 0.0,
-          longitude: this.currentPosition?.longitude || 0.0,
+          latitude: position.latitude,
+          longitude: position.longitude,
         },
         {
           latitude: marker.latitude,
           longitude: marker.longitude,
         }
       );
+      // console.log(`📏 ${distance} meter to ${marker.label}`)
       const marginOfError =
-        (marker.accuracy || 0) + (this.currentPosition?.accuracy || 0);
+        (marker.meterAccuracy || 0) +
+        (position.meterAccuracy || 0);
       const isWithinMarker = distance - marginOfError <= 0;
-      const type = isWithinMarker ? MarkerType.ACTIVE : MarkerType.NORMAL;
-
-      return {
-        ...marker,
-        type,
-      };
+      return isWithinMarker;
     });
+
   }
 
-  get activeMarkers(): Marker[] {
-    return this.checkpoints.filter(
-      ({ type }: Marker) => type === MarkerType.ACTIVE
-    );
+  @Watch("curPos")
+  onPositionChange(newPosition: Marker) {
+    console.log("New position is", newPosition);
+    this.updateActiveMarkers(this.markers, newPosition)
+  }
+
+  @Watch("markers")
+  onMarkersChange(newMarkers: Marker[]) {
+    console.log("New markers are", newMarkers);
+    this.updateActiveMarkers(newMarkers, this.currentPosition)
+  }
+
+  get checkpoints(): Marker[] {
+    console.log("Get checkpoints");
+    return [...this.markers, this.currentPosition];
   }
 
   get isMarkerListLoaded() {
@@ -149,12 +166,12 @@ export default class Map extends Vue {
         const markers = await resp.json();
 
         this.markers = markers.map(
-          ({ latitude, longitude, name, radius }: ApiMarker) => ({
+          ({ latitude, longitude, name, radius }: ApiMarker): Marker => ({
             latitude,
             longitude,
-            accuracy: radius / 1000,
+            meterAccuracy: radius,
             label: String(name),
-            type: MarkerType.NORMAL,
+            type: MarkerType.CHECKPOINT,
           })
         );
       } catch (e) {
@@ -175,9 +192,12 @@ export default class Map extends Vue {
           const {
             coords: { accuracy, latitude, longitude },
           } = position;
-          this.currentPosition.accuracy = 0.01; //(1.0 * accuracy) / 1000;
-          this.currentPosition.latitude = latitude;
-          this.currentPosition.longitude = longitude;
+          this.currentPosition = {
+            meterAccuracy: accuracy,
+            latitude: latitude,
+            longitude: longitude,
+            type: MarkerType.USER_POSITION
+          }
           this.state = State.POSITION_ACQUIRED;
         },
         (error) => {

@@ -5,61 +5,59 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Watch } from 'vue-property-decorator'
-import Button from '@/components/common/Button.vue'
-import 'leaflet/dist/leaflet.css'
-import L from 'leaflet'
+import { Component, Vue, Prop, Watch } from "vue-property-decorator";
+import Button from "@/components/common/Button.vue";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+export const HIGH_ACCURACY_THRESHOLD = 50
 
 const getAccuracyLevel = (meterAccuracy: number): AccuracyLevel => {
-  return meterAccuracy < 100
+  return meterAccuracy < HIGH_ACCURACY_THRESHOLD
     ? AccuracyLevel.HIGHEST
-    : meterAccuracy < 200
-      ? AccuracyLevel.HIGH
-      : meterAccuracy < 500
-        ? AccuracyLevel.MEDIUM
-        : AccuracyLevel.LOW
-}
+    : meterAccuracy < 100
+    ? AccuracyLevel.HIGH
+    : meterAccuracy < 250
+    ? AccuracyLevel.MEDIUM
+    : AccuracyLevel.LOW;
+};
 
 const getZoomLevel = (accuracyLevel: AccuracyLevel) => {
   switch (accuracyLevel) {
     case AccuracyLevel.HIGHEST:
-      return 18
+      return 18;
     case AccuracyLevel.HIGH:
-      return 16
+      return 16;
     case AccuracyLevel.MEDIUM:
-      return 15
+      return 15;
     default:
-      return 13
+      return 13;
   }
-}
+};
 
 const MARKER_BASE_STYLE = {
   stroke: true,
 
-  color: '#000',
+  color: "#000",
   opacity: 0.5,
   weight: 5,
 
-  fillColor: '#0F0',
-  fillOpacity: 0.5
-}
+  fillColor: "#0F0",
+  fillOpacity: 0.5,
+};
 
-const getMarkerStyle = (meterAccuracy: number) : any => ({
-  ...MARKER_BASE_STYLE,
-  radius: meterAccuracy,
-  fillColor:
-    getAccuracyLevel(meterAccuracy) === AccuracyLevel.HIGHEST
-      ? 'green'
-      : getAccuracyLevel(meterAccuracy) === AccuracyLevel.HIGH
-        ? 'yellow'
-        : getAccuracyLevel(meterAccuracy) === AccuracyLevel.MEDIUM
-          ? 'yellow'
-          : 'orange'
-})
+const getUserPositionColour = (meterAccuracy: number): any =>
+  getAccuracyLevel(meterAccuracy) === AccuracyLevel.HIGHEST
+    ? "green"
+    : getAccuracyLevel(meterAccuracy) === AccuracyLevel.HIGH
+    ? "yellow"
+    : getAccuracyLevel(meterAccuracy) === AccuracyLevel.MEDIUM
+    ? "yellow"
+    : "orange";
 
 export enum MarkerType {
-  NORMAL,
-  ACTIVE,
+  CHECKPOINT,
+  USER_POSITION,
 }
 
 enum AccuracyLevel {
@@ -69,94 +67,101 @@ enum AccuracyLevel {
   LOW,
 }
 
-export type Marker = {
+export type Coord = {
   latitude: number;
   longitude: number;
-  accuracy?: number;
+};
+
+export type Marker = Coord & {
+  meterAccuracy: number;
   label?: string;
-  type?: MarkerType;
+  type: MarkerType;
 };
 
 @Component({
-  components: { Button }
+  components: { Button },
 })
 export default class Map extends Vue {
-  @Prop() private markers!: Marker[];
-  @Prop() private currentPosition!: Marker;
-  private currentPositionMapRef: any;
+  @Prop() private markers!: Record<string, Marker>;
+  private markerRefs: Record<string, any> = {};
   private mapRef: any;
 
   // Credits: https://github.com/Leaflet/Leaflet/issues/4968#issuecomment-483402699
   applyDeadIconFix() {
-    delete L.Icon.Default.prototype._getIconUrl
+    delete L.Icon.Default.prototype._getIconUrl;
     L.Icon.Default.mergeOptions({
-      iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-      iconUrl: require('leaflet/dist/images/marker-icon.png'),
-      shadowUrl: require('leaflet/dist/images/marker-shadow.png')
-    })
+      iconRetinaUrl: require("leaflet/dist/images/marker-icon-2x.png"),
+      iconUrl: require("leaflet/dist/images/marker-icon.png"),
+      shadowUrl: require("leaflet/dist/images/marker-shadow.png"),
+    });
   }
 
-  @Watch('markers')
-  updateMarkers(newMarkers: Marker[]) {
-    console.log('Update markers')
-  }
+  @Watch("markers")
+  updateMarkers(newMarkers: Record<string, Marker>) {
+    console.log("Markers updated", newMarkers);
+    for (const [key, marker] of Object.entries(newMarkers)) {
+      const { label, latitude, longitude, type, meterAccuracy } = marker;
 
-  @Watch('currentPosition')
-  updatePosition(newPosition: Marker) {
-    console.log('🌍 Update map marker:', newPosition)
-    const accuracy = newPosition.accuracy || 10000
-    const zoomLevel = getZoomLevel(getAccuracyLevel((newPosition.accuracy || 0) * 1000))
+      const style = {
+        stroke: type === MarkerType.CHECKPOINT,
+        radius: meterAccuracy || 10,
 
-    this.currentPositionMapRef.setRadius((newPosition.accuracy || 0) * 1000)
-    this.currentPositionMapRef.setLatLng([
-      newPosition.latitude,
-      newPosition.longitude
-    ])
-
-    this.mapRef.setZoom(zoomLevel)
-    this.mapRef.panTo([newPosition.latitude, newPosition.longitude], {
-      animate: true,
-      duration: 0.5
-    })
-  }
-
-  initMap() {
-    this.applyDeadIconFix()
-
-    this.mapRef = L.map('map-container')
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      zoom: 15,
-      id: 'openstreetmap',
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(this.mapRef)
-    for (const marker of this.markers || []) {
-      const { label, latitude, longitude, type, accuracy } = marker
-
-      L.circle([latitude, longitude], {
-        stroke: true,
-        radius: (accuracy || 0.01) * 1000,
-
-        color: type === MarkerType.ACTIVE ? '#F00' : '#000',
+        color: type === MarkerType.CHECKPOINT ? "#F00" : "#000",
         opacity: 0.5,
         weight: 1,
 
-        fillColor: type === MarkerType.ACTIVE ? '#FCC' : '#FFF',
-        fillOpacity: 0.5
-      }).addTo(this.mapRef)
+        fillColor:
+          type === MarkerType.CHECKPOINT
+            ? "#FCC"
+            : getUserPositionColour(meterAccuracy),
+        fillOpacity: type === MarkerType.CHECKPOINT ? 0.5 : 0.25,
+      };
+      if (!Object.keys(this.markerRefs).includes(key)) {
+        // Create new marker
+        this.markerRefs[key] = L.circle([latitude, longitude], style);
+        this.markerRefs[key].addTo(this.mapRef);
+      }
+      const ref = this.markerRefs[key];
+      
+      const styleUpdates = { fillColor: style.fillColor }
+      ref.setStyle(styleUpdates);
+      ref.setRadius(style.radius)
+      
+      ref.setLatLng([latitude, longitude]);
     }
 
-    this.currentPositionMapRef = L.circle(
-      [this.currentPosition.latitude, this.currentPosition.longitude],
-      getMarkerStyle((this.currentPosition.accuracy || 0) * 1000)
-    )
-    this.currentPositionMapRef.addTo(this.mapRef)
+    const userPosition = Object.values(newMarkers).find(
+      (marker: Marker) => marker.type === MarkerType.USER_POSITION
+    );
+    if (userPosition) {
+      console.log("🌍 Update user position:", userPosition);
+      const zoomLevel = getZoomLevel(
+        getAccuracyLevel(userPosition.meterAccuracy || 0)
+      );
 
-    this.updatePosition(this.currentPosition)
+      this.mapRef.setZoom(zoomLevel);
+      this.mapRef.panTo([userPosition.latitude, userPosition.longitude], {
+        animate: true,
+        duration: 0.5,
+      });
+    }
+  }
+
+  initMap() {
+    this.applyDeadIconFix();
+
+    this.mapRef = L.map("map-container");
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      zoom: 15,
+      id: "openstreetmap",
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(this.mapRef);
   }
 
   mounted() {
-    this.initMap()
+    this.initMap();
+    this.updateMarkers(this.markers);
   }
 }
 </script>

@@ -37,7 +37,7 @@
         v-if="isPositioningDone"
         class="done-container"
       >
-        <Map :current-position="curPos" />
+        <Map :markers="[curPos]" />
         <ConfirmationOverlay
           v-if="isAccuratePosition"
           question="Befinner du dig i den gröna cirkeln?"
@@ -62,7 +62,7 @@ import { Component, Vue, Watch } from 'vue-property-decorator'
 import Button from '@/components/common/Button.vue'
 import Fullscreen from '@/components/common/Fullscreen.vue'
 import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
-import Map, { Marker } from '@/components/common/Map.vue'
+import Map, { HIGH_ACCURACY_THRESHOLD, Marker, MarkerType } from '@/components/common/Map.vue'
 import store, { Status } from '@/store'
 import * as Analytics from '@/utils/Analytics'
 
@@ -101,7 +101,8 @@ export default class Location extends Vue {
   private currentPosition: Marker = {
     latitude: 0.0,
     longitude: 0.0,
-    accuracy: 0
+    meterAccuracy: 0,
+    type: MarkerType.USER_POSITION
   };
 
   private isTestStarted = false;
@@ -144,8 +145,8 @@ export default class Location extends Vue {
   }
 
   get isAccuratePosition() {
-    const accuracy = this.currentPosition?.accuracy || 0
-    return accuracy > 0 && accuracy < 0.05
+    const accuracy = this.currentPosition?.meterAccuracy || 0
+    return accuracy > 0 && accuracy < HIGH_ACCURACY_THRESHOLD
   }
 
   get isPositioningDone() {
@@ -182,7 +183,7 @@ export default class Location extends Vue {
     if (LOGGED_STATUS.includes(geolocationStatus)) {
       const additionalProps =
         geolocationStatus === GeolocationStatus.LOCATION_REQUEST_SUCCEEDED
-          ? { accuracy: this.currentPosition.accuracy }
+          ? { accuracy: this.currentPosition.meterAccuracy }
           : {}
       Analytics.logEvent(Analytics.AnalyticsEventType.LOCATION, 'set', 'status', {
         status: geolocationStatus,
@@ -227,7 +228,7 @@ export default class Location extends Vue {
             const {
               coords: { accuracy, latitude, longitude }
             } = position
-            this.currentPosition.accuracy = (1.0 * accuracy) / 1000
+            this.currentPosition.meterAccuracy = accuracy
             this.currentPosition.latitude = latitude
             this.currentPosition.longitude = longitude
             this.geolocationStatus =
