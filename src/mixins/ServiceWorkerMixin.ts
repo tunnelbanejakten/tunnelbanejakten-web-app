@@ -1,4 +1,5 @@
 import { Component, Vue } from 'vue-property-decorator'
+import * as Analytics from '@/utils/Analytics'
 
 // Credits: https://dev.to/drbragg/handling-service-worker-updates-in-your-vue-pwa-1pip
 @Component
@@ -33,6 +34,7 @@ export default class ServiceWorkerMixin extends Vue {
    * Event handler for when a new version of the service worker has been detected (but not yet activated/used).
    */
   onServiceWorkerUpdated(event: any) {
+    Analytics.logEvent(Analytics.AnalyticsEventType.APP, 'prompt', 'update')
     this.isUpdatePending = true
     this.pendingRegistration = event.detail
   }
@@ -41,6 +43,7 @@ export default class ServiceWorkerMixin extends Vue {
    * Function to start the process of swapping out old service worker for new one (assumed to be triggered by user).
    */
   refreshApplication() {
+    Analytics.logEvent(Analytics.AnalyticsEventType.APP, 'install', 'update')
     this.isUpdatePending = false
     console.log('refreshApplication', this.pendingRegistration, this.pendingRegistration.waiting)
     if (this.pendingRegistration && this.pendingRegistration.waiting) {
