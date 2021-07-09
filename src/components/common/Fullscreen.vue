@@ -3,7 +3,11 @@
     <div class="background" />
     <div class="content">
       <div class="top-buttons">
-        <IconButton @click="onClose" icon="close" type="secondary" />
+        <IconButton
+          @click="onClose"
+          icon="close"
+          type="secondary"
+        />
       </div>
       <slot name="default" />
     </div>
@@ -11,11 +15,11 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Emit } from "vue-property-decorator";
+import { Component, Vue, Emit } from 'vue-property-decorator'
 import IconButton from '@/components/common/IconButton.vue'
 
 @Component({
-  components: {IconButton},
+  components: { IconButton }
 })
 export default class Fullscreen extends Vue {
   @Emit('close')

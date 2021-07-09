@@ -1,5 +1,8 @@
 <template>
-  <button @click="onClick" :class="buttonClass">
+  <button
+    @click="onClick"
+    :class="buttonClass"
+  >
     <font-awesome-icon
       :icon="actualIconName"
       :style="{ color: 'white' }"
@@ -9,63 +12,63 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Emit } from "vue-property-decorator";
+import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 
 const Icon: Record<string, string> = {
-  CLOSE: "times",
-  CAMERA: "camera",
-  SWITCH: "sync-alt",
-};
+  CLOSE: 'times',
+  CAMERA: 'camera',
+  SWITCH: 'sync-alt'
+}
 
 const Type: Record<string, string> = {
-  PRIMARY: "primary",
-  SECONDARY: "secondary",
-};
+  PRIMARY: 'primary',
+  SECONDARY: 'secondary'
+}
 
 const Size: Record<string, string> = {
-  NORMAL: "2x",
-  HUGE: "3x",
-};
+  NORMAL: '2x',
+  HUGE: '3x'
+}
 
 @Component({
-  components: {},
+  components: {}
 })
 export default class Button extends Vue {
   @Prop({
     validator: (value: string) =>
-      Object.keys(Size).includes(value.toUpperCase()),
+      Object.keys(Size).includes(value.toUpperCase())
   })
   readonly size!: string;
 
   @Prop({
     required: true,
     validator: (value: string) =>
-      Object.keys(Icon).includes(value.toUpperCase()),
+      Object.keys(Icon).includes(value.toUpperCase())
   })
   readonly icon!: string;
 
   @Prop({
     default: Type.PRIMARY,
     validator: (value: string) =>
-      Object.keys(Type).includes(value.toUpperCase()),
+      Object.keys(Type).includes(value.toUpperCase())
   })
   readonly type!: string;
 
-  @Emit("click")
+  @Emit('click')
   onClick() {
-    return true;
+    return true
   }
 
   get actualIconName(): string {
-    return Icon[this.icon.toUpperCase()];
+    return Icon[this.icon.toUpperCase()]
   }
 
   get actualIconSize(): string {
-    return Size[this.size?.toUpperCase()] || Size.NORMAL;
+    return Size[this.size?.toUpperCase()] || Size.NORMAL
   }
 
   get buttonClass(): string {
-    return `icon-button size-${this.size} type-${this.type}`;
+    return `icon-button size-${this.size} type-${this.type}`
   }
 }
 </script>

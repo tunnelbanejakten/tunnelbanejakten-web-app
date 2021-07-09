@@ -7,14 +7,23 @@
       size="huge"
       @click="onStartTest"
     />
-    <Fullscreen v-if="isCameraShown" @close="onEndTest">
+    <Fullscreen
+      v-if="isCameraShown"
+      @close="onEndTest"
+    >
       <div class="camera-container">
         <div class="camera">
           <CameraComponent @captured="onCaptured" />
         </div>
-        </div>
-      <div v-if="!!img" class="review">
-        <img :src="img" class="captured-photo" />
+      </div>
+      <div
+        v-if="!!img"
+        class="review"
+      >
+        <img
+          :src="img"
+          class="captured-photo"
+        >
         <ConfirmationOverlay
           question="Blev bilden bra?"
           accept-label="Ja"
@@ -28,13 +37,13 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator";
-import Button from "@/components/common/Button.vue";
-import IconButton from "@/components/common/IconButton.vue";
-import ConfirmationOverlay from "@/components/common/ConfirmationOverlay.vue";
-import Fullscreen from "@/components/common/Fullscreen.vue";
-import CameraComponent from "@/components/common/Camera.vue";
-import store, { Status } from "@/store";
+import { Component, Vue } from 'vue-property-decorator'
+import Button from '@/components/common/Button.vue'
+import IconButton from '@/components/common/IconButton.vue'
+import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
+import Fullscreen from '@/components/common/Fullscreen.vue'
+import CameraComponent from '@/components/common/Camera.vue'
+import store, { Status } from '@/store'
 
 @Component({
   components: {
@@ -42,8 +51,8 @@ import store, { Status } from "@/store";
     IconButton,
     Fullscreen,
     CameraComponent,
-    ConfirmationOverlay,
-  },
+    ConfirmationOverlay
+  }
 })
 export default class Camera extends Vue {
   private isCameraShown = false;
