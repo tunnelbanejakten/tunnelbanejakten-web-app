@@ -13,15 +13,8 @@
           <CameraComponent @captured="onCaptured" />
         </div>
         </div>
-      </div>
-      <div
-        v-if="!!img"
-        class="review"
-      >
-        <img
-          :src="img"
-          class="captured-photo"
-        >
+      <div v-if="!!img" class="review">
+        <img :src="img" class="captured-photo" />
         <ConfirmationOverlay
           question="Blev bilden bra?"
           accept-label="Ja"
@@ -35,20 +28,22 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator'
-import Button from '@/components/common/Button.vue'
-import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
-import Fullscreen from '@/components/common/Fullscreen.vue'
-import CameraComponent from '@/components/common/Camera.vue'
-import store, { Status } from '@/store'
+import { Component, Vue } from "vue-property-decorator";
+import Button from "@/components/common/Button.vue";
+import IconButton from "@/components/common/IconButton.vue";
+import ConfirmationOverlay from "@/components/common/ConfirmationOverlay.vue";
+import Fullscreen from "@/components/common/Fullscreen.vue";
+import CameraComponent from "@/components/common/Camera.vue";
+import store, { Status } from "@/store";
 
 @Component({
   components: {
     Button,
+    IconButton,
     Fullscreen,
     CameraComponent,
-    ConfirmationOverlay
-  }
+    ConfirmationOverlay,
+  },
 })
 export default class Camera extends Vue {
   private isCameraShown = false;

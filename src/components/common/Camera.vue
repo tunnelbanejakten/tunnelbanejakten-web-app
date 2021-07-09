@@ -15,17 +15,11 @@
       />
     </div>
     <div class="buttons">
-      <button
-        v-if="isPlaying"
-        class="capture-button"
-        @click="capture"
-      >
-        📸
-      </button>
-      <Button
+      <IconButton v-if="isPlaying" @click="capture" icon="camera" size="huge" />
+      <IconButton
         v-if="!!devices && devices.length > 1"
-        label="Switch camera"
         @click="switchCamera"
+        icon="switch"
         type="secondary"
       />
     </div>
@@ -33,9 +27,10 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Watch } from 'vue-property-decorator'
-import Button from '@/components/common/Button.vue'
-import { WebCam } from 'vue-web-cam'
+import { Component, Vue, Watch } from "vue-property-decorator";
+import Button from "@/components/common/Button.vue";
+import IconButton from "@/components/common/IconButton.vue";
+import { WebCam } from "vue-web-cam";
 
 type DeviceData = {
   deviceId: string;
@@ -47,7 +42,7 @@ type Dimensions = {
 };
 
 @Component({
-  components: { WebCam, Button }
+  components: { WebCam, Button, IconButton },
 })
 export default class Camera extends Vue {
   private deviceId? = '';
@@ -162,12 +157,13 @@ export default class Camera extends Vue {
   flex-direction: row;
   justify-content: center;
   width: 100%;
+  align-items: center;
 }
-.container .buttons button {
-  margin-left: 10px;
+.container .buttons button:not(:first-child) {
+  margin-left: 50px;
 }
-.container .buttons button:first-child {
-  margin-left: 0px;
+.container .buttons button:first-child:not(:only-child) {
+  margin-left: 100px; /* Account for 50px margin + 50px button to the right of the button. */
 }
 .capture-button {
   height: 60px;
