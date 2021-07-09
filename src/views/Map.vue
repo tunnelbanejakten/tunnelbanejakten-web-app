@@ -121,6 +121,7 @@ export default class Map extends Vue {
   private checkpointButtonSize: ButtonSize = ButtonSize.HUGE;
   private watchId = 0;
   private isCheckpointArrivalShown: boolean = false;
+  private lastApproxAccuracy: number = -1;
 
   private markers: Marker[] = [];
   private activeMarkers: Marker[] = [];
@@ -282,8 +283,13 @@ export default class Map extends Vue {
           const {
             coords: { accuracy, latitude, longitude },
           } = position;
-          const isAccuracyChange =
-            this.currentPosition?.meterAccuracy != accuracy;
+
+          // The accuracy often changes by a fraction between measurements. 
+          // Only consider it "a proper change" if it changes by at least 10 meters.
+          const approxAccuracy = Math.round(accuracy / 10) * 10;
+          const isAccuracyChange = this.lastApproxAccuracy != approxAccuracy;
+          this.lastApproxAccuracy = approxAccuracy;
+
           this.currentPosition = {
             meterAccuracy: accuracy,
             latitude: latitude,
@@ -300,7 +306,7 @@ export default class Map extends Vue {
               "acquire",
               "location",
               {
-                accuracy: accuracy,
+                accuracy: approxAccuracy,
               }
             );
           }
