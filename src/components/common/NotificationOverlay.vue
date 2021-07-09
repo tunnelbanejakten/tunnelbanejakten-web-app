@@ -5,12 +5,12 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Emit, Prop } from "vue-property-decorator";
-import Button from "@/components/common/Button.vue";
+import { Component, Vue, Emit, Prop } from 'vue-property-decorator'
+import Button from '@/components/common/Button.vue'
 @Component({
   components: {
-    Button,
-  },
+    Button
+  }
 })
 export default class NotificationOverlay extends Vue {
   @Prop() private message!: string;
