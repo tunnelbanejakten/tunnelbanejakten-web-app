@@ -57,6 +57,7 @@ import Button, { Size as ButtonSize } from "@/components/common/Button.vue";
 import Fullscreen from "@/components/common/Fullscreen.vue";
 import Message, { Type as MessageType } from "@/components/common/Message.vue";
 import * as LocationUtils from "@/utils/Location";
+import * as Analytics from "@/utils/Analytics";
 
 const apiHost = process.env.VUE_APP_API_HOST;
 
@@ -124,12 +125,21 @@ export default class Map extends Vue {
   private markers: Marker[] = [];
   private activeMarkers: Marker[] = [];
   private currentPosition: Marker = {
-    longitude: 17.833718,
-    // longitude: 17.832718,
-    latitude: 59.361201,
-    meterAccuracy: 10,
+    longitude: 0,
+    latitude: 0,
+    meterAccuracy: -1,
     type: MarkerType.USER_POSITION,
   };
+
+  updateState(newState: State, newStateMessage: string) {
+    this.state = newState;
+    this.stateMessage = newStateMessage;
+
+    Analytics.logEvent(Analytics.AnalyticsEventType.MAP, "set", "state", {
+      state: State[this.state],
+      message: this.stateMessage,
+    });
+  }
 
   get curPos() {
     return { ...this.currentPosition };
@@ -156,7 +166,9 @@ export default class Map extends Vue {
   }
 
   onSelectCheckpoint(e: Marker) {
-    console.log(e);
+    Analytics.logEvent(Analytics.AnalyticsEventType.MAP, "open", "checkpoint", {
+      message: e.label,
+    });
   }
 
   onCloseArrivalPopup() {
@@ -193,6 +205,16 @@ export default class Map extends Vue {
     if (!isMarkerActiveBefore && isMarkerActiveAfter) {
       // User has walked into a "checkpoint region" (as opposed to walking out of it or walking around inside of it)
       this.isCheckpointArrivalShown = true;
+      Analytics.logEvent(
+        Analytics.AnalyticsEventType.MAP,
+        "arrive",
+        "checkpoint",
+        {
+          message: this.activeMarkers
+            .map((marker: Marker) => marker.label)
+            .join(", "),
+        }
+      );
     }
   }
 
@@ -217,6 +239,7 @@ export default class Map extends Vue {
   async loadMarkers() {
     const token = AuthUtils.getTokenCookie();
     if (token) {
+      this.updateState(State.LOADING_MARKERS, "Hämtar karta.");
       try {
         const resp = await fetch(
           `${apiHost}/wp-json/tuja/v1/map/markers?token=${token}`
@@ -232,70 +255,98 @@ export default class Map extends Vue {
             type: MarkerType.CHECKPOINT,
           })
         );
+        Analytics.logEvent(
+          Analytics.AnalyticsEventType.MAP,
+          "load",
+          "markers",
+          {
+            count: this.markers.length,
+          }
+        );
       } catch (e) {
-        this.state = State.ERROR;
-        this.stateMessage = "Kunde inte läsa in kontroller.";
-        console.log("💥", e);
+        this.updateState(State.ERROR, "Kunde inte läsa in kontroller.");
       }
     } else {
-      console.log("No token");
+      this.updateState(State.ERROR, "Du är inte inloggad.");
     }
   }
 
   initLocationListener() {
     if ("geolocation" in navigator) {
+      this.updateState(
+        State.LOADING_POSITION,
+        "Försöker hittar dig på kartan."
+      );
       this.watchId = navigator.geolocation.watchPosition(
         (position) => {
-          console.log("🌍 New position from geolocation API:", position);
           const {
             coords: { accuracy, latitude, longitude },
           } = position;
+          const isAccuracyChange =
+            this.currentPosition?.meterAccuracy != accuracy;
           this.currentPosition = {
             meterAccuracy: accuracy,
             latitude: latitude,
             longitude: longitude,
             type: MarkerType.USER_POSITION,
           };
-          this.state = State.POSITION_ACQUIRED;
-          this.stateMessage = "Vi har hittat dig på kartan.";
+          if (this.state != State.POSITION_ACQUIRED || isAccuracyChange) {
+            this.updateState(
+              State.POSITION_ACQUIRED,
+              "Vi har hittat dig på kartan."
+            );
+            Analytics.logEvent(
+              Analytics.AnalyticsEventType.MAP,
+              "acquire",
+              "location",
+              {
+                accuracy: accuracy,
+              }
+            );
+          }
           this.notification = !LocationUtils.isAccuratePosition(accuracy)
             ? "Vi är osäkra på din position. Om du står still ett litet tag till så löser det sig säkert."
             : "";
         },
         (error) => {
-          this.state = State.ERROR;
           switch (error.code) {
             // 1 PERMISSION_DENIED The acquisition of the geolocation information failed because the page didn't have the permission to do it.
             case 1:
-              this.stateMessage =
-                "Antingen är din GPS inte påslagen eller så blockerade du den.";
+              this.updateState(
+                State.ERROR,
+                "Antingen är din GPS inte påslagen eller så blockerade du den."
+              );
               break;
             // 2 POSITION_UNAVAILABLE The acquisition of the geolocation failed because one or several internal sources of position returned an internal error.
             case 2:
-              this.stateMessage =
-                "Det gick inte att fixera din position. Kanske åker du bil eller är på en plats med dålig mottagning?";
+              this.updateState(
+                State.ERROR,
+                "Det gick inte att fixera din position. Kanske åker du bil eller är på en plats med dålig mottagning?"
+              );
               break;
             // 3 TIMEOUT The time allowed to acquire the geolocation, defined by PositionOptions.timeout information that was reached before the information was obtained.
             case 3:
-              this.stateMessage =
-                "Det tog för lång tid att ta reda på din position så vi gav upp.";
+              this.updateState(
+                State.ERROR,
+                "Det tog för lång tid att ta reda på din position så vi gav upp."
+              );
               break;
             default:
-              this.stateMessage =
-                "Av någon anledning kunde vi inte ta reda på din position.";
+              this.updateState(
+                State.ERROR,
+                "Av någon anledning kunde vi inte ta reda på din position."
+              );
               break;
           }
         }
       );
+    } else {
+      this.updateState(State.ERROR, "Du saknar GPS.");
     }
   }
 
   async mounted() {
-    this.state = State.LOADING_MARKERS;
-    this.stateMessage = "Hämtar karta.";
     await this.loadMarkers();
-    this.state = State.LOADING_POSITION;
-    this.stateMessage = "Försöker hittar dig på kartan.";
     this.initLocationListener();
   }
 
