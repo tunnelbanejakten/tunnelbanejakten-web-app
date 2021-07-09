@@ -9,11 +9,10 @@ import { Component, Vue, Prop, Watch } from "vue-property-decorator";
 import Button from "@/components/common/Button.vue";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-
-export const HIGH_ACCURACY_THRESHOLD = 50;
+import * as LocationUtils from '@/utils/Location'
 
 const getAccuracyLevel = (meterAccuracy: number): AccuracyLevel => {
-  return meterAccuracy < HIGH_ACCURACY_THRESHOLD
+  return LocationUtils.isAccuratePosition(meterAccuracy)
     ? AccuracyLevel.HIGHEST
     : meterAccuracy < 100
     ? AccuracyLevel.HIGH

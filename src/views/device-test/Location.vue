@@ -62,9 +62,10 @@ import { Component, Vue, Watch } from 'vue-property-decorator'
 import Button from '@/components/common/Button.vue'
 import Fullscreen from '@/components/common/Fullscreen.vue'
 import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
-import Map, { HIGH_ACCURACY_THRESHOLD, Marker, MarkerType } from '@/components/common/Map.vue'
+import Map, { Marker, MarkerType } from '@/components/common/Map.vue'
 import store, { Status } from '@/store'
 import * as Analytics from '@/utils/Analytics'
+import * as LocationUtils from '@/utils/Location'
 
 const GeolocationStatus = {
   UNKNOWN: 'UNKNOWN',
@@ -146,7 +147,7 @@ export default class Location extends Vue {
 
   get isAccuratePosition() {
     const accuracy = this.currentPosition?.meterAccuracy || 0
-    return accuracy > 0 && accuracy < HIGH_ACCURACY_THRESHOLD
+    return LocationUtils.isAccuratePosition(accuracy)
   }
 
   get isPositioningDone() {

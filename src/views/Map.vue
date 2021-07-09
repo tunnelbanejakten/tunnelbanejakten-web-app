@@ -1,18 +1,24 @@
 <template>
   <Page title="Karta" :noPadding="true">
-    <div>
+    <div class="no-map" v-if="isLoading">
+      <p>{{ stateMessage }}</p>
+    </div>
+    <div class="no-map" v-if="isError">
       <Message
-        v-if="isError"
         header="Problem med kartan"
         :message="stateMessage"
         :type="stateMessageType"
       />
     </div>
-    <div class="map-container" v-if="isMarkerListLoaded && !isError">
+    <div class="map-container" v-if="!isLoading && !isError">
       <MapComponent :markers="checkpoints" />
       <ConfirmationOverlay
         v-if="activeMarkers.length"
         :question="atLocationText"
+      />
+      <NotificationOverlay
+        v-if="!!notification"
+        :message="notification"
       />
     </div>
   </Page>
@@ -24,12 +30,13 @@ import Page from "@/components/layout/Page.vue";
 import * as AuthUtils from "@/utils/Auth";
 import MapComponent, {
   Coord,
-  HIGH_ACCURACY_THRESHOLD,
   Marker,
   MarkerType,
 } from "@/components/common/Map.vue";
 import ConfirmationOverlay from "@/components/common/ConfirmationOverlay.vue";
+import NotificationOverlay from "@/components/common/NotificationOverlay.vue";
 import Message, { Type as MessageType } from "@/components/common/Message.vue";
+import * as LocationUtils from '@/utils/Location'
 
 const apiHost = process.env.VUE_APP_API_HOST;
 
@@ -67,7 +74,7 @@ const coordinateDistance = (coord1: Coord, coord2: Coord) => {
       Math.sin(dLon / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return (R * c) * 1000.0; // Distance (in meter)
+  return R * c * 1000.0; // Distance (in meter)
 };
 
 const deg2rad = (deg: number) => {
@@ -80,10 +87,12 @@ const deg2rad = (deg: number) => {
     MapComponent,
     Message,
     ConfirmationOverlay,
+    NotificationOverlay,
   },
 })
 export default class Map extends Vue {
   private state: State = State.INITIAL;
+  private notification: string = "";
   private stateMessage: string = "";
   private stateMessageType: MessageType = MessageType.FAILURE;
   private watchId = 0;
@@ -106,13 +115,21 @@ export default class Map extends Vue {
     return this.state === State.ERROR;
   }
 
+  get isLoading() {
+    return (
+      this.state === State.INITIAL ||
+      this.state === State.LOADING_MARKERS ||
+      this.state === State.LOADING_POSITION
+    );
+  }
+
   get atLocationText(): string {
     return this.activeMarkers.map(({ label }: Marker) => label).join(", ");
   }
 
   updateActiveMarkers(markers: Marker[], position: Marker) {
-    if (position.meterAccuracy > HIGH_ACCURACY_THRESHOLD){
-      return []
+    if (!LocationUtils.isAccuratePosition(position.meterAccuracy)) {
+      return [];
     }
     this.activeMarkers = markers.filter((marker: Marker) => {
       const distance = coordinateDistance(
@@ -127,22 +144,20 @@ export default class Map extends Vue {
       );
       // console.log(`📏 ${distance} meter to ${marker.label}`)
       const marginOfError =
-        (marker.meterAccuracy || 0) +
-        (position.meterAccuracy || 0);
+        (marker.meterAccuracy || 0) + (position.meterAccuracy || 0);
       const isWithinMarker = distance - marginOfError <= 0;
       return isWithinMarker;
     });
-
   }
 
   @Watch("curPos")
   onPositionChange(newPosition: Marker) {
-    this.updateActiveMarkers(this.markers, newPosition)
+    this.updateActiveMarkers(this.markers, newPosition);
   }
 
   @Watch("markers")
   onMarkersChange(newMarkers: Marker[]) {
-    this.updateActiveMarkers(newMarkers, this.currentPosition)
+    this.updateActiveMarkers(newMarkers, this.currentPosition);
   }
 
   get checkpoints(): Marker[] {
@@ -193,9 +208,11 @@ export default class Map extends Vue {
             meterAccuracy: accuracy,
             latitude: latitude,
             longitude: longitude,
-            type: MarkerType.USER_POSITION
-          }
+            type: MarkerType.USER_POSITION,
+          };
           this.state = State.POSITION_ACQUIRED;
+          this.stateMessage = "Vi har hittat dig på kartan.";
+          this.notification = !LocationUtils.isAccuratePosition(accuracy) ? 'Vi är osäkra på din position. Om du står still ett litet tag till så löser dit sig säkert.' : ''
         },
         (error) => {
           this.state = State.ERROR;
@@ -227,8 +244,10 @@ export default class Map extends Vue {
 
   async mounted() {
     this.state = State.LOADING_MARKERS;
+    this.stateMessage = "Hämtar karta.";
     await this.loadMarkers();
     this.state = State.LOADING_POSITION;
+    this.stateMessage = "Försöker hittar dig på kartan.";
     this.initLocationListener();
   }
 
@@ -249,5 +268,12 @@ export default class Map extends Vue {
   flex-direction: column;
   align-content: center;
   justify-content: flex-end;
+}
+.no-map {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
 }
 </style>
