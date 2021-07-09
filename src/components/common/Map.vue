@@ -10,7 +10,7 @@ import Button from "@/components/common/Button.vue";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-export const HIGH_ACCURACY_THRESHOLD = 50
+export const HIGH_ACCURACY_THRESHOLD = 50;
 
 const getAccuracyLevel = (meterAccuracy: number): AccuracyLevel => {
   return meterAccuracy < HIGH_ACCURACY_THRESHOLD
@@ -35,16 +35,27 @@ const getZoomLevel = (accuracyLevel: AccuracyLevel) => {
   }
 };
 
-const MARKER_BASE_STYLE = {
-  stroke: true,
+// Icon for USER POSITION:
+//   https://www.mappity.org/marker_icons/circle/
+//   Red icon colour: #ff1100
+//   Purple icon colour: #794794
+const iconUserPosition = L.icon({
+  iconUrl: require("../../assets/map-markers/user-position-red-lowres.png"),
+  iconSize: [48, 48],
+  iconAnchor: [24, 48],
+  popupAnchor: [0, -34],
+});
 
-  color: "#000",
-  opacity: 0.5,
-  weight: 5,
-
-  fillColor: "#0F0",
-  fillOpacity: 0.5,
-};
+// Icon for CHECK POINT:
+//   https://www.mappity.org/marker_icons/bullseye/
+//   Orange icon colour: #ffaa00
+//   Purple icon colour: #794794
+const iconCheckpoint = L.icon({
+  iconUrl: require("../../assets/map-markers/checkpoint-purple-lowres.png"),
+  iconSize: [48, 48],
+  iconAnchor: [24, 24],
+  popupAnchor: [0, -34],
+});
 
 const getUserPositionColour = (meterAccuracy: number): any =>
   getAccuracyLevel(meterAccuracy) === AccuracyLevel.HIGHEST
@@ -83,7 +94,7 @@ export type Marker = Coord & {
 })
 export default class Map extends Vue {
   @Prop() private markers!: Record<string, Marker>;
-  private markerRefs: Record<string, any> = {};
+  private mapObjects: Record<string, any> = {};
   private mapRef: any;
 
   // Credits: https://github.com/Leaflet/Leaflet/issues/4968#issuecomment-483402699
@@ -98,43 +109,54 @@ export default class Map extends Vue {
 
   @Watch("markers")
   updateMarkers(newMarkers: Record<string, Marker>) {
-    console.log("Markers updated", newMarkers);
     for (const [key, marker] of Object.entries(newMarkers)) {
       const { label, latitude, longitude, type, meterAccuracy } = marker;
 
       const style = {
-        stroke: type === MarkerType.CHECKPOINT,
+        stroke: false,
         radius: meterAccuracy || 10,
-
-        color: type === MarkerType.CHECKPOINT ? "#F00" : "#000",
-        opacity: 0.5,
-        weight: 1,
 
         fillColor:
           type === MarkerType.CHECKPOINT
-            ? "#FCC"
+            ? "#794794"
             : getUserPositionColour(meterAccuracy),
         fillOpacity: type === MarkerType.CHECKPOINT ? 0.5 : 0.25,
       };
-      if (!Object.keys(this.markerRefs).includes(key)) {
+
+      const keyMarker = key + "-marker";
+      const keyBounds = key + "-bounds";
+
+      if (!Object.keys(this.mapObjects).includes(keyMarker)) {
         // Create new marker
-        this.markerRefs[key] = L.circle([latitude, longitude], style);
-        this.markerRefs[key].addTo(this.mapRef);
+        this.mapObjects[keyBounds] = L.circle([latitude, longitude], style);
+        this.mapObjects[keyBounds].addTo(this.mapRef);
+        this.mapObjects[keyMarker] = L.marker([latitude, longitude], {
+          icon:
+            type === MarkerType.CHECKPOINT ? iconCheckpoint : iconUserPosition,
+          zIndexOffset: type === MarkerType.CHECKPOINT ? 0 : 1000,
+        })
+          .bindPopup(
+            type === MarkerType.CHECKPOINT ? marker.label : "Din position"
+          )
+          .openPopup();
+        this.mapObjects[keyMarker].addTo(this.mapRef);
       }
-      const ref = this.markerRefs[key];
-      
-      const styleUpdates = { fillColor: style.fillColor }
-      ref.setStyle(styleUpdates);
-      ref.setRadius(style.radius)
-      
-      ref.setLatLng([latitude, longitude]);
+
+      // Update position and design for the "area or accuracy indicator"
+      const objBounds = this.mapObjects[keyBounds];
+      objBounds.setStyle({ fillColor: style.fillColor });
+      objBounds.setRadius(style.radius);
+      objBounds.setLatLng([latitude, longitude]);
+
+      // Update position and design for the "pin"
+      const objMarker = this.mapObjects[keyMarker];
+      objMarker.setLatLng([latitude, longitude]);
     }
 
     const userPosition = Object.values(newMarkers).find(
       (marker: Marker) => marker.type === MarkerType.USER_POSITION
     );
     if (userPosition) {
-      console.log("🌍 Update user position:", userPosition);
       const zoomLevel = getZoomLevel(
         getAccuracyLevel(userPosition.meterAccuracy || 0)
       );

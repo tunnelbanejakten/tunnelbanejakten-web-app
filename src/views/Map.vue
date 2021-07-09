@@ -1,5 +1,5 @@
 <template>
-  <Page title="Karta">
+  <Page title="Karta" :noPadding="true">
     <div>
       <Message
         v-if="isError"
@@ -137,18 +137,15 @@ export default class Map extends Vue {
 
   @Watch("curPos")
   onPositionChange(newPosition: Marker) {
-    console.log("New position is", newPosition);
     this.updateActiveMarkers(this.markers, newPosition)
   }
 
   @Watch("markers")
   onMarkersChange(newMarkers: Marker[]) {
-    console.log("New markers are", newMarkers);
     this.updateActiveMarkers(newMarkers, this.currentPosition)
   }
 
   get checkpoints(): Marker[] {
-    console.log("Get checkpoints");
     return [...this.markers, this.currentPosition];
   }
 
