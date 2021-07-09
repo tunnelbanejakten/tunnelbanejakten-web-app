@@ -7,17 +7,11 @@
       size="huge"
       @click="onStartTest"
     />
-    <Fullscreen v-if="isCameraShown">
+    <Fullscreen v-if="isCameraShown" @close="onEndTest">
       <div class="camera-container">
         <div class="camera">
           <CameraComponent @captured="onCaptured" />
         </div>
-        <div class="buttons">
-          <Button
-            label="Stäng"
-            @click="onEndTest"
-            type="secondary"
-          />
         </div>
       </div>
       <div
@@ -100,15 +94,6 @@ export default class Camera extends Vue {
 </script>
 
 <style scoped>
-.camera-container .buttons {
-  position: absolute;
-  top: 10px;
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-  width: 100%;
-  right: 10px;
-}
 .camera-container .buttons button {
   margin-left: 10px;
 }
