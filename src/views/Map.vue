@@ -265,24 +265,28 @@ export default class Map extends Vue {
         )
         const markers = await resp.json()
 
-        this.markers = markers.map(
-          ({ latitude, longitude, name, radius }: ApiMarker): Marker => ({
-            latitude,
-            longitude,
-            meterAccuracy: radius,
-            label: String(name),
-            type: MarkerType.CHECKPOINT
-          })
-        )
-        Analytics.logEvent(
-          Analytics.AnalyticsEventType.MAP,
-          'load',
-          'markers',
-          {
-            count: this.markers.length
-          }
-        )
-        return true
+        if (markers.length > 0) {
+          this.markers = markers.map(
+            ({ latitude, longitude, name, radius }: ApiMarker): Marker => ({
+              latitude,
+              longitude,
+              meterAccuracy: radius,
+              label: String(name),
+              type: MarkerType.CHECKPOINT
+            })
+          )
+          Analytics.logEvent(
+            Analytics.AnalyticsEventType.MAP,
+            'load',
+            'markers',
+            {
+              count: this.markers.length
+            }
+          )
+          return true
+        } else {
+          this.updateState(State.ERROR, 'Det finns inga kontroller att visa på kartan.')
+        }
       } catch (e) {
         this.updateState(State.ERROR, 'Kunde inte läsa in kontroller.')
       }
