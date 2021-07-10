@@ -282,12 +282,32 @@ export default class Map extends Vue {
             count: this.markers.length
           }
         )
+        return true
       } catch (e) {
         this.updateState(State.ERROR, 'Kunde inte läsa in kontroller.')
       }
     } else {
       this.updateState(State.ERROR, 'Du är inte inloggad.')
     }
+    return false
+  }
+
+  logAccuracy(accuracy: number) {
+    // The accuracy often changes by a fraction between measurements.
+    // Only consider it "a proper change" if it changes by at least 10 meters.
+    const approxAccuracy = Math.round(accuracy / 10) * 10
+    const isAccuracyChange = this.lastApproxAccuracy !== approxAccuracy
+    if (isAccuracyChange) {
+      Analytics.logEvent(
+        Analytics.AnalyticsEventType.MAP,
+        'acquire',
+        'location',
+        {
+          accuracy: approxAccuracy
+        }
+      )
+    }
+    this.lastApproxAccuracy = approxAccuracy
   }
 
   initLocationListener() {
@@ -302,32 +322,21 @@ export default class Map extends Vue {
             coords: { accuracy, latitude, longitude }
           } = position
 
-          // The accuracy often changes by a fraction between measurements.
-          // Only consider it "a proper change" if it changes by at least 10 meters.
-          const approxAccuracy = Math.round(accuracy / 10) * 10
-          const isAccuracyChange = this.lastApproxAccuracy != approxAccuracy
-          this.lastApproxAccuracy = approxAccuracy
-
           this.currentPosition = {
             meterAccuracy: accuracy,
             latitude: latitude,
             longitude: longitude,
             type: MarkerType.USER_POSITION
           }
-          if (this.state != State.POSITION_ACQUIRED || isAccuracyChange) {
+          if (this.state !== State.POSITION_ACQUIRED) {
             this.updateState(
               State.POSITION_ACQUIRED,
               'Vi har hittat dig på kartan.'
             )
-            Analytics.logEvent(
-              Analytics.AnalyticsEventType.MAP,
-              'acquire',
-              'location',
-              {
-                accuracy: approxAccuracy
-              }
-            )
           }
+
+          this.logAccuracy(accuracy)
+
           this.notification = !LocationUtils.isAccuratePosition(accuracy)
             ? 'Vi är osäkra på din position. Om du står still ett litet tag till så löser det sig säkert.'
             : ''
@@ -370,8 +379,10 @@ export default class Map extends Vue {
   }
 
   async mounted() {
-    await this.loadMarkers()
-    this.initLocationListener()
+    const markersLoaded = await this.loadMarkers()
+    if (markersLoaded) {
+      this.initLocationListener()
+    }
   }
 
   unmouted() {

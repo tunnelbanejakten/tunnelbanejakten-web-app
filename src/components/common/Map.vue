@@ -11,6 +11,13 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import * as LocationUtils from '@/utils/Location'
 
+enum AccuracyLevel {
+  HIGHEST,
+  HIGH,
+  MEDIUM,
+  LOW,
+}
+
 const getAccuracyLevel = (meterAccuracy: number): AccuracyLevel => {
   return LocationUtils.isAccuratePosition(meterAccuracy)
     ? AccuracyLevel.HIGHEST
@@ -68,13 +75,6 @@ const getUserPositionColour = (meterAccuracy: number): any =>
 export enum MarkerType {
   CHECKPOINT,
   USER_POSITION,
-}
-
-enum AccuracyLevel {
-  HIGHEST,
-  HIGH,
-  MEDIUM,
-  LOW,
 }
 
 export type Coord = {
