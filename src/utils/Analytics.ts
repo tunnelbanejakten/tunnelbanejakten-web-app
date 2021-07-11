@@ -6,7 +6,8 @@ const APP_VERSION = process.env.VUE_APP_VERSION
 export enum AnalyticsEventType {
   APP,
   DEVICE_TEST,
-  LOCATION
+  LOCATION,
+  MAP
 }
 
 let isAnalyticsInitialized = false
