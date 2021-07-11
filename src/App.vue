@@ -32,6 +32,9 @@
       <router-link to="/">
         Svara
       </router-link>
+      <router-link to="/map">
+        Karta
+      </router-link>
       <router-link to="/devicetest">
         Mobiltest
       </router-link>
