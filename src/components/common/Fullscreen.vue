@@ -34,6 +34,8 @@ export default class Fullscreen extends Vue {
   position: fixed;
   top: 0;
   left: 0;
+  height: 100%;
+  width: 100%;
   z-index: 1001;
 }
 
