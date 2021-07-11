@@ -9,27 +9,91 @@ import { Component, Vue, Prop, Watch } from 'vue-property-decorator'
 import Button from '@/components/common/Button.vue'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
+import * as LocationUtils from '@/utils/Location'
 
-export enum MarkerType {
-  NORMAL,
-  ACTIVE,
+enum AccuracyLevel {
+  HIGHEST,
+  HIGH,
+  MEDIUM,
+  LOW,
 }
 
-export type Marker = {
+const getAccuracyLevel = (meterAccuracy: number): AccuracyLevel => {
+  return LocationUtils.isAccuratePosition(meterAccuracy)
+    ? AccuracyLevel.HIGHEST
+    : meterAccuracy < 100
+      ? AccuracyLevel.HIGH
+      : meterAccuracy < 250
+        ? AccuracyLevel.MEDIUM
+        : AccuracyLevel.LOW
+}
+
+const getZoomLevel = (accuracyLevel: AccuracyLevel) => {
+  switch (accuracyLevel) {
+    case AccuracyLevel.HIGHEST:
+      return 18
+    case AccuracyLevel.HIGH:
+      return 16
+    case AccuracyLevel.MEDIUM:
+      return 15
+    default:
+      return 13
+  }
+}
+
+// Icon for USER POSITION:
+//   https://www.mappity.org/marker_icons/circle/
+//   Red icon colour: #ff1100
+//   Purple icon colour: #794794
+const iconUserPosition = L.icon({
+  iconUrl: require('../../assets/map-markers/user-position-red-lowres.png'),
+  iconSize: [48, 48],
+  iconAnchor: [24, 48],
+  popupAnchor: [0, -34]
+})
+
+// Icon for CHECK POINT:
+//   https://www.mappity.org/marker_icons/bullseye/
+//   Orange icon colour: #ffaa00
+//   Purple icon colour: #794794
+const iconCheckpoint = L.icon({
+  iconUrl: require('../../assets/map-markers/checkpoint-purple-lowres.png'),
+  iconSize: [48, 48],
+  iconAnchor: [24, 24],
+  popupAnchor: [0, -34]
+})
+
+const getUserPositionColour = (meterAccuracy: number): any =>
+  getAccuracyLevel(meterAccuracy) === AccuracyLevel.HIGHEST
+    ? 'green'
+    : getAccuracyLevel(meterAccuracy) === AccuracyLevel.HIGH
+      ? 'yellow'
+      : getAccuracyLevel(meterAccuracy) === AccuracyLevel.MEDIUM
+        ? 'yellow'
+        : 'orange'
+
+export enum MarkerType {
+  CHECKPOINT,
+  USER_POSITION,
+}
+
+export type Coord = {
   latitude: number;
   longitude: number;
-  accuracy?: number;
+};
+
+export type Marker = Coord & {
+  meterAccuracy: number;
   label?: string;
-  type?: MarkerType;
+  type: MarkerType;
 };
 
 @Component({
   components: { Button }
 })
 export default class Map extends Vue {
-  @Prop() private markers!: Marker[];
-  @Prop() private currentPosition!: Marker;
-  private currentPositionMapRef: any;
+  @Prop() private markers!: Record<string, Marker>;
+  private mapObjects: Record<string, any> = {};
   private mapRef: any;
 
   // Credits: https://github.com/Leaflet/Leaflet/issues/4968#issuecomment-483402699
@@ -42,59 +106,72 @@ export default class Map extends Vue {
     })
   }
 
-  @Watch('currentPosition')
-  updatePosition(newPosition: Marker) {
-    console.log('🌍 Update map marker:', newPosition)
-    const accuracy = newPosition.accuracy || 10000
-    const zoomLevel =
-      accuracy < 100 ? 17 : accuracy < 500 ? 15 : accuracy < 1000 ? 13 : 10
+  @Watch('markers')
+  updateMarkers(newMarkers: Record<string, Marker>) {
+    for (const [key, marker] of Object.entries(newMarkers)) {
+      const { label, latitude, longitude, type, meterAccuracy } = marker
 
-    this.currentPositionMapRef.setRadius((newPosition.accuracy || 0) * 1000)
-    this.mapRef.setView([newPosition.latitude, newPosition.longitude], zoomLevel)
+      const style = {
+        stroke: false,
+        radius: meterAccuracy || 10,
+
+        fillColor:
+          type === MarkerType.CHECKPOINT
+            ? '#794794'
+            : getUserPositionColour(meterAccuracy),
+        fillOpacity: type === MarkerType.CHECKPOINT ? 0.5 : 0.25
+      }
+
+      const keyMarker = key + '-marker'
+      const keyBounds = key + '-bounds'
+
+      if (!Object.keys(this.mapObjects).includes(keyMarker)) {
+        // Create new marker
+        this.mapObjects[keyBounds] = L.circle([latitude, longitude], style)
+        this.mapObjects[keyBounds].addTo(this.mapRef)
+        this.mapObjects[keyMarker] = L.marker([latitude, longitude], {
+          icon:
+            type === MarkerType.CHECKPOINT ? iconCheckpoint : iconUserPosition,
+          zIndexOffset: type === MarkerType.CHECKPOINT ? 0 : 1000
+        })
+          .bindPopup(
+            type === MarkerType.CHECKPOINT ? marker.label : 'Din position'
+          )
+          .openPopup()
+        this.mapObjects[keyMarker].addTo(this.mapRef)
+      }
+
+      // Update position and design for the "area or accuracy indicator"
+      const objBounds = this.mapObjects[keyBounds]
+      objBounds.setStyle({ fillColor: style.fillColor })
+      objBounds.setRadius(style.radius)
+      objBounds.setLatLng([latitude, longitude])
+
+      // Update position and design for the "pin"
+      const objMarker = this.mapObjects[keyMarker]
+      objMarker.setLatLng([latitude, longitude])
+    }
+
+    const userPosition = Object.values(newMarkers).find(
+      (marker: Marker) => marker.type === MarkerType.USER_POSITION
+    )
+    if (userPosition) {
+      const zoomLevel = getZoomLevel(
+        getAccuracyLevel(userPosition.meterAccuracy || 0)
+      )
+
+      this.mapRef.setZoom(zoomLevel)
+      this.mapRef.panTo([userPosition.latitude, userPosition.longitude], {
+        animate: true,
+        duration: 0.5
+      })
+    }
   }
 
   initMap() {
     this.applyDeadIconFix()
 
-    this.mapRef = L.map('map-container')
-    // L.marker([
-    //   this.currentPosition.latitude,
-    //   this.currentPosition.longitude,
-    // ]).addTo(map);
-    this.currentPositionMapRef = L.circle(
-      [this.currentPosition.latitude, this.currentPosition.longitude],
-      {
-        stroke: true,
-        radius: (this.currentPosition.accuracy || 0) * 1000,
-
-        color: '#000',
-        opacity: 0.5,
-        weight: 1,
-
-        fillColor: '#0F0',
-        fillOpacity: 0.5
-      }
-    )
-    this.currentPositionMapRef.addTo(this.mapRef)
-
-    this.updatePosition(this.currentPosition)
-
-    for (const marker of (this.markers || [])) {
-      const { label, latitude, longitude, type, accuracy } = marker
-
-      L.circle([latitude, longitude], {
-        stroke: true,
-        radius: (accuracy || 0.01) * 1000,
-
-        color: type === MarkerType.ACTIVE ? '#F00' : '#000',
-        opacity: 0.5,
-        weight: 1,
-
-        fillColor: type === MarkerType.ACTIVE ? '#FCC' : '#FFF',
-        fillOpacity: 0.5
-      }).addTo(this.mapRef)
-    }
-
+    this.mapRef = L.map('map-container', { tap: false })
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       zoom: 15,
       id: 'openstreetmap',
@@ -105,6 +182,7 @@ export default class Map extends Vue {
 
   mounted() {
     this.initMap()
+    this.updateMarkers(this.markers)
   }
 }
 </script>

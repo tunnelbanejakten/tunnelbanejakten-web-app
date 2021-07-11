@@ -1,6 +1,6 @@
 <template>
   <div class="page">
-    <div class="body">
+    <div :class="bodyClasses">
       <slot name="default" />
     </div>
     <div
@@ -20,9 +20,14 @@ import { Component, Prop, Vue } from 'vue-property-decorator'
 @Component
 export default class Page extends Vue {
     @Prop() private title!: string
+    @Prop() private noPadding!: boolean
 
     get isFooterDefined() {
       return !!this.$slots.footer
+    }
+
+    get bodyClasses() {
+      return this.noPadding ? 'body no-padding' : 'body'
     }
 }
 </script>
@@ -56,6 +61,10 @@ h1 {
     flex: 1;
 
     padding: 10px;
+}
+
+.body.no-padding {
+    padding: 0;
 }
 
 .footer {
