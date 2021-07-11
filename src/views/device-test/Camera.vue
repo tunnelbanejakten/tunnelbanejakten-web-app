@@ -7,17 +7,13 @@
       size="huge"
       @click="onStartTest"
     />
-    <Fullscreen v-if="isCameraShown">
+    <Fullscreen
+      v-if="isCameraShown"
+      @close="onEndTest"
+    >
       <div class="camera-container">
         <div class="camera">
           <CameraComponent @captured="onCaptured" />
-        </div>
-        <div class="buttons">
-          <Button
-            label="Stäng"
-            @click="onEndTest"
-            type="secondary"
-          />
         </div>
       </div>
       <div
@@ -43,6 +39,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
 import Button from '@/components/common/Button.vue'
+import IconButton from '@/components/common/IconButton.vue'
 import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
 import Fullscreen from '@/components/common/Fullscreen.vue'
 import CameraComponent from '@/components/common/Camera.vue'
@@ -51,6 +48,7 @@ import store, { Status } from '@/store'
 @Component({
   components: {
     Button,
+    IconButton,
     Fullscreen,
     CameraComponent,
     ConfirmationOverlay
@@ -100,15 +98,6 @@ export default class Camera extends Vue {
 </script>
 
 <style scoped>
-.camera-container .buttons {
-  position: absolute;
-  top: 10px;
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-  width: 100%;
-  right: 10px;
-}
 .camera-container .buttons button {
   margin-left: 10px;
 }

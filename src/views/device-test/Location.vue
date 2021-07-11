@@ -10,7 +10,10 @@
       :label="startTestButtonLabel"
       :type="startTestButtonType"
     />
-    <Fullscreen v-if="isTestStarted">
+    <Fullscreen
+      v-if="isTestStarted"
+      @close="onDone"
+    >
       <div
         v-if="isPositioningPending"
         class="waiting-container"

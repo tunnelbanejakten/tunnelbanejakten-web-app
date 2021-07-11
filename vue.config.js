@@ -13,6 +13,6 @@ module.exports = {
       appleTouchIcon: 'manifest/apple-touch-icon.png',
       maskIcon: 'manifest/safari-pinned-tab.svg',
       msTileImage: 'manifest/mstil-150x150.png'
-    }    
+    }
   }
 }
