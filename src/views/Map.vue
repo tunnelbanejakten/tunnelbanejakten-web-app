@@ -34,9 +34,12 @@
         v-if="!!notification"
         :message="notification"
       />
-      <Fullscreen v-if="isCheckpointArrivalShown">
+      <Fullscreen
+        v-if="isCheckpointArrivalShown"
+        @close="onCloseArrivalPopup"
+      >
         <div class="arrival-container">
-          <p>Du är framme!</p>
+          <div>Du är framme!</div>
           <div
             v-for="marker in activeMarkers"
             :key="marker.label"
@@ -45,13 +48,6 @@
               :label="marker.label"
               @click="onSelectCheckpoint(marker)"
               :size="checkpointButtonSize"
-            />
-          </div>
-          <div class="buttons">
-            <Button
-              label="Stäng"
-              @click="onCloseArrivalPopup"
-              type="secondary"
             />
           </div>
         </div>
@@ -417,7 +413,7 @@ export default class Map extends Vue {
 .arrival-container {
   display: flex;
   flex-direction: column;
-  justify-content: space-around;
+  justify-content: space-evenly;
   height: 100%;
   width: 100%;
   align-items: center;

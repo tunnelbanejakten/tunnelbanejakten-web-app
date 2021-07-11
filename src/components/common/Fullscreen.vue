@@ -2,7 +2,10 @@
   <div class="fullscreen">
     <div class="background" />
     <div class="content">
-      <div class="top-buttons">
+      <div
+        class="top-buttons"
+        v-if="isCloseEventListenerDefined"
+      >
         <IconButton
           @click="onClose"
           icon="close"
@@ -22,6 +25,10 @@ import IconButton from '@/components/common/IconButton.vue'
   components: { IconButton }
 })
 export default class Fullscreen extends Vue {
+  get isCloseEventListenerDefined() {
+    return this.$listeners && this.$listeners.close
+  }
+
   @Emit('close')
   onClose() {
     return true
