@@ -106,7 +106,8 @@ export default class Location extends Vue {
     latitude: 0.0,
     longitude: 0.0,
     meterAccuracy: 0,
-    type: MarkerType.USER_POSITION
+    type: MarkerType.USER_POSITION,
+    id: ''
   };
 
   private isTestStarted = false;
@@ -228,7 +229,6 @@ export default class Location extends Vue {
 
         this.watchId = navigator.geolocation.watchPosition(
           (position) => {
-            console.log('🌍 New position from geolocation API:', position)
             const {
               coords: { accuracy, latitude, longitude }
             } = position
