@@ -16,7 +16,7 @@ import Button from '@/components/common/Button.vue'
 })
 export default class Intro extends Vue {
   onStart() {
-    console.log('Start')
+    return true
   }
 }
 </script>

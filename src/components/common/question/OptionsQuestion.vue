@@ -39,7 +39,6 @@ export default class OptionsQuestion extends Vue {
   }
 
   get textHint() {
-    console.log('💬', this.question.config)
     return this.question.config.text_hint
   }
 

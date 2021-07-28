@@ -38,63 +38,20 @@
         v-if="isCheckpointArrivalShown"
         @close="onCloseArrivalPopup"
       >
-        <div class="arrival-container">
-          <div>Du är framme!</div>
-          <div
-            v-for="marker in activeMarkers"
-            :key="marker.label"
-          >
-            <Button
-              :label="marker.label"
-              @click="onSelectCheckpoint(marker)"
-              :size="checkpointButtonSize"
-            />
-          </div>
-        </div>
+        <CheckpointSelector
+          :markers="activeMarkers"
+          @selected="onSelectCheckpoint"
+        />
       </Fullscreen>
       <Fullscreen
         v-if="isCheckpointShown"
         @close="onCloseCheckpointPopup"
       >
-        <div class="checkpoint-container">
-          <div>
-            <div v-if="isQuestionLoading">
-              Laddar...
-            </div>
-            <div v-if="!isQuestionLoading && !question">
-              <Message
-                header="Problem med kontrollen"
-                :message="questionFailedMessage"
-                :type="questionFailedMessageType"
-              />
-            </div>
-            <div v-if="!isQuestionLoading && question">
-              <form>
-                <component
-                  :is="currentComponent()"
-                  :question="question"
-                />
-                <input
-                  type="hidden"
-                  :name="optimisticLockFieldName"
-                  :value="optimisticLockCurrentValue"
-                >
-                <input
-                  type="hidden"
-                  :name="trackedAnswersFieldName"
-                  :value="trackedAnswersCurrentValue"
-                >
-                <div>
-                  <Button
-                    @click="onSubmitAnswer"
-                    label="Spara"
-                    type="primary"
-                  />
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
+        <Checkpoint
+          :question-id="questionId"
+          @submit-success="onCheckpointSuccess"
+          @submit-failure="onCheckpointFailure"
+        />
       </Fullscreen>
     </div>
   </Page>
@@ -111,11 +68,11 @@ import MapComponent, {
 } from '@/components/common/Map.vue'
 import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
 import NotificationOverlay from '@/components/common/NotificationOverlay.vue'
-import Button, { Size as ButtonSize } from '@/components/common/Button.vue'
+import Button from '@/components/common/Button.vue'
 import Fullscreen from '@/components/common/Fullscreen.vue'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
-import OptionsQuestion from '@/components/common/question/OptionsQuestion.vue'
-import TextQuestion from '@/components/common/question/TextQuestion.vue'
+import CheckpointSelector from './map/CheckpointSelector.vue'
+import Checkpoint from './map/Checkpoint.vue'
 import * as LocationUtils from '@/utils/Location'
 import * as Analytics from '@/utils/Analytics'
 
@@ -173,8 +130,8 @@ const deg2rad = (deg: number) => {
     NotificationOverlay,
     Fullscreen,
     Button,
-    OptionsQuestion,
-    TextQuestion
+    Checkpoint,
+    CheckpointSelector
   }
 })
 export default class Map extends Vue {
@@ -182,13 +139,9 @@ export default class Map extends Vue {
   private notification = '';
   private stateMessage = '';
   private stateMessageType: MessageType = MessageType.FAILURE;
-  private questionFailedMessage = '';
-  private questionFailedMessageType: MessageType = MessageType.FAILURE;
-  private checkpointButtonSize: ButtonSize = ButtonSize.HUGE;
   private watchId = 0;
   private isCheckpointArrivalShown = false;
   private isCheckpointShown = false;
-  private isQuestionLoading = false;
   private lastApproxAccuracy = -1;
 
   private markers: Marker[] = [];
@@ -201,32 +154,7 @@ export default class Map extends Vue {
     id: ''
   };
 
-  private question: any = null;
   private questionId: string | null = null;
-
-  get optimisticLockCurrentValue() {
-    return this.question ? this.question.optimistic_lock.current_value : -1
-  }
-
-  get optimisticLockFieldName() {
-    return this.question
-      ? this.question.optimistic_lock.field_name
-      : 'untitled'
-  }
-
-  get trackedAnswersCurrentValue() {
-    return this.question ? this.question.tracked_answers.current_value : -1
-  }
-
-  get trackedAnswersFieldName() {
-    return this.question
-      ? this.question.tracked_answers.field_name
-      : 'untitled'
-  }
-
-  currentComponent() {
-    return this.question?.type
-  }
 
   updateState(newState: State, newStateMessage: string) {
     this.state = newState
@@ -267,55 +195,14 @@ export default class Map extends Vue {
       message: e.label
     })
 
-    try {
-      this.isCheckpointArrivalShown = false
-      this.isCheckpointShown = true
-      this.isQuestionLoading = true
-
-      this.question = null
-      this.questionId = null
-
-      const token = AuthUtils.getTokenCookie()
-
-      const resp = await fetch(
-        `${apiHost}/wp-json/tuja/v1/questions/${e.id}?token=${token}`
-      )
-      const payload = await resp.json()
-      this.question = {
-        ...payload
-      }
-      this.questionId = e.id
-    } catch (e) {
-      this.questionFailedMessage = e.message
-    }
-    this.isQuestionLoading = false
+    this.isCheckpointArrivalShown = false
+    this.isCheckpointShown = true
+    this.questionId = e.id
   }
 
   onCloseCheckpointPopup() {
     this.isCheckpointShown = false
-  }
-
-  async onSubmitAnswer() {
-    try {
-      const token = AuthUtils.getTokenCookie()
-
-      const formEl = document.querySelector('form')
-      if (formEl) {
-        const payload = new FormData(formEl)
-        const resp = await fetch(
-          `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}/answer?token=${token}`,
-          {
-            method: 'POST',
-            body: payload
-          }
-        )
-        if (resp.ok) {
-          this.isCheckpointShown = false
-        }
-      }
-    } catch (e) {
-      console.log('💥', e)
-    }
+    this.questionId = null
   }
 
   onCloseArrivalPopup() {
@@ -324,6 +211,15 @@ export default class Map extends Vue {
 
   onShowArrivalPopup() {
     this.isCheckpointArrivalShown = true
+  }
+
+  onCheckpointSuccess() {
+    this.isCheckpointShown = false
+    this.questionId = null
+  }
+
+  onCheckpointFailure(e: any) {
+    // TODO: Handle errors
   }
 
   updateActiveMarkers(markers: Marker[], position: Marker) {
@@ -556,20 +452,13 @@ export default class Map extends Vue {
   justify-content: center;
   align-items: center;
 }
-.arrival-container,
-.checkpoint-container {
+
+.arrival-container {
   display: flex;
   flex-direction: column;
   justify-content: space-evenly;
   height: 100%;
   width: 100%;
   align-items: center;
-}
-.checkpoint-container {
-  align-items: unset;
-}
-
-.checkpoint-container > div {
-  margin: 0px 10px;
 }
 </style>
