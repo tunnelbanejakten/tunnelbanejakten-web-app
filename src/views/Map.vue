@@ -38,19 +38,20 @@
         v-if="isCheckpointArrivalShown"
         @close="onCloseArrivalPopup"
       >
-        <div class="arrival-container">
-          <div>Du är framme!</div>
-          <div
-            v-for="marker in activeMarkers"
-            :key="marker.label"
-          >
-            <Button
-              :label="marker.label"
-              @click="onSelectCheckpoint(marker)"
-              :size="checkpointButtonSize"
-            />
-          </div>
-        </div>
+        <CheckpointSelector
+          :markers="activeMarkers"
+          @selected="onSelectCheckpoint"
+        />
+      </Fullscreen>
+      <Fullscreen
+        v-if="isCheckpointShown"
+        @close="onCloseCheckpointPopup"
+      >
+        <Checkpoint
+          :question-id="questionId"
+          @submit-success="onCheckpointSuccess"
+          @submit-failure="onCheckpointFailure"
+        />
       </Fullscreen>
     </div>
   </Page>
@@ -67,9 +68,11 @@ import MapComponent, {
 } from '@/components/common/Map.vue'
 import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
 import NotificationOverlay from '@/components/common/NotificationOverlay.vue'
-import Button, { Size as ButtonSize } from '@/components/common/Button.vue'
+import Button from '@/components/common/Button.vue'
 import Fullscreen from '@/components/common/Fullscreen.vue'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
+import CheckpointSelector from './map/CheckpointSelector.vue'
+import Checkpoint from './map/Checkpoint.vue'
 import * as LocationUtils from '@/utils/Location'
 import * as Analytics from '@/utils/Analytics'
 
@@ -80,7 +83,7 @@ enum State {
   LOADING_MARKERS,
   LOADING_POSITION,
   POSITION_ACQUIRED,
-  ERROR,
+  ERROR
 }
 
 type ApiMarker = {
@@ -88,6 +91,8 @@ type ApiMarker = {
   longitude: number;
   radius: number;
   name: string;
+  // eslint-disable-next-line camelcase
+  link_form_question_id: number;
 };
 
 // Credits: https://stackoverflow.com/a/27943
@@ -104,9 +109,9 @@ const coordinateDistance = (coord1: Coord, coord2: Coord) => {
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(deg2rad(coord1.latitude)) *
-      Math.cos(deg2rad(coord2.latitude)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2)
+    Math.cos(deg2rad(coord2.latitude)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2)
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return R * c * 1000.0 // Distance (in meter)
@@ -124,7 +129,9 @@ const deg2rad = (deg: number) => {
     ConfirmationOverlay,
     NotificationOverlay,
     Fullscreen,
-    Button
+    Button,
+    Checkpoint,
+    CheckpointSelector
   }
 })
 export default class Map extends Vue {
@@ -132,9 +139,9 @@ export default class Map extends Vue {
   private notification = '';
   private stateMessage = '';
   private stateMessageType: MessageType = MessageType.FAILURE;
-  private checkpointButtonSize: ButtonSize = ButtonSize.HUGE;
   private watchId = 0;
   private isCheckpointArrivalShown = false;
+  private isCheckpointShown = false;
   private lastApproxAccuracy = -1;
 
   private markers: Marker[] = [];
@@ -143,8 +150,11 @@ export default class Map extends Vue {
     longitude: 0,
     latitude: 0,
     meterAccuracy: -1,
-    type: MarkerType.USER_POSITION
+    type: MarkerType.USER_POSITION,
+    id: ''
   };
+
+  private questionId: string | null = null;
 
   updateState(newState: State, newStateMessage: string) {
     this.state = newState
@@ -180,10 +190,19 @@ export default class Map extends Vue {
     }
   }
 
-  onSelectCheckpoint(e: Marker) {
+  async onSelectCheckpoint(e: Marker) {
     Analytics.logEvent(Analytics.AnalyticsEventType.MAP, 'open', 'checkpoint', {
       message: e.label
     })
+
+    this.isCheckpointArrivalShown = false
+    this.isCheckpointShown = true
+    this.questionId = e.id
+  }
+
+  onCloseCheckpointPopup() {
+    this.isCheckpointShown = false
+    this.questionId = null
   }
 
   onCloseArrivalPopup() {
@@ -192,6 +211,15 @@ export default class Map extends Vue {
 
   onShowArrivalPopup() {
     this.isCheckpointArrivalShown = true
+  }
+
+  onCheckpointSuccess() {
+    this.isCheckpointShown = false
+    this.questionId = null
+  }
+
+  onCheckpointFailure(e: any) {
+    // TODO: Handle errors
   }
 
   updateActiveMarkers(markers: Marker[], position: Marker) {
@@ -263,12 +291,19 @@ export default class Map extends Vue {
 
         if (markers.length > 0) {
           this.markers = markers.map(
-            ({ latitude, longitude, name, radius }: ApiMarker): Marker => ({
+            ({
+              latitude,
+              longitude,
+              name,
+              radius,
+              link_form_question_id: questionId
+            }: ApiMarker): Marker => ({
               latitude,
               longitude,
               meterAccuracy: radius,
               label: String(name),
-              type: MarkerType.CHECKPOINT
+              type: MarkerType.CHECKPOINT,
+              id: String(questionId)
             })
           )
           Analytics.logEvent(
@@ -281,7 +316,10 @@ export default class Map extends Vue {
           )
           return true
         } else {
-          this.updateState(State.ERROR, 'Det finns inga kontroller att visa på kartan.')
+          this.updateState(
+            State.ERROR,
+            'Det finns inga kontroller att visa på kartan.'
+          )
         }
       } catch (e) {
         this.updateState(State.ERROR, 'Kunde inte läsa in kontroller.')
@@ -316,8 +354,11 @@ export default class Map extends Vue {
         State.LOADING_POSITION,
         'Försöker hittar dig på kartan.'
       )
+      if (this.watchId) {
+        navigator.geolocation.clearWatch(this.watchId)
+      }
       this.watchId = navigator.geolocation.watchPosition(
-        (position) => {
+        position => {
           const {
             coords: { accuracy, latitude, longitude }
           } = position
@@ -326,7 +367,8 @@ export default class Map extends Vue {
             meterAccuracy: accuracy,
             latitude: latitude,
             longitude: longitude,
-            type: MarkerType.USER_POSITION
+            type: MarkerType.USER_POSITION,
+            id: ''
           }
           if (this.state !== State.POSITION_ACQUIRED) {
             this.updateState(
@@ -341,7 +383,7 @@ export default class Map extends Vue {
             ? 'Vi är osäkra på din position. Om du står still ett litet tag till så löser det sig säkert.'
             : ''
         },
-        (error) => {
+        error => {
           switch (error.code) {
             // 1 PERMISSION_DENIED The acquisition of the geolocation information failed because the page didn't have the permission to do it.
             case 1:
@@ -410,6 +452,7 @@ export default class Map extends Vue {
   justify-content: center;
   align-items: center;
 }
+
 .arrival-container {
   display: flex;
   flex-direction: column;

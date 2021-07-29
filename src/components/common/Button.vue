@@ -1,9 +1,13 @@
 <template>
   <button
+    type="button"
     @click="onClick"
     :class="buttonClass"
   >
-    {{ label }}
+    <span class="button-content">
+      <span class="label">{{ label }}</span>
+      <span class="spinner">⏳</span>
+    </span>
   </button>
 </template>
 
@@ -26,6 +30,7 @@ export enum Size {
 })
 export default class Button extends Vue {
   @Prop() private label!: string
+  @Prop() private pending!: boolean
   @Prop({ default: Type.PRIMARY }) readonly type!: Type
   @Prop({ default: Size.NORMAL }) readonly size!: Size
 
@@ -35,7 +40,7 @@ export default class Button extends Vue {
   }
 
   get buttonClass(): string {
-    return `type-${this.type} size-${this.size}`
+    return `type-${this.type} size-${this.size} pending-${this.pending ? 'yes' : 'no'}`
   }
 }
 </script>
@@ -64,5 +69,35 @@ button.type-secondary {
   background-color: #fff;
   border: 1px solid #977ca1;
   color: #000;
+}
+
+span.button-content {
+  position: relative;
+}
+
+button.pending-yes span.label {
+  visibility: hidden;
+}
+
+button.pending-no span.label {
+  visibility: visible;
+}
+
+button span.spinner {
+  width: 100%;
+  left: 0;
+  position: absolute;
+  top: 50%;
+  margin-top: -10px;
+  line-height: 20px;
+  font-size: 20px;
+}
+
+button.pending-yes span.spinner {
+  display: inline-block;
+}
+
+button.pending-no span.spinner {
+  display: none;
 }
 </style>

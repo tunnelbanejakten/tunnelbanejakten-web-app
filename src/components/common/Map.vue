@@ -86,6 +86,7 @@ export type Marker = Coord & {
   meterAccuracy: number;
   label?: string;
   type: MarkerType;
+  id: string
 };
 
 @Component({
