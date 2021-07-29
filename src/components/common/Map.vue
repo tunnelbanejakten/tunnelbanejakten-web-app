@@ -6,6 +6,7 @@
 
 <script lang="ts">
 import { Component, Vue, Prop, Watch } from 'vue-property-decorator'
+import { dom } from '@fortawesome/fontawesome-svg-core'
 import Button from '@/components/common/Button.vue'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
@@ -17,6 +18,8 @@ enum AccuracyLevel {
   MEDIUM,
   LOW,
 }
+
+const RECENTER_MAP_ICON_SIZE = 18
 
 const getAccuracyLevel = (meterAccuracy: number): AccuracyLevel => {
   return LocationUtils.isAccuratePosition(meterAccuracy)
@@ -96,6 +99,9 @@ export default class Map extends Vue {
   @Prop() private markers!: Record<string, Marker>;
   private mapObjects: Record<string, any> = {};
   private mapRef: any;
+  private panLockControl: any;
+  private isUserPanning = false
+  private currentPosition!: Marker
 
   // Credits: https://github.com/Leaflet/Leaflet/issues/4968#issuecomment-483402699
   applyDeadIconFix() {
@@ -157,20 +163,83 @@ export default class Map extends Vue {
       (marker: Marker) => marker.type === MarkerType.USER_POSITION
     )
     if (userPosition) {
-      const zoomLevel = getZoomLevel(
-        getAccuracyLevel(userPosition.meterAccuracy || 0)
-      )
+      this.currentPosition = userPosition
+      if (!this.isUserPanning) {
+        this.panToCurrentPosition()
+      }
+    }
+  }
 
-      this.mapRef.setZoom(zoomLevel)
-      this.mapRef.panTo([userPosition.latitude, userPosition.longitude], {
-        animate: true,
-        duration: 0.5
-      })
+  panToCurrentPosition() {
+    const zoomLevel = getZoomLevel(
+      getAccuracyLevel(this.currentPosition.meterAccuracy || 0)
+    )
+
+    this.mapRef.off('movestart', this.onUserMapPan)
+
+    this.mapRef.setZoom(zoomLevel)
+    this.mapRef.panTo([this.currentPosition.latitude, this.currentPosition.longitude], {
+      animate: true,
+      duration: 0.5
+    })
+
+    this.mapRef.on('movestart', this.onUserMapPan)
+  }
+
+  onUserMapPan() {
+    this.isUserPanning = true
+
+    this.panLockControl.addTo(this.mapRef)
+  }
+
+  onRecenterMap() {
+    this.isUserPanning = false
+
+    this.panLockControl.remove()
+
+    this.panToCurrentPosition()
+  }
+
+  applyPanLockControlExtension() {
+    L.Control.PanLock = L.Control.extend({
+      onAdd: () => {
+        // Create container element
+        const container = L.DomUtil.create('div')
+        L.DomUtil.addClass(container, 'leaflet-bar')
+        L.DomUtil.addClass(container, 'leaflet-control')
+
+        // Create button element inside container
+        const button = L.DomUtil.create('a', null, container)
+        button.id = 'panLockButton'
+        button.role = 'button'
+        button.title = 'Re-center map'
+        button.ariaLabel = 'Re-center map'
+        button.href = '#'
+        button.style.lineHeight = (RECENTER_MAP_ICON_SIZE * 2) + 'px'
+        L.DomEvent.on(button, 'click', this.onRecenterMap)
+
+        // Create icon element inside button
+        const icon = L.DomUtil.create('i', null, button)
+        L.DomUtil.addClass(icon, 'fas')
+        L.DomUtil.addClass(icon, 'fa-crosshairs')
+        icon.style.fontSize = (RECENTER_MAP_ICON_SIZE) + 'px'
+        dom.i2svg({ node: button, callback: () => { return true } })
+
+        return container
+      },
+      onRemove: (map: any) => {
+        // Nothing
+      }
+    })
+
+    L.control.panLock = (opts: any) => {
+      return new L.Control.PanLock(opts)
     }
   }
 
   initMap() {
     this.applyDeadIconFix()
+    this.applyPanLockControlExtension()
 
     this.mapRef = L.map('map-container', { tap: false })
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -179,6 +248,10 @@ export default class Map extends Vue {
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(this.mapRef)
+
+    this.mapRef.on('movestart', this.onUserMapPan)
+
+    this.panLockControl = L.control.panLock({ position: 'topleft' })
   }
 
   mounted() {
