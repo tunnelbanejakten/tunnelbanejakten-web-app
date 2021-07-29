@@ -48,6 +48,7 @@ import Message, { Type as MessageType } from '@/components/common/Message.vue'
 import OptionsQuestion from '@/components/common/question/OptionsQuestion.vue'
 import TextQuestion from '@/components/common/question/TextQuestion.vue'
 import * as AuthUtils from '@/utils/Auth'
+import * as Analytics from '@/utils/Analytics'
 
 const apiHost = process.env.VUE_APP_API_HOST
 
@@ -105,11 +106,29 @@ export default class Checkpoint extends Vue {
       const resp = await fetch(
         `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}?token=${token}`
       )
-      const payload = await resp.json()
-      this.question = {
-        ...payload
+      if (resp.ok) {
+        const payload = await resp.json()
+        this.question = {
+          ...payload
+        }
+
+        Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'fetched', 'question', {
+          message: `Fetched question ${this.questionId}.`
+        })
+      } else {
+        Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'fetch', {
+          message: `Could not fetch question ${this.questionId}.`,
+          status: `Http response ${resp.status}.`
+        })
+
+        this.message = 'Oj då, appen kan inte läsa in kontrollen.'
+        this.messageType = MessageType.FAILURE
       }
     } catch (e) {
+      Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'fetch', {
+        message: `Could not fetch question ${this.questionId}. Reason: ${e.message}.`
+      })
+
       this.message = 'Något gick fel. ' + e.message
       this.messageType = MessageType.FAILURE
     }
@@ -145,6 +164,10 @@ export default class Checkpoint extends Vue {
 
   @Emit('submit-success')
   onSubmitSuccess() {
+    Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'submitted', 'answer', {
+      message: `Submitted answer to question ${this.questionId}.`
+    })
+
     this.message = 'Ditt svar sparades'
     this.messageType = MessageType.INFO
 
@@ -153,6 +176,10 @@ export default class Checkpoint extends Vue {
 
   @Emit('submit-failure')
   onSubmitFailure(error: any) {
+    Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'submit', {
+      message: `Could not submit answer to question ${this.questionId}. Reason: ${error.message}.`
+    })
+
     this.message = 'Något gick fel. ' + error.message
     this.messageType = MessageType.FAILURE
 

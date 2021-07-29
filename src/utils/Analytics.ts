@@ -7,7 +7,8 @@ export enum AnalyticsEventType {
   APP,
   DEVICE_TEST,
   LOCATION,
-  MAP
+  MAP,
+  FORM
 }
 
 let isAnalyticsInitialized = false
