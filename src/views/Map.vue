@@ -224,7 +224,7 @@ export default class Map extends Vue {
 
   updateActiveMarkers(markers: Marker[], position: Marker) {
     if (!LocationUtils.isAccuratePosition(position.meterAccuracy)) {
-      return []
+      return
     }
     const isMarkerActiveBefore = this.activeMarkers.length > 0
     this.activeMarkers = markers.filter((marker: Marker) => {
@@ -238,7 +238,6 @@ export default class Map extends Vue {
           longitude: marker.longitude
         }
       )
-      // console.log(`📏 ${distance} meter to ${marker.label}`)
       const marginOfError =
         (marker.meterAccuracy || 0) + (position.meterAccuracy || 0)
       const isWithinMarker = distance - marginOfError <= 0
@@ -258,6 +257,11 @@ export default class Map extends Vue {
             .join(', ')
         }
       )
+    } else if (isMarkerActiveBefore && !isMarkerActiveAfter) {
+      // User has walked out of a "checkpoint region" (as opposed to walking into it or walking around inside of it).
+
+      this.isCheckpointArrivalShown = false
+      this.isCheckpointShown = false
     }
   }
 
