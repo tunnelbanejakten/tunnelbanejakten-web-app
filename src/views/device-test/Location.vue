@@ -151,7 +151,7 @@ export default class Location extends Vue {
 
   get isAccuratePosition() {
     const accuracy = this.currentPosition?.meterAccuracy || 0
-    return LocationUtils.isAccuratePosition(accuracy)
+    return LocationUtils.getAccuracyLevel(accuracy) === LocationUtils.AccuracyLevel.HIGHEST
   }
 
   get isPositioningDone() {
