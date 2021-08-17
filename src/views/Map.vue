@@ -409,6 +409,10 @@ export default class Map extends Vue {
                 )
                 this.isLowAccuracyAllowed = true
                 this.lowAccuracyTimeoutId = 0
+
+                // Check right away (instead of waiting for next coordinate update from browser) if the
+                // lowered accuracy requirement means that checkpoints are now close enough to be shown.
+                this.updateActiveMarkers(this.markers, this.currentPosition)
               }, LOW_ACCURACY_TIMEOUT * 1000)
             }
           }
