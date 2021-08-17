@@ -12,32 +12,15 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import * as LocationUtils from '@/utils/Location'
 
-enum AccuracyLevel {
-  HIGHEST,
-  HIGH,
-  MEDIUM,
-  LOW,
-}
-
 const RECENTER_MAP_ICON_SIZE = 18
 
-const getAccuracyLevel = (meterAccuracy: number): AccuracyLevel => {
-  return LocationUtils.isAccuratePosition(meterAccuracy)
-    ? AccuracyLevel.HIGHEST
-    : meterAccuracy < 100
-      ? AccuracyLevel.HIGH
-      : meterAccuracy < 250
-        ? AccuracyLevel.MEDIUM
-        : AccuracyLevel.LOW
-}
-
-const getZoomLevel = (accuracyLevel: AccuracyLevel) => {
+const getZoomLevel = (accuracyLevel: LocationUtils.AccuracyLevel) => {
   switch (accuracyLevel) {
-    case AccuracyLevel.HIGHEST:
+    case LocationUtils.AccuracyLevel.HIGHEST:
       return 18
-    case AccuracyLevel.HIGH:
+    case LocationUtils.AccuracyLevel.HIGH:
       return 16
-    case AccuracyLevel.MEDIUM:
+    case LocationUtils.AccuracyLevel.MEDIUM:
       return 15
     default:
       return 13
@@ -67,11 +50,11 @@ const iconCheckpoint = L.icon({
 })
 
 const getUserPositionColour = (meterAccuracy: number): any =>
-  getAccuracyLevel(meterAccuracy) === AccuracyLevel.HIGHEST
+  LocationUtils.getAccuracyLevel(meterAccuracy) === LocationUtils.AccuracyLevel.HIGHEST
     ? 'green'
-    : getAccuracyLevel(meterAccuracy) === AccuracyLevel.HIGH
+    : LocationUtils.getAccuracyLevel(meterAccuracy) === LocationUtils.AccuracyLevel.HIGH
       ? 'yellow'
-      : getAccuracyLevel(meterAccuracy) === AccuracyLevel.MEDIUM
+      : LocationUtils.getAccuracyLevel(meterAccuracy) === LocationUtils.AccuracyLevel.MEDIUM
         ? 'yellow'
         : 'orange'
 
@@ -172,7 +155,7 @@ export default class Map extends Vue {
 
   panToCurrentPosition() {
     const zoomLevel = getZoomLevel(
-      getAccuracyLevel(this.currentPosition.meterAccuracy || 0)
+      LocationUtils.getAccuracyLevel(this.currentPosition.meterAccuracy || 0)
     )
 
     this.mapRef.off('movestart', this.onUserMapPan)

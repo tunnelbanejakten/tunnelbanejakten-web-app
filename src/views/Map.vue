@@ -78,6 +78,8 @@ import * as Analytics from '@/utils/Analytics'
 
 const apiHost = process.env.VUE_APP_API_HOST
 
+const LOW_ACCURACY_TIMEOUT = 60
+
 enum State {
   INITIAL,
   LOADING_MARKERS,
@@ -143,6 +145,8 @@ export default class Map extends Vue {
   private isCheckpointArrivalShown = false;
   private isCheckpointShown = false;
   private lastApproxAccuracy = -1;
+  private isLowAccuracyAllowed = false;
+  private lowAccuracyTimeoutId = 0;
 
   private markers: Marker[] = [];
   private activeMarkers: Marker[] = [];
@@ -222,10 +226,23 @@ export default class Map extends Vue {
     // TODO: Handle errors
   }
 
+  isAccurateEnough(meterAccuracy: number) {
+    const accuracyLevel = LocationUtils.getAccuracyLevel(meterAccuracy)
+    const isAccuracyEnough = accuracyLevel === LocationUtils.AccuracyLevel.HIGHEST ||
+      (accuracyLevel === LocationUtils.AccuracyLevel.HIGH && this.isLowAccuracyAllowed)
+    return isAccuracyEnough
+  }
+
   updateActiveMarkers(markers: Marker[], position: Marker) {
-    if (!LocationUtils.isAccuratePosition(position.meterAccuracy)) {
+    const isPositionAccurate = this.isAccurateEnough(position.meterAccuracy)
+    if (!isPositionAccurate) {
+      this.notification = this.isLowAccuracyAllowed
+        ? 'Vi är fortfarande osäkra på din position. Kontakta kundtjänst för att få hjälp.'
+        : 'Vi är osäkra på din position. Stå still ett litet tag så löser det sig säkert.'
       return
     }
+    this.notification = ''
+
     const isMarkerActiveBefore = this.activeMarkers.length > 0
     this.activeMarkers = markers.filter((marker: Marker) => {
       const distance = coordinateDistance(
@@ -361,6 +378,10 @@ export default class Map extends Vue {
       if (this.watchId) {
         navigator.geolocation.clearWatch(this.watchId)
       }
+      if (this.lowAccuracyTimeoutId) {
+        clearTimeout(this.lowAccuracyTimeoutId)
+        this.lowAccuracyTimeoutId = 0
+      }
       this.watchId = navigator.geolocation.watchPosition(
         position => {
           const {
@@ -379,13 +400,24 @@ export default class Map extends Vue {
               State.POSITION_ACQUIRED,
               'Vi har hittat dig på kartan.'
             )
+            if (!this.lowAccuracyTimeoutId) {
+              this.lowAccuracyTimeoutId = setTimeout(() => {
+                Analytics.logEvent(
+                  Analytics.AnalyticsEventType.MAP,
+                  'lower',
+                  'accuracy threshold'
+                )
+                this.isLowAccuracyAllowed = true
+                this.lowAccuracyTimeoutId = 0
+
+                // Check right away (instead of waiting for next coordinate update from browser) if the
+                // lowered accuracy requirement means that checkpoints are now close enough to be shown.
+                this.updateActiveMarkers(this.markers, this.currentPosition)
+              }, LOW_ACCURACY_TIMEOUT * 1000)
+            }
           }
 
           this.logAccuracy(accuracy)
-
-          this.notification = !LocationUtils.isAccuratePosition(accuracy)
-            ? 'Vi är osäkra på din position. Om du står still ett litet tag till så löser det sig säkert.'
-            : ''
         },
         error => {
           switch (error.code) {
@@ -431,9 +463,13 @@ export default class Map extends Vue {
     }
   }
 
-  unmouted() {
+  beforeDestroy() {
     if (this.watchId) {
       navigator.geolocation.clearWatch(this.watchId)
+    }
+    if (this.lowAccuracyTimeoutId) {
+      clearTimeout(this.lowAccuracyTimeoutId)
+      this.lowAccuracyTimeoutId = 0
     }
   }
 }
