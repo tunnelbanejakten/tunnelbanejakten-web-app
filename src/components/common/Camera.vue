@@ -100,7 +100,7 @@ export default class Camera extends Vue {
     this.$emit('captured', image)
   }
 
-  beforeDestroyed() {
+  beforeDestroy() {
     const cam: any = this.$refs.webcam
     cam.stop()
   }

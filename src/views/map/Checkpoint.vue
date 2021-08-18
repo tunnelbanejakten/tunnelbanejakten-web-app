@@ -11,30 +11,14 @@
           :type="messageType"
         />
       </div>
-      <div v-if="!isQuestionLoading && question">
+      <div v-if="!isQuestionLoading && !!question">
         <form>
-          <component
-            :is="currentComponent()"
+          <Question
             :question="question"
+            :is-submitting="isSubmitting"
+            @user-accepts-time-limit="postViewEvent"
+            @user-submits-answer="submitAnswer"
           />
-          <input
-            type="hidden"
-            :name="optimisticLockFieldName"
-            :value="optimisticLockCurrentValue"
-          >
-          <input
-            type="hidden"
-            :name="trackedAnswersFieldName"
-            :value="trackedAnswersCurrentValue"
-          >
-          <div>
-            <Button
-              @click="onSubmitAnswer"
-              :pending="isSubmitting"
-              label="Spara"
-              type="primary"
-            />
-          </div>
         </form>
       </div>
     </div>
@@ -44,18 +28,17 @@
 <script lang="ts">
 import { Component, Vue, Emit, Prop } from 'vue-property-decorator'
 import Button from '@/components/common/Button.vue'
+import Question from '@/components/common/question/Question.vue'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
-import OptionsQuestion from '@/components/common/question/OptionsQuestion.vue'
-import TextQuestion from '@/components/common/question/TextQuestion.vue'
 import * as AuthUtils from '@/utils/Auth'
 import * as Analytics from '@/utils/Analytics'
+import { QuestionDto } from '@/components/common/question/model'
 
 const apiHost = process.env.VUE_APP_API_HOST
 
 @Component({
   components: {
-    OptionsQuestion,
-    TextQuestion,
+    Question,
     Button,
     Message
   }
@@ -63,39 +46,26 @@ const apiHost = process.env.VUE_APP_API_HOST
 export default class Checkpoint extends Vue {
   @Prop() private readonly questionId!: string
 
-  private question: any = null
-
   private isQuestionLoading = false
-  private isSubmitting = false
+  private question: QuestionDto | null = null
 
   private message = ''
   private messageType = MessageType.FAILURE
+  private isSubmitting = false
 
-  currentComponent() {
-    return this.question?.type
+  get submitUrl() {
+    const token = AuthUtils.getTokenCookie()
+
+    return `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}/answer?token=${token}`
   }
 
-  get optimisticLockCurrentValue() {
-    return this.question ? this.question.optimistic_lock.current_value : -1
+  get viewEventUrl() {
+    const token = AuthUtils.getTokenCookie()
+
+    return `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}/view-events?token=${token}`
   }
 
-  get optimisticLockFieldName() {
-    return this.question
-      ? this.question.optimistic_lock.field_name
-      : 'untitled'
-  }
-
-  get trackedAnswersCurrentValue() {
-    return this.question ? this.question.tracked_answers.current_value : -1
-  }
-
-  get trackedAnswersFieldName() {
-    return this.question
-      ? this.question.tracked_answers.field_name
-      : 'untitled'
-  }
-
-  async mounted() {
+  async fetchQuestion() {
     try {
       this.isQuestionLoading = true
 
@@ -135,16 +105,38 @@ export default class Checkpoint extends Vue {
     this.isQuestionLoading = false
   }
 
-  async onSubmitAnswer() {
+  async mounted() {
+    await this.fetchQuestion()
+  }
+
+  async postViewEvent() {
     this.isSubmitting = true
     try {
-      const token = AuthUtils.getTokenCookie()
+      const resp = await fetch(
+        this.viewEventUrl,
+        {
+          method: 'POST'
+        }
+      )
+      if (resp.ok) {
+        this.onPostViewEventSuccess()
+      } else {
+        this.onPostViewEventFailure(new Error('Kunde inte visa fråga'))
+      }
+    } catch (e) {
+      this.onPostViewEventFailure(e)
+    }
+    this.isSubmitting = false
+  }
 
+  async submitAnswer() {
+    this.isSubmitting = true
+    try {
       const formEl = document.querySelector('form')
       if (formEl) {
         const payload = new FormData(formEl)
         const resp = await fetch(
-          `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}/answer?token=${token}`,
+          this.submitUrl,
           {
             method: 'POST',
             body: payload
@@ -178,6 +170,30 @@ export default class Checkpoint extends Vue {
   onSubmitFailure(error: any) {
     Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'submit', {
       message: `Could not submit answer to question ${this.questionId}. Reason: ${error.message}.`
+    })
+
+    this.message = 'Något gick fel. ' + error.message
+    this.messageType = MessageType.FAILURE
+
+    return error
+  }
+
+  async onPostViewEventSuccess() {
+    Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'posted', 'view event', {
+      message: `Posted view event for question ${this.questionId}.`
+    })
+
+    this.message = ''
+    this.messageType = MessageType.INFO
+
+    await this.fetchQuestion()
+
+    return true
+  }
+
+  onPostViewEventFailure(error: any) {
+    Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'post view event', {
+      message: `Could not post view event for question ${this.questionId}. Reason: ${error.message}.`
     })
 
     this.message = 'Något gick fel. ' + error.message
