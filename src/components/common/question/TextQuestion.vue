@@ -1,22 +1,18 @@
 <template>
-  <Wrapper
-    :text="text"
-    :hint="textHint"
-  >
-    <div class="input-wrapper">
-      <input
-        type="text"
-        :value="fieldValue"
-        :name="fieldName"
-      >
-    </div>
-  </Wrapper>
+  <div class="input-wrapper">
+    <input
+      type="text"
+      :value="fieldValue"
+      :name="fieldName"
+    >
+  </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue, Prop } from 'vue-property-decorator'
 import Page from '@/components/layout/Page.vue'
-import Wrapper from './Wrapper.vue'
+import Wrapper from './Question.vue'
+import { QuestionDto } from './model'
 
 @Component({
   components: {
@@ -24,23 +20,15 @@ import Wrapper from './Wrapper.vue'
     Wrapper
   }
 })
-export default class OptionsQuestion extends Vue {
-  @Prop() private question: any;
-
-  get text() {
-    return this.question.config.text
-  }
-
-  get textHint() {
-    return this.question.config.text_hint
-  }
+export default class TextQuestion extends Vue {
+  @Prop() private question!: QuestionDto;
 
   get optionType() {
-    return this.question.config.is_single_select ? 'radio' : 'checkbox'
+    return this.question.config?.is_single_select ? 'radio' : 'checkbox'
   }
 
   get possibleAnswers() {
-    return this.question.config.possible_answers || []
+    return this.question.config?.possible_answers || []
   }
 
   get fieldName() {
@@ -61,6 +49,6 @@ input {
   padding: 5px;
   border: 1px solid #bbb;
 
-  font: 16px/1.4 'Open Sans', Tahoma, Verdana, Segoe, sans-serif;
+  font: 16px/1.4 "Open Sans", Tahoma, Verdana, Segoe, sans-serif;
 }
 </style>

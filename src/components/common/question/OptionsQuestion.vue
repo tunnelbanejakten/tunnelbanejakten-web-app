@@ -1,8 +1,5 @@
 <template>
-  <Wrapper
-    :text="text"
-    :hint="textHint"
-  >
+  <div>
     <div
       v-for="opt in possibleAnswers"
       :key="opt"
@@ -17,13 +14,14 @@
         {{ opt }}
       </label>
     </div>
-  </Wrapper>
+  </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue, Prop } from 'vue-property-decorator'
 import Page from '@/components/layout/Page.vue'
-import Wrapper from './Wrapper.vue'
+import Wrapper from './Question.vue'
+import { QuestionDto } from './model'
 
 @Component({
   components: {
@@ -32,22 +30,14 @@ import Wrapper from './Wrapper.vue'
   }
 })
 export default class OptionsQuestion extends Vue {
-  @Prop() private question: any;
-
-  get text() {
-    return this.question.config.text
-  }
-
-  get textHint() {
-    return this.question.config.text_hint
-  }
+  @Prop() private question!: QuestionDto;
 
   get optionType() {
-    return this.question.config.is_single_select ? 'radio' : 'checkbox'
+    return this.question.config?.is_single_select ? 'radio' : 'checkbox'
   }
 
   get possibleAnswers() {
-    return this.question.config.possible_answers || []
+    return this.question.config?.possible_answers || []
   }
 
   get fieldName() {
