@@ -109,18 +109,13 @@ export default class Question extends Vue {
   }
 
   init() {
-    console.log('🏁 Init')
     if (this.isTimedQuestion) {
-      console.log('🕰 Timed question. Seconds left:', this.question.limit_time_remaining)
       this.endTime = Date.now() + (this.question.limit_time_remaining || 0) * 1000
       this.updateTimeLeft()
       if (this.timeLeft > 0) {
         this.countdownTimer = setInterval(() => {
           this.updateTimeLeft()
-          if (this.timeLeft > 0) {
-            console.log('🕰 Time left:', this.timeLeft)
-          } else {
-            console.log('🕰 Time is up')
+          if (this.timeLeft <= 0) {
             this.stopCountdownTimer()
           }
         }, 1000)
@@ -137,7 +132,6 @@ export default class Question extends Vue {
   }
 
   stopCountdownTimer() {
-    console.log('🕰 Stop timer')
     if (this.countdownTimer) {
       clearInterval(this.countdownTimer)
       this.countdownTimer = 0

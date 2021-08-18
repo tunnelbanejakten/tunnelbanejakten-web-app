@@ -69,7 +69,7 @@ export default class Checkpoint extends Vue {
     try {
       this.isQuestionLoading = true
 
-      // this.question = null
+      this.question = null
 
       const token = AuthUtils.getTokenCookie()
 
