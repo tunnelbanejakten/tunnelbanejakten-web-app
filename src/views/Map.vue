@@ -7,7 +7,7 @@
       class="no-map"
       v-if="isLoading"
     >
-      <p>{{ stateMessage }}</p>
+      <Loader :message="stateMessage" />
     </div>
     <div
       class="no-map"
@@ -70,6 +70,7 @@ import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
 import NotificationOverlay from '@/components/common/NotificationOverlay.vue'
 import Button from '@/components/common/Button.vue'
 import Fullscreen from '@/components/common/Fullscreen.vue'
+import Loader from '@/components/common/Loader.vue'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
 import CheckpointSelector from './map/CheckpointSelector.vue'
 import Checkpoint from './map/Checkpoint.vue'
@@ -133,7 +134,8 @@ const deg2rad = (deg: number) => {
     Fullscreen,
     Button,
     Checkpoint,
-    CheckpointSelector
+    CheckpointSelector,
+    Loader
   }
 })
 export default class Map extends Vue {

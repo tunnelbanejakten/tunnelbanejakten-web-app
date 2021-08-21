@@ -36,8 +36,11 @@
         </div>
       </Fullscreen>
     </div>
-    <div v-if="isUploadingMode">
-      Sparar bild...
+    <div
+      v-if="isUploadingMode"
+      class="mode-uploading"
+    >
+      <Loader />
     </div>
     <div
       v-if="isUploadedMode"
@@ -74,6 +77,7 @@ import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
 import Fullscreen from '@/components/common/Fullscreen.vue'
 import Button from '@/components/common/Button.vue'
+import Loader from '@/components/common/Loader.vue'
 import Camera from '@/components/common/Camera.vue'
 import * as AuthUtils from '@/utils/Auth'
 
@@ -93,6 +97,7 @@ export type ImageData = {
 @Component({
   components: {
     Button,
+    Loader,
     Camera,
     Fullscreen,
     ConfirmationOverlay
@@ -231,6 +236,13 @@ export default class ImagesQuestionImage extends Vue {
   object-fit: contain;
 }
 .mode-select {
+  display: flex;
+  width: 40vw;
+  height: 40vw;
+  justify-content: center;
+  align-items: center;
+}
+.mode-uploading {
   display: flex;
   width: 40vw;
   height: 40vw;

@@ -2,7 +2,7 @@
   <div class="checkpoint-container">
     <div>
       <div v-if="isQuestionLoading">
-        Laddar...
+        <Loader />
       </div>
       <div v-if="!!message">
         <Message
@@ -29,6 +29,7 @@
 <script lang="ts">
 import { Component, Vue, Emit, Prop } from 'vue-property-decorator'
 import Button from '@/components/common/Button.vue'
+import Loader from '@/components/common/Loader.vue'
 import Question from '@/components/common/question/Question.vue'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
 import * as AuthUtils from '@/utils/Auth'
@@ -41,7 +42,8 @@ const apiHost = process.env.VUE_APP_API_HOST
   components: {
     Question,
     Button,
-    Message
+    Message,
+    Loader
   }
 })
 export default class Checkpoint extends Vue {
