@@ -4,7 +4,7 @@ export type QuestionDto = {
     is_read_only: boolean;
     response: {
         field_name: string;
-        current_value: string[];
+        current_value: any;
     },
     optimistic_lock: {
         field_name: string;

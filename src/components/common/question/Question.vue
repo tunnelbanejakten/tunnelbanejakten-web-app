@@ -29,6 +29,7 @@
       <component
         :is="currentComponent()"
         :question="question"
+        :question-id="questionId"
       />
 
       <p
@@ -79,16 +80,19 @@ import { QuestionDto } from './model'
 import Button from '@/components/common/Button.vue'
 import OptionsQuestion from '@/components/common/question/OptionsQuestion.vue'
 import TextQuestion from '@/components/common/question/TextQuestion.vue'
+import ImagesQuestion from '@/components/common/question/ImagesQuestion.vue'
 
 @Component({
   components: {
     Button,
     OptionsQuestion,
-    TextQuestion
+    TextQuestion,
+    ImagesQuestion
   }
 })
 export default class Question extends Vue {
   @Prop() private question!: QuestionDto;
+  @Prop() private questionId!: string;
   @Prop() private isSubmitting!: boolean;
 
   private countdownTimer = 0

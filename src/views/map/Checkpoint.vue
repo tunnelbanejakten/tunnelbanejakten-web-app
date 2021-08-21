@@ -15,6 +15,7 @@
         <form>
           <Question
             :question="question"
+            :question-id="questionId"
             :is-submitting="isSubmitting"
             @user-accepts-time-limit="postViewEvent"
             @user-submits-answer="submitAnswer"
