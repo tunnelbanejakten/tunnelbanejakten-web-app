@@ -47,6 +47,7 @@
 
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
+import * as Analytics from '@/utils/Analytics'
 import { ImageData } from './ImagesQuestion.vue'
 import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
 import Fullscreen from '@/components/common/Fullscreen.vue'
@@ -108,8 +109,12 @@ export default class ImagesQuestionImage extends Vue {
     fd.append('lock', this.optimisticLockValue)
     fd.append('file', blob, 'image.jpg')
 
-    this.isUploading = true
+    this.onUploadStarted()
     try {
+      Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'started', 'image upload', {
+        size: blob.size,
+        message: `Started to upload image to question ${this.questionId}. Base64-encoded length: ${imageUrl.length}. Blob length: ${blob.size}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`
+      })
       const resp = await fetch(
         `${apiHost}/wp-admin/admin-ajax.php`,
         {
@@ -119,16 +124,28 @@ export default class ImagesQuestionImage extends Vue {
       )
       if (resp.ok) {
         const payload = await resp.json()
+        Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'completed', 'image upload', {
+          size: blob.size,
+          message: `Uploaded image ${payload.image} as answer to question ${this.questionId}. Thumbnail: ${payload.thumbnail_url}. Base64-encoded length: ${imageUrl.length}. Blob length: ${blob.size}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`
+        })
         this.onImageUploaded({
           imageId: payload.image,
           thumbnailUrl: payload.thumbnail_url
         })
-        console.log('Response', payload)
       } else {
-        console.log('Non-ok response', resp.status)
+        Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'image upload', {
+          size: blob.size,
+          message: `Failed to upload image to question ${this.questionId}. Base64-encoded length: ${imageUrl.length}. Blob length: ${blob.size}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`,
+          status: `Http response ${resp.status}.`
+        })
+        this.onUploadFailed(new Error(`Kunde inte spara bilden. Teknisk info: ${resp.status}.`))
       }
     } catch (e) {
-      console.log('💥', e)
+      Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'image upload', {
+        size: blob.size,
+        message: `Failed to upload image to question ${this.questionId}. Message: ${e.message}. Base64-encoded length: ${imageUrl.length}. Blob length: ${blob.size}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`
+      })
+      this.onUploadFailed(e)
     }
     this.isUploading = false
   }
@@ -158,6 +175,16 @@ export default class ImagesQuestionImage extends Vue {
   @Emit('image-uploaded')
   onImageUploaded(imageData: ImageData) {
     return imageData
+  }
+
+  @Emit('upload-failed')
+  onUploadFailed(error: any) {
+    return error
+  }
+
+  @Emit('upload-started')
+  onUploadStarted() {
+    this.isUploading = true
   }
 }
 

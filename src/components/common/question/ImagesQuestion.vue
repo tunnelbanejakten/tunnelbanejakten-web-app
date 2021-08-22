@@ -1,5 +1,11 @@
 <template>
   <div>
+    <Message
+      v-if="!!statusMessage"
+      :header="statusHeader"
+      :message="statusMessage"
+      :type="statusType"
+    />
     <div class="images-container">
       <ImagesQuestionImage
         v-for="data in imageList"
@@ -15,6 +21,8 @@
         :question-id="questionId"
         :field-name="fieldName"
         @image-uploaded="onImageUploaded"
+        @upload-started="onImageUploadStarted"
+        @upload-failed="onImageUploadFailed"
         :select-button-label="selectButtonLabel"
         :optimistic-lock-value="optimisticLockValue"
       />
@@ -41,6 +49,7 @@ import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
 import Fullscreen from '@/components/common/Fullscreen.vue'
 import Button from '@/components/common/Button.vue'
 import Camera from '@/components/common/Camera.vue'
+import Message, { Type as MessageType } from '@/components/common/Message.vue'
 import { QuestionDto } from './model'
 import ImagesQuestionImage from './ImagesQuestionImage.vue'
 import ImagesQuestionUploader from './ImagesQuestionUploader.vue'
@@ -57,6 +66,7 @@ export type ImageData = {
     Button,
     Camera,
     Fullscreen,
+    Message,
     ConfirmationOverlay,
     ImagesQuestionImage,
     ImagesQuestionUploader
@@ -66,6 +76,10 @@ export default class ImageQuestion extends Vue {
   @Prop() private question!: QuestionDto;
   @Prop() private questionId!: string;
   @Prop() private optimisticLockValue!: string;
+
+  private statusHeader = ''
+  private statusMessage = ''
+  private statusType: MessageType = MessageType.FAILURE
 
   private imageList: ImageData[] = []
 
@@ -103,6 +117,16 @@ export default class ImageQuestion extends Vue {
 
   onImageUploaded(imageData: ImageData) {
     this.imageList.push(imageData)
+    this.statusMessage = ''
+  }
+
+  onImageUploadStarted() {
+    this.statusMessage = ''
+  }
+
+  onImageUploadFailed(error: any) {
+    this.statusHeader = 'Oj då'
+    this.statusMessage = error.message
   }
 
   onImageRemoved(imageData: ImageData) {
@@ -110,6 +134,7 @@ export default class ImageQuestion extends Vue {
     if (index !== -1) {
       this.imageList.splice(index, 1)
     }
+    this.statusMessage = ''
   }
 
   plural(number: number, zero: string, one: string, other: string) {
