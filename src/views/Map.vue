@@ -79,7 +79,7 @@ import * as Analytics from '@/utils/Analytics'
 
 const apiHost = process.env.VUE_APP_API_HOST
 
-const LOW_ACCURACY_TIMEOUT = 60
+const LOW_ACCURACY_TIMEOUT = parseInt(process.env.VUE_APP_LOW_ACCURACY_TIMEOUT || '60', 10)
 
 enum State {
   INITIAL,
