@@ -30,6 +30,7 @@ export default class Loader extends Vue {
 </script>
 
 <style scoped>
+/* Credits: https://loading.io/css/ */
 .loader {
   display: flex;
   flex-direction: column;
@@ -38,7 +39,7 @@ export default class Loader extends Vue {
   align-content: center;
 }
 .message {
-    margin-top: 10px;
+  margin-top: 10px;
 }
 .small {
   transform: scale(0.5) translate(-10px, -10px);

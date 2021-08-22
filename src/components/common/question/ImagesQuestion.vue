@@ -10,7 +10,7 @@
         @image-removed="onImageRemoved"
       />
 
-      <ImagesQuestionImage
+      <ImagesQuestionUploader
         v-if="isAdditionalImageAllowed"
         :question-id="questionId"
         :field-name="fieldName"
@@ -41,7 +41,13 @@ import Fullscreen from '@/components/common/Fullscreen.vue'
 import Button from '@/components/common/Button.vue'
 import Camera from '@/components/common/Camera.vue'
 import { QuestionDto } from './model'
-import ImagesQuestionImage, { ImageData } from './ImagesQuestionImage.vue'
+import ImagesQuestionImage from './ImagesQuestionImage.vue'
+import ImagesQuestionUploader from './ImagesQuestionUploader.vue'
+
+export type ImageData = {
+  imageId: string
+  thumbnailUrl: string
+}
 
 @Component({
   components: {
@@ -51,12 +57,23 @@ import ImagesQuestionImage, { ImageData } from './ImagesQuestionImage.vue'
     Camera,
     Fullscreen,
     ConfirmationOverlay,
-    ImagesQuestionImage
+    ImagesQuestionImage,
+    ImagesQuestionUploader
   }
 })
 export default class ImageQuestion extends Vue {
   @Prop() private question!: QuestionDto;
   @Prop() private questionId!: string;
+
+  private imageList: ImageData[] = []
+
+  created() {
+    if (this.currentResponse) {
+      const images = this.currentResponse.images || []
+      const thumbnails = this.currentResponse.thumbnails || []
+      this.imageList = images.map((imageId: string, index: number) => ({ imageId, thumbnailUrl: thumbnails[index] }))
+    }
+  }
 
   get fieldName() {
     return this.question.response.field_name + '[images][]'
@@ -67,13 +84,11 @@ export default class ImageQuestion extends Vue {
   }
 
   get commentFieldValue() {
-    return this.question?.response.current_value.comment
+    return this.question?.response.current_value?.comment
   }
 
-  get imageList(): ImageData[] {
-    const images = this.question?.response.current_value.images || []
-    const thumbnails = this.question?.response.current_value.thumbnails || []
-    return images.map((imageId: string, index: number) => ({ imageId, thumbnailUrl: thumbnails[index] }))
+  get currentResponse() {
+    return this.question?.response.current_value
   }
 
   get isAdditionalImageAllowed() {
@@ -85,24 +100,13 @@ export default class ImageQuestion extends Vue {
   }
 
   onImageUploaded(imageData: ImageData) {
-    const images = this.question?.response.current_value.images
-    const thumbnails = this.question?.response.current_value.thumbnails
-    console.log(imageData, images, thumbnails)
-    if (images) {
-      images.push(imageData.imageId)
-    }
-    if (thumbnails) {
-      thumbnails.push(imageData.thumbnailUrl)
-    }
+    this.imageList.push(imageData)
   }
 
   onImageRemoved(imageData: ImageData) {
-    const images = this.question?.response.current_value.images
-    const thumbnails = this.question?.response.current_value.thumbnails
-    const index = images.findIndex((existingId: string) => existingId === imageData.imageId)
+    const index = this.imageList.findIndex((o: ImageData) => o.imageId === imageData.imageId)
     if (index !== -1) {
-      images.splice(index, 1)
-      thumbnails.splice(index, 1)
+      this.imageList.splice(index, 1)
     }
   }
 
@@ -139,9 +143,9 @@ export default class ImageQuestion extends Vue {
 
   get selectButtonLabel() {
     if (this.imageList.length) {
-      return 'Ta bild'
+      return 'Ta bild...'
     } else {
-      return 'Ta er första bild'
+      return 'Ta bild med kamera...'
     }
   }
 }
