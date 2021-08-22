@@ -30,6 +30,7 @@
         :is="currentComponent()"
         :question="question"
         :question-id="questionId"
+        :optimistic-lock-value="optimisticLockCurrentValue"
       />
 
       <p

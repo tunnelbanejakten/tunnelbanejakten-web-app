@@ -16,6 +16,7 @@
         :field-name="fieldName"
         @image-uploaded="onImageUploaded"
         :select-button-label="selectButtonLabel"
+        :optimistic-lock-value="optimisticLockValue"
       />
     </div>
     <div class="file-count-status">
@@ -64,6 +65,7 @@ export type ImageData = {
 export default class ImageQuestion extends Vue {
   @Prop() private question!: QuestionDto;
   @Prop() private questionId!: string;
+  @Prop() private optimisticLockValue!: string;
 
   private imageList: ImageData[] = []
 

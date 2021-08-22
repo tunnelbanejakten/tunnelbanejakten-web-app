@@ -70,6 +70,7 @@ export default class ImagesQuestionImage extends Vue {
   @Prop() private selectButtonLabel!: string
   @Prop() private questionId!: string
   @Prop() private fieldName!: string
+  @Prop() private optimisticLockValue!: string
   private isUploading = false
   private imageDataUrl = '';
   private isCameraShown = false;
@@ -104,7 +105,7 @@ export default class ImagesQuestionImage extends Vue {
       fd.append('token', token)
     }
     fd.append('question', this.questionId)
-    fd.append('lock', 'a:4:{i:12;i:0;i:13;i:0;i:14;i:0;i:15;i:0;}')
+    fd.append('lock', this.optimisticLockValue)
     fd.append('file', blob, 'image.jpg')
 
     this.isUploading = true
