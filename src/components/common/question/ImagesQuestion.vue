@@ -25,6 +25,7 @@
         @upload-failed="onImageUploadFailed"
         :select-button-label="selectButtonLabel"
         :optimistic-lock-value="optimisticLockValue"
+        :max-file-size="maxFileSize"
       />
     </div>
     <div class="file-count-status">
@@ -113,6 +114,10 @@ export default class ImageQuestion extends Vue {
 
   get maxImageCount(): number {
     return this.question.config?.max_files_count
+  }
+
+  get maxFileSize(): number {
+    return this.question.config?.max_file_size || 2e6
   }
 
   onImageUploaded(imageData: ImageData) {

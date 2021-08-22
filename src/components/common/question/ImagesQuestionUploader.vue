@@ -72,6 +72,7 @@ export default class ImagesQuestionImage extends Vue {
   @Prop() private questionId!: string
   @Prop() private fieldName!: string
   @Prop() private optimisticLockValue!: string
+  @Prop() private maxFileSize!: number
   private isUploading = false
   private imageDataUrl = '';
   private isCameraShown = false;
@@ -98,7 +99,38 @@ export default class ImagesQuestionImage extends Vue {
   }
 
   async uploadImageFromDataUrl(imageUrl: string) {
-    var blob = this.dataURItoBlob(imageUrl)
+    let blob = null
+    for (const resizeFactor of [1.0, 0.5, 0.25]) {
+      let resizedDataUrl = ''
+      try {
+        resizedDataUrl = await this.resizeImage(imageUrl, resizeFactor)
+      } catch (error: any) {
+        this.onUploadFailed('Kunde inte förminska bilden.', 'image downscaling', {
+          message: `Failed to resize image. Factor: ${resizeFactor}. Base64-encoded length: ${imageUrl.length}. Error: ${error.message}.`
+        })
+        return
+      }
+      const tempBlob = this.dataURItoBlob(resizedDataUrl)
+      if (!tempBlob) {
+        this.onUploadFailed('Kunde inte läsa in bilden.', 'image downscaling', {
+          message: `Failed to convert data URI to blob. Base64-encoded length: ${imageUrl.length}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`
+        })
+        return
+      }
+
+      if (tempBlob.size < this.maxFileSize) {
+        blob = tempBlob
+        break
+      }
+    }
+
+    if (!blob) {
+      this.onUploadFailed('Kunde inte spara bilden trots flera försök.', 'image upload', {
+        message: `Failed to convert data URI to blob. Base64-encoded length: ${imageUrl.length}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`
+      })
+      return
+    }
+
     var fd = new FormData(document.createElement('form'))
     fd.append('action', 'tuja_upload_images')
     const token = AuthUtils.getTokenCookie()
@@ -133,21 +165,61 @@ export default class ImagesQuestionImage extends Vue {
           thumbnailUrl: payload.thumbnail_url
         })
       } else {
-        Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'image upload', {
+        this.onUploadFailed(`Kunde inte spara bilden. Teknisk info: ${resp.status}.`, 'image upload', {
           size: blob.size,
           message: `Failed to upload image to question ${this.questionId}. Base64-encoded length: ${imageUrl.length}. Blob length: ${blob.size}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`,
           status: `Http response ${resp.status}.`
         })
-        this.onUploadFailed(new Error(`Kunde inte spara bilden. Teknisk info: ${resp.status}.`))
       }
     } catch (e) {
-      Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'image upload', {
+      this.onUploadFailed('Kunde inte ladda upp bilden', 'image upload', {
         size: blob.size,
         message: `Failed to upload image to question ${this.questionId}. Message: ${e.message}. Base64-encoded length: ${imageUrl.length}. Blob length: ${blob.size}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`
       })
-      this.onUploadFailed(e)
     }
-    this.isUploading = false
+  }
+
+  resizeImage(imageUrl: string, resizeFactor: number): Promise<string> {
+    if (resizeFactor === 1.0) {
+      return Promise.resolve(imageUrl)
+    }
+    Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'downscaling', 'image upload', {
+      size: resizeFactor,
+      message: `Resizing image. Factor: ${resizeFactor}. Base64-encoded length: ${imageUrl.length}.`
+    })
+    return new Promise((resolve, reject) => {
+      console.log('🏞 Starting promise')
+
+      const sourceImage = new Image()
+      sourceImage.onload = (event: any) => {
+        try {
+          console.log('🏞 Source image loaded')
+          const { height, width } = event.target
+          const targetCanvas = document.createElement('canvas')
+          targetCanvas.width = resizeFactor * width
+          targetCanvas.height = resizeFactor * height
+
+          const targetCtx = targetCanvas.getContext('2d')
+          if (targetCtx) {
+            targetCtx.drawImage(event.target, 0, 0, targetCanvas.width, targetCanvas.height)
+
+            const newDataUrl = targetCtx?.canvas.toDataURL('image/png', 1)
+            console.log(`🏞 Got a data URL. Length: ${newDataUrl.length}.`)
+            Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'downscaled', 'image upload', {
+              message: `Length of resized base64-encoded image: ${newDataUrl.length}.`
+            })
+            resolve(newDataUrl)
+          } else {
+            console.log('🏞 No context')
+            reject(new Error('No context'))
+          }
+        } catch (e: any) {
+          console.log('🏞 Something went wrong', e)
+          reject(e)
+        }
+      }
+      sourceImage.src = imageUrl
+    })
   }
 
   onStartCamera() {
@@ -174,12 +246,17 @@ export default class ImagesQuestionImage extends Vue {
 
   @Emit('image-uploaded')
   onImageUploaded(imageData: ImageData) {
+    this.isUploading = false
     return imageData
   }
 
   @Emit('upload-failed')
-  onUploadFailed(error: any) {
-    return error
+  onUploadFailed(userErrorMessage: string, analyticsEventObject: string, analyticsProps: any) {
+    this.isUploading = false
+
+    Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', analyticsEventObject, analyticsProps)
+
+    return new Error(userErrorMessage)
   }
 
   @Emit('upload-started')
