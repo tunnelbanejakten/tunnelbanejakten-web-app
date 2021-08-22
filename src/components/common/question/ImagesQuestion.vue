@@ -117,7 +117,7 @@ export default class ImageQuestion extends Vue {
   }
 
   get maxFileSize(): number {
-    return this.question.config?.max_file_size || 2e6
+    return this.question.config?.max_file_size || 1e6
   }
 
   onImageUploaded(imageData: ImageData) {
