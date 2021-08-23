@@ -179,6 +179,7 @@ export default class ImagesQuestionImage extends Vue {
     }
   }
 
+  // Credits: https://www.therogerlab.com/sandbox/pages/how-to-resize-an-image-using-javascript
   resizeImage(imageUrl: string, resizeFactor: number): Promise<string> {
     if (resizeFactor === 1.0) {
       return Promise.resolve(imageUrl)

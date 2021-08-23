@@ -23,7 +23,7 @@
         @image-uploaded="onImageUploaded"
         @upload-started="onImageUploadStarted"
         @upload-failed="onImageUploadFailed"
-        :select-button-label="selectButtonLabel"
+        select-button-label="Öppna kamera"
         :optimistic-lock-value="optimisticLockValue"
         :max-file-size="maxFileSize"
       />
@@ -54,6 +54,9 @@ import Message, { Type as MessageType } from '@/components/common/Message.vue'
 import { QuestionDto } from './model'
 import ImagesQuestionImage from './ImagesQuestionImage.vue'
 import ImagesQuestionUploader from './ImagesQuestionUploader.vue'
+
+// Upper bound for file size (if not overridden by individual question).
+const MAX_FILE_SIZE = parseInt(process.env.VUE_APP_MAX_FILE_SIZE || '5000000', 10)
 
 export type ImageData = {
   imageId: string
@@ -116,8 +119,14 @@ export default class ImageQuestion extends Vue {
     return this.question.config?.max_files_count
   }
 
+  // The upper limit for uploads is MAX_FILE_SIZE, unless the question explicitly specifies a lower value.
   get maxFileSize(): number {
-    return this.question.config?.max_file_size || 1e6
+    const questionSpecificLimit = this.question.config?.max_file_size
+    if (questionSpecificLimit) {
+      return Math.min(questionSpecificLimit, MAX_FILE_SIZE)
+    } else {
+      return MAX_FILE_SIZE
+    }
   }
 
   onImageUploaded(imageData: ImageData) {
@@ -157,7 +166,7 @@ export default class ImageQuestion extends Vue {
     if (this.isAdditionalImageAllowed) {
       var count = this.imageList.length
       var pattern = count === 0
-        ? ('Ni kan ladda upp COUNT IMAGES här.'
+        ? ('Ni kan ladda upp COUNT IMAGES.'
           .replace('COUNT', String(this.maxImageCount))
           .replace('IMAGES', this.plural(this.maxImageCount, 'bilder', 'bild', 'bilder')))
         : ('Ni kan ladda upp COUNT IMAGES till.'
@@ -166,18 +175,10 @@ export default class ImageQuestion extends Vue {
       return pattern
     } else {
       if (this.maxImageCount > 1) {
-        return 'Ni har laddad upp så många bilder som ni får. Vill ni byta ut en bild måste ni först ta bort en.'
+        return 'Byta ut bild? Ta bort en först.'
       } else {
-        return 'Vill ni byta ut bilden måste ni först ta bort den ni laddat upp.'
+        return 'Byta ut bilden? Ta bort den ni har först.'
       }
-    }
-  }
-
-  get selectButtonLabel() {
-    if (this.imageList.length) {
-      return 'Ta bild...'
-    } else {
-      return 'Ta bild med kamera...'
     }
   }
 }

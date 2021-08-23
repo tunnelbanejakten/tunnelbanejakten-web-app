@@ -63,7 +63,7 @@
           type="primary"
         />
         <p class="time-status">
-          Ni kan uppdatera ert svar genom att trycka på Spara igen.
+          Kom ihåg Spara-knappen när ni ändrat något.
         </p>
       </div>
       <div v-if="isTimeLimitExceeded">
