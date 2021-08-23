@@ -6,13 +6,16 @@
   >
     <span class="button-content">
       <span class="label">{{ label }}</span>
-      <span class="spinner">⏳</span>
+      <span class="spinner">
+        <Loader size="small" />
+      </span>
     </span>
   </button>
 </template>
 
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
+import Loader from '@/components/common/Loader.vue'
 
 export enum Type {
   PRIMARY = 'primary',
@@ -26,6 +29,7 @@ export enum Size {
 
 @Component({
   components: {
+    Loader
   }
 })
 export default class Button extends Vue {
@@ -89,8 +93,6 @@ button span.spinner {
   position: absolute;
   top: 50%;
   margin-top: -10px;
-  line-height: 20px;
-  font-size: 20px;
 }
 
 button.pending-yes span.spinner {

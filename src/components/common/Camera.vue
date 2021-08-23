@@ -6,6 +6,7 @@
         width="100%"
         :resolution="{ width: 1980, height: 1080 }"
         ref="webcam"
+        screenshot-format="image/jpg"
         :device-id="deviceId"
         @started="onStarted"
         @stopped="onStopped"

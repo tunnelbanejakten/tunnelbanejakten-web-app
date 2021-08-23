@@ -29,6 +29,8 @@
       <component
         :is="currentComponent()"
         :question="question"
+        :question-id="questionId"
+        :optimistic-lock-value="optimisticLockCurrentValue"
       />
 
       <p
@@ -61,7 +63,7 @@
           type="primary"
         />
         <p class="time-status">
-          Ni kan uppdatera ert svar genom att trycka på Spara igen.
+          Kom ihåg Spara-knappen när ni ändrat något.
         </p>
       </div>
       <div v-if="isTimeLimitExceeded">
@@ -79,16 +81,19 @@ import { QuestionDto } from './model'
 import Button from '@/components/common/Button.vue'
 import OptionsQuestion from '@/components/common/question/OptionsQuestion.vue'
 import TextQuestion from '@/components/common/question/TextQuestion.vue'
+import ImagesQuestion from '@/components/common/question/ImagesQuestion.vue'
 
 @Component({
   components: {
     Button,
     OptionsQuestion,
-    TextQuestion
+    TextQuestion,
+    ImagesQuestion
   }
 })
 export default class Question extends Vue {
   @Prop() private question!: QuestionDto;
+  @Prop() private questionId!: string;
   @Prop() private isSubmitting!: boolean;
 
   private countdownTimer = 0

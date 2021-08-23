@@ -1,5 +1,6 @@
 <template>
   <button
+    type="button"
     @click="onClick"
     :class="buttonClass"
   >
@@ -17,6 +18,7 @@ import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 const Icon: Record<string, string> = {
   CLOSE: 'times',
   CAMERA: 'camera',
+  TRASH: 'trash-alt',
   SWITCH: 'sync-alt'
 }
 
