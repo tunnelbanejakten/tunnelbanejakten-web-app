@@ -23,7 +23,6 @@
         @image-uploaded="onImageUploaded"
         @upload-started="onImageUploadStarted"
         @upload-failed="onImageUploadFailed"
-        select-button-label="Öppna kamera"
         :optimistic-lock-value="optimisticLockValue"
         :max-file-size="maxFileSize"
       />
