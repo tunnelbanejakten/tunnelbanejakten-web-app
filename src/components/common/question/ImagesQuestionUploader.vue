@@ -320,7 +320,7 @@ export default class ImagesQuestionImage extends Vue {
   width: 40vw;
   height: 40vw;
   overflow: hidden;
-  margin: 5px;
+  margin: 0 10px 10px 0;
 }
 .mode-select {
   display: flex;

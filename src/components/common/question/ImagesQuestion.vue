@@ -186,7 +186,9 @@ export default class ImageQuestion extends Vue {
 <style scoped>
 .images-container {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
+  flex-direction: row;
+  flex-wrap: wrap;
 }
 .file-count-status {
   font-size: 90%;

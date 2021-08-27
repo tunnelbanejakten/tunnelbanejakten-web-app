@@ -5,8 +5,7 @@
     </div>
     <div v-if="!!message">
       <Message
-        header="Problem med kontrollen"
-        :message="message"
+        :header="message"
         :type="messageType"
       />
     </div>
@@ -162,7 +161,7 @@ export default class QuestionForm extends Vue {
     })
 
     this.message = 'Ditt svar sparades'
-    this.messageType = MessageType.INFO
+    this.messageType = MessageType.SUCCESS
 
     return true
   }
