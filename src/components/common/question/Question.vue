@@ -22,9 +22,10 @@
       class="question"
       v-if="isQuestionAvailable"
     >
-      <p class="text">
-        {{ text }}
-      </p>
+      <div
+        class="text"
+        v-html="text"
+      />
 
       <component
         :is="currentComponent()"
@@ -237,7 +238,8 @@ p.time-status {
   font-size: 90%;
   font-style: italic;
 }
-p.text {
+p.text img {
+  width: 100%;
 }
 p.text-hint {
   font-size: 90%;
