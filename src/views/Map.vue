@@ -27,7 +27,7 @@
       <ConfirmationOverlay
         v-if="activeMarkers.length"
         :question="atLocationText"
-        @accept="onShowArrivalPopup"
+        @accept="onReopenCheckpoint"
         accept-label="Visa"
       />
       <NotificationOverlay
@@ -35,8 +35,8 @@
         :message="notification"
       />
       <Fullscreen
-        v-if="isCheckpointArrivalShown"
-        @close="onCloseArrivalPopup"
+        v-if="isCheckpointSelectorShown"
+        @close="onCloseCheckpointSelector"
       >
         <CheckpointSelector
           :markers="activeMarkers"
@@ -45,7 +45,7 @@
       </Fullscreen>
       <Fullscreen
         v-if="isCheckpointShown"
-        @close="onCloseCheckpointPopup"
+        @close="onCloseCheckpoint"
       >
         <Checkpoint
           :question-id="questionId"
@@ -87,6 +87,12 @@ enum State {
   LOADING_POSITION,
   POSITION_ACQUIRED,
   ERROR
+}
+
+enum CheckpointView {
+  NONE,
+  SELECT,
+  SHOW
 }
 
 type ApiMarker = {
@@ -144,8 +150,7 @@ export default class Map extends Vue {
   private stateMessage = '';
   private stateMessageType: MessageType = MessageType.FAILURE;
   private watchId = 0;
-  private isCheckpointArrivalShown = false;
-  private isCheckpointShown = false;
+  private checkpointView: CheckpointView = CheckpointView.NONE
   private lastApproxAccuracy = -1;
   private isLowAccuracyAllowed = false;
   private lowAccuracyTimeoutId = 0;
@@ -170,6 +175,14 @@ export default class Map extends Vue {
       state: State[this.state],
       message: this.stateMessage
     })
+  }
+
+  get isCheckpointSelectorShown() {
+    return this.checkpointView === CheckpointView.SELECT
+  }
+
+  get isCheckpointShown() {
+    return this.checkpointView === CheckpointView.SHOW
   }
 
   get curPos() {
@@ -201,26 +214,25 @@ export default class Map extends Vue {
       message: e.label
     })
 
-    this.isCheckpointArrivalShown = false
-    this.isCheckpointShown = true
+    this.checkpointView = CheckpointView.SHOW
     this.questionId = e.id
   }
 
-  onCloseCheckpointPopup() {
-    this.isCheckpointShown = false
+  onCloseCheckpoint() {
+    this.checkpointView = CheckpointView.NONE
     this.questionId = null
   }
 
-  onCloseArrivalPopup() {
-    this.isCheckpointArrivalShown = false
+  onCloseCheckpointSelector() {
+    this.checkpointView = CheckpointView.NONE
   }
 
-  onShowArrivalPopup() {
-    this.isCheckpointArrivalShown = true
+  onReopenCheckpoint() {
+    this.openCheckpointView()
   }
 
   onCheckpointSuccess() {
-    this.isCheckpointShown = false
+    this.checkpointView = CheckpointView.SHOW
     this.questionId = null
   }
 
@@ -257,15 +269,14 @@ export default class Map extends Vue {
           longitude: marker.longitude
         }
       )
-      const marginOfError =
-        (marker.meterAccuracy || 0) + (position.meterAccuracy || 0)
+      const marginOfError = (marker.meterAccuracy || 0) + (position.meterAccuracy || 0)
       const isWithinMarker = distance - marginOfError <= 0
       return isWithinMarker
     })
     const isMarkerActiveAfter = this.activeMarkers.length > 0
     if (!isMarkerActiveBefore && isMarkerActiveAfter) {
       // User has walked into a "checkpoint region" (as opposed to walking out of it or walking around inside of it)
-      this.isCheckpointArrivalShown = true
+      this.openCheckpointView()
       Analytics.logEvent(
         Analytics.AnalyticsEventType.MAP,
         'arrive',
@@ -279,8 +290,15 @@ export default class Map extends Vue {
     } else if (isMarkerActiveBefore && !isMarkerActiveAfter) {
       // User has walked out of a "checkpoint region" (as opposed to walking into it or walking around inside of it).
 
-      this.isCheckpointArrivalShown = false
-      this.isCheckpointShown = false
+      this.checkpointView = CheckpointView.NONE
+    }
+  }
+
+  openCheckpointView() {
+    if (this.activeMarkers.length === 1) {
+      this.onSelectCheckpoint(this.activeMarkers[0])
+    } else {
+      this.checkpointView = CheckpointView.SELECT
     }
   }
 
