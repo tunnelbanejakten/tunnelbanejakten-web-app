@@ -238,7 +238,7 @@ p.time-status {
   font-size: 90%;
   font-style: italic;
 }
-p.text img {
+div.text >>> img {
   width: 100%;
 }
 p.text-hint {
