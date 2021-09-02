@@ -52,27 +52,29 @@ export default class Button extends Vue {
 <style scoped>
 button {
   border-radius: 10px;
+  font: 16px/1.4 "Open Sans", Tahoma, Verdana, Segoe, sans-serif;
 }
 
 button.size-normal {
-  padding: 9px;
+  padding: 10px 20px;
+  font-size: 16px;
 }
 
 button.size-huge {
-  padding: 14px;
-  font-size: 100%;
+  padding: 15px 30px;
+  font-size: 20px;
 }
 
 button.type-primary {
-  background-color: #e2c7ec;
-  border: 1px solid #977ca1;
-  color: #000;
+  background-color: #977ca1;
+  border: 2px solid transparent;
+  color: #fff;
 }
 
 button.type-secondary {
   background-color: #fff;
-  border: 1px solid #977ca1;
-  color: #000;
+  border: 2px solid #977ca1;
+  color: #977ca1;
 }
 
 span.button-content {

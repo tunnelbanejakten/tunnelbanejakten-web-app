@@ -82,13 +82,15 @@ import Button from '@/components/common/Button.vue'
 import OptionsQuestion from '@/components/common/question/OptionsQuestion.vue'
 import TextQuestion from '@/components/common/question/TextQuestion.vue'
 import ImagesQuestion from '@/components/common/question/ImagesQuestion.vue'
+import NumberQuestion from '@/components/common/question/NumberQuestion.vue'
 
 @Component({
   components: {
     Button,
     OptionsQuestion,
     TextQuestion,
-    ImagesQuestion
+    ImagesQuestion,
+    NumberQuestion
   }
 })
 export default class Question extends Vue {

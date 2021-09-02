@@ -23,7 +23,6 @@
         @image-uploaded="onImageUploaded"
         @upload-started="onImageUploadStarted"
         @upload-failed="onImageUploadFailed"
-        select-button-label="Öppna kamera"
         :optimistic-lock-value="optimisticLockValue"
         :max-file-size="maxFileSize"
       />
@@ -187,7 +186,9 @@ export default class ImageQuestion extends Vue {
 <style scoped>
 .images-container {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
+  flex-direction: row;
+  flex-wrap: wrap;
 }
 .file-count-status {
   font-size: 90%;

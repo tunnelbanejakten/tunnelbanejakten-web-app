@@ -4,11 +4,26 @@
       v-if="!isUploading"
       class="mode-select"
     >
+      <div>
+        Lägg till bild:
+      </div>
       <Button
-        :label="selectButtonLabel"
+        label="Kamera"
         type="primary"
         @click="onStartCamera"
       />
+      <Button
+        label="Välj bild"
+        type="primary"
+        @click="onStartFileSelector"
+      />
+      <input
+        type="file"
+        ref="fileSelector"
+        style="display: none"
+        @change="onFileSelected"
+        accept="image/*"
+      >
       <Fullscreen
         v-if="isCameraShown"
         @close="onStopCamera"
@@ -68,7 +83,6 @@ const apiHost = process.env.VUE_APP_API_HOST
   }
 })
 export default class ImagesQuestionImage extends Vue {
-  @Prop() private selectButtonLabel!: string
   @Prop() private questionId!: string
   @Prop() private fieldName!: string
   @Prop() private optimisticLockValue!: string
@@ -223,6 +237,39 @@ export default class ImagesQuestionImage extends Vue {
     })
   }
 
+  onStartFileSelector() {
+    (this.$refs.fileSelector as HTMLInputElement).click()
+  }
+
+  onFileSelected(event: any) {
+    const files = (event.target as HTMLInputElement).files
+    if (files && files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'selected', 'image upload', {
+          message: 'User selected file to upload'
+        })
+
+        const reader = new FileReader()
+        reader.onload = (event) => {
+          const result = event?.target?.result
+          if (result) {
+            this.uploadImageFromDataUrl(result as string)
+          } else {
+            this.onUploadFailed('Kunde inte öppna bilden.', 'image upload', {
+              message: 'Reader loaded by no data'
+            })
+          }
+        }
+        reader.readAsDataURL(file)
+      }
+    } else {
+      Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'skipped', 'image upload', {
+        message: 'No files selected'
+      })
+    }
+  }
+
   onStartCamera() {
     this.isCameraShown = true
     this.imageDataUrl = ''
@@ -273,17 +320,14 @@ export default class ImagesQuestionImage extends Vue {
   width: 40vw;
   height: 40vw;
   overflow: hidden;
-}
-.thumbnail {
-  width: 40vw;
-  height: 40vw;
-  object-fit: contain;
+  margin: 0 10px 10px 0;
 }
 .mode-select {
   display: flex;
   width: 40vw;
   height: 40vw;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: space-evenly;
   align-items: center;
 }
 .mode-uploading {
@@ -295,13 +339,6 @@ export default class ImagesQuestionImage extends Vue {
 }
 .mode-uploaded {
   position: relative;
-}
-.thumbnail-overlay-buttons {
-  position: absolute;
-  bottom: 10px;
-  width: 100%;
-  display: flex;
-  justify-content: center;
 }
 .camera-container .buttons button {
   margin-left: 10px;
