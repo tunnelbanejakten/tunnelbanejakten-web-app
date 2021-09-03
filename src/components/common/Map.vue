@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Watch } from 'vue-property-decorator'
+import { Component, Vue, Prop, Watch, Emit } from 'vue-property-decorator'
 import { dom } from '@fortawesome/fontawesome-svg-core'
 import Button from '@/components/common/Button.vue'
 import 'leaflet/dist/leaflet.css'
@@ -49,6 +49,16 @@ const iconCheckpoint = L.icon({
   popupAnchor: [0, -34]
 })
 
+// Icon for CHECK POINT SUBMITTED:
+//   https://www.mappity.org/marker_icons/check/
+//   Purple icon colour: #794794
+const iconCheckpointSubmitted = L.icon({
+  iconUrl: require('../../assets/map-markers/checkmark-purple-lowres.png'),
+  iconSize: [48, 48],
+  iconAnchor: [24, 24],
+  popupAnchor: [0, -34]
+})
+
 const getUserPositionColour = (meterAccuracy: number): any =>
   LocationUtils.getAccuracyLevel(meterAccuracy) === LocationUtils.AccuracyLevel.HIGHEST
     ? 'green'
@@ -60,6 +70,7 @@ const getUserPositionColour = (meterAccuracy: number): any =>
 
 export enum MarkerType {
   CHECKPOINT,
+  CHECKPOINT_SUBMITTED,
   USER_POSITION,
 }
 
@@ -72,8 +83,14 @@ export type Marker = Coord & {
   meterAccuracy: number;
   label?: string;
   type: MarkerType;
-  id: string
+  id: string;
 };
+
+const MARKER_TYPE_ICON = {
+  [MarkerType.USER_POSITION]: iconUserPosition,
+  [MarkerType.CHECKPOINT]: iconCheckpoint,
+  [MarkerType.CHECKPOINT_SUBMITTED]: iconCheckpointSubmitted
+}
 
 @Component({
   components: { Button }
@@ -96,20 +113,27 @@ export default class Map extends Vue {
     })
   }
 
+  @Emit('marker-clicked')
+  onMarkerClicked(marker: Marker) {
+    return marker
+  }
+
   @Watch('markers')
   updateMarkers(newMarkers: Record<string, Marker>) {
     for (const [key, marker] of Object.entries(newMarkers)) {
       const { label, latitude, longitude, type, meterAccuracy } = marker
+
+      const isCheckpoint = type === MarkerType.CHECKPOINT || type === MarkerType.CHECKPOINT_SUBMITTED
 
       const style = {
         stroke: false,
         radius: meterAccuracy || 10,
 
         fillColor:
-          type === MarkerType.CHECKPOINT
+          isCheckpoint
             ? '#794794'
             : getUserPositionColour(meterAccuracy),
-        fillOpacity: type === MarkerType.CHECKPOINT ? 0.5 : 0.25
+        fillOpacity: isCheckpoint ? 0.5 : 0.25
       }
 
       const keyMarker = key + '-marker'
@@ -119,15 +143,12 @@ export default class Map extends Vue {
         // Create new marker
         this.mapObjects[keyBounds] = L.circle([latitude, longitude], style)
         this.mapObjects[keyBounds].addTo(this.mapRef)
-        this.mapObjects[keyMarker] = L.marker([latitude, longitude], {
-          icon:
-            type === MarkerType.CHECKPOINT ? iconCheckpoint : iconUserPosition,
-          zIndexOffset: type === MarkerType.CHECKPOINT ? 0 : 1000
+        const mapMarker = L.marker([latitude, longitude], {
+          icon: MARKER_TYPE_ICON[type],
+          zIndexOffset: isCheckpoint ? 0 : 1000
         })
-          .bindPopup(
-            type === MarkerType.CHECKPOINT ? marker.label : 'Din position'
-          )
-          .openPopup()
+        mapMarker.on('click', () => this.onMarkerClicked(marker))
+        this.mapObjects[keyMarker] = mapMarker
         this.mapObjects[keyMarker].addTo(this.mapRef)
       }
 

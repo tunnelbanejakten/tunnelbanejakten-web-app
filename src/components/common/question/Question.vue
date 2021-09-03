@@ -31,6 +31,7 @@
         :is="currentComponent()"
         :question="question"
         :question-id="questionId"
+        :read-only="readOnly"
         :optimistic-lock-value="optimisticLockCurrentValue"
       />
 
@@ -40,7 +41,7 @@
       >
         {{ textHint }}
       </p>
-      <div v-if="!isTimeLimitExceeded">
+      <div v-if="!isTimeLimitExceeded && !readOnly">
         <p
           class="time-status"
           v-if="isTimedQuestion"
@@ -67,7 +68,7 @@
           Kom ihåg Spara-knappen när ni ändrat något.
         </p>
       </div>
-      <div v-if="isTimeLimitExceeded">
+      <div v-if="isTimeLimitExceeded && !readOnly">
         <p class="time-status">
           Tiden har gått ut. Ni kan inte längre ändra ert svar.
         </p>
@@ -98,6 +99,7 @@ export default class Question extends Vue {
   @Prop() private question!: QuestionDto;
   @Prop() private questionId!: string;
   @Prop() private isSubmitting!: boolean;
+  @Prop() private readOnly!: boolean;
 
   private countdownTimer = 0
   private timeLeft = 0

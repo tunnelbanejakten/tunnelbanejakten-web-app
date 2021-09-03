@@ -13,6 +13,7 @@
         :image-data="data"
         :question-id="questionId"
         :field-name="fieldName"
+        :read-only="readOnly"
         @image-removed="onImageRemoved"
       />
 
@@ -27,13 +28,18 @@
         :max-file-size="maxFileSize"
       />
     </div>
-    <div class="file-count-status">
+    <div
+      class="file-count-status"
+      v-if="!readOnly"
+    >
       {{ fileCountStatus }}
     </div>
     <div class="input-wrapper">
       <input
         placeholder="Skriv kommentar här, om det behövs..."
         type="text"
+        :readonly="readOnly"
+        :disabled="readOnly"
         :value="commentFieldValue"
         :name="commentFieldName"
       >
@@ -79,6 +85,7 @@ export default class ImageQuestion extends Vue {
   @Prop() private question!: QuestionDto;
   @Prop() private questionId!: string;
   @Prop() private optimisticLockValue!: string;
+  @Prop() private readOnly!: boolean;
 
   private statusHeader = ''
   private statusMessage = ''
@@ -111,7 +118,7 @@ export default class ImageQuestion extends Vue {
   }
 
   get isAdditionalImageAllowed() {
-    return this.imageList.length < this.maxImageCount
+    return this.imageList.length < this.maxImageCount && !this.readOnly
   }
 
   get maxImageCount(): number {
