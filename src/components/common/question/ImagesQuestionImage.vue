@@ -7,7 +7,10 @@
         alt="Miniatyr av uppladdad bild"
       >
 
-      <div class="thumbnail-overlay-buttons">
+      <div
+        class="thumbnail-overlay-buttons"
+        v-if="!readOnly"
+      >
         <IconButton
           @click="onImageRemoved"
           icon="trash"
@@ -48,6 +51,7 @@ import Camera from '@/components/common/Camera.vue'
 export default class ImagesQuestionImage extends Vue {
   @Prop() private imageData!: ImageData
   @Prop() private fieldName!: string
+  @Prop() private readOnly!: boolean
 
   @Emit('image-removed')
   onImageRemoved() {

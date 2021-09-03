@@ -7,6 +7,8 @@
       <label>
         <input
           :type="optionType"
+          :readonly="readOnly"
+          :disabled="readOnly"
           :value="opt"
           :checked="fieldValues.includes(opt)"
           :name="fieldName"
@@ -31,6 +33,7 @@ import { QuestionDto } from './model'
 })
 export default class OptionsQuestion extends Vue {
   @Prop() private question!: QuestionDto;
+  @Prop() private readOnly!: boolean;
 
   get optionType() {
     return this.question.config?.is_single_select ? 'radio' : 'checkbox'

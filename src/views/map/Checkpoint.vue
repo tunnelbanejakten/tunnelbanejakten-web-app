@@ -2,6 +2,7 @@
   <div class="checkpoint-container">
     <QuestionForm
       :question-id="questionId"
+      :read-only="readOnly"
       @submit-success="onSubmitSuccess"
       @submit-failure="onSubmitFailure"
     />
@@ -19,6 +20,7 @@ import QuestionForm from '@/components/QuestionForm.vue'
 })
 export default class Checkpoint extends Vue {
   @Prop() private readonly questionId!: string
+  @Prop() private readonly readOnly!: boolean
 
   @Emit('submit-success')
   onSubmitSuccess() {

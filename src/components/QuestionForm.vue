@@ -9,11 +9,12 @@
         :type="messageType"
       />
     </div>
-    <div v-if="!isQuestionLoading && !!question">
+    <div v-if="!isQuestionLoading && !!loadedQuestion">
       <form ref="form">
         <Question
-          :question="question"
+          :question="loadedQuestion"
           :question-id="questionId"
+          :read-only="readOnly"
           :is-submitting="isSubmitting"
           @user-accepts-time-limit="postViewEvent"
           @user-submits-answer="submitAnswer"
@@ -44,8 +45,11 @@ const apiHost = process.env.VUE_APP_API_HOST
 export default class QuestionForm extends Vue {
   @Prop() private question!: QuestionDto | null;
   @Prop() private questionId!: string;
+  @Prop() private readOnly!: boolean;
 
+  private loadedQuestion!: QuestionDto;
   private isQuestionLoading = false
+
   private isSubmitting = false
 
   private message = ''
@@ -64,7 +68,9 @@ export default class QuestionForm extends Vue {
   }
 
   async created() {
-    if (!this.question) {
+    if (this.question) {
+      this.loadedQuestion = this.question
+    } else {
       await this.fetchQuestion()
     }
   }
@@ -73,8 +79,6 @@ export default class QuestionForm extends Vue {
     try {
       this.isQuestionLoading = true
 
-      this.question = null
-
       const token = AuthUtils.getTokenCookie()
 
       const resp = await fetch(
@@ -82,9 +86,7 @@ export default class QuestionForm extends Vue {
       )
       if (resp.ok) {
         const payload = await resp.json()
-        this.question = {
-          ...payload
-        }
+        this.loadedQuestion = payload
 
         Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'fetched', 'question', {
           message: `Fetched question ${this.questionId}.`

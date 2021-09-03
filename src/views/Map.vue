@@ -23,7 +23,10 @@
       class="map-container"
       v-if="!isLoading && !isError"
     >
-      <MapComponent :markers="checkpoints" />
+      <MapComponent
+        :markers="checkpoints"
+        @marker-clicked="onMarkerClicked"
+      />
       <ConfirmationOverlay
         v-if="activeMarkers.length"
         :question="atLocationText"
@@ -49,6 +52,7 @@
       >
         <Checkpoint
           :question-id="questionId"
+          :read-only="isCheckpointReadOnly"
           @submit-success="onCheckpointSuccess"
           @submit-failure="onCheckpointFailure"
         />
@@ -92,7 +96,8 @@ enum State {
 enum CheckpointView {
   NONE,
   SELECT,
-  SHOW
+  SHOW,
+  SHOW_READONLY
 }
 
 type ApiMarker = {
@@ -102,6 +107,8 @@ type ApiMarker = {
   name: string;
   // eslint-disable-next-line camelcase
   link_form_question_id: number;
+  // eslint-disable-next-line camelcase
+  is_response_submitted: boolean;
 };
 
 // Credits: https://stackoverflow.com/a/27943
@@ -182,7 +189,11 @@ export default class Map extends Vue {
   }
 
   get isCheckpointShown() {
-    return this.checkpointView === CheckpointView.SHOW
+    return this.checkpointView === CheckpointView.SHOW || this.isCheckpointReadOnly
+  }
+
+  get isCheckpointReadOnly() {
+    return this.checkpointView === CheckpointView.SHOW_READONLY
   }
 
   get curPos() {
@@ -209,12 +220,38 @@ export default class Map extends Vue {
     }
   }
 
-  async onSelectCheckpoint(e: Marker) {
+  onMarkerClicked(marker: Marker) {
+    const isActiveMarker = this.activeMarkers.some((activeMarker: Marker) => activeMarker.id === marker.id)
+    switch (marker.type) {
+      case MarkerType.USER_POSITION:
+        // console.log('User clicked their own position marker.')
+        break
+      case MarkerType.CHECKPOINT:
+        if (isActiveMarker) {
+          // console.log('User clicked a checkpoint which they have NOT submitted an answer to and which they are currently close to. SHOW CHECKPOINT.')
+          this.onSelectCheckpoint(marker)
+        } else {
+          // console.log('User clicked a checkpoint which they have NOT submitted an answer to and which they are currently NOT close to. DO NOTHING.')
+        }
+        break
+      case MarkerType.CHECKPOINT_SUBMITTED:
+        if (isActiveMarker) {
+          // console.log('User clicked a checkpoint which they HAVE submitted an answer to and which they are currently close to. SHOW CHECKPOINT.')
+          this.onSelectCheckpoint(marker)
+        } else {
+          // console.log('User clicked a checkpoint which they HAVE submitted an answer to and which they are currently NOT close to. SHOW READ-ONLY CHECKPOINT.')
+          this.onSelectCheckpoint(marker, true)
+        }
+        break
+    }
+  }
+
+  async onSelectCheckpoint(e: Marker, readOnly = false) {
     Analytics.logEvent(Analytics.AnalyticsEventType.MAP, 'open', 'checkpoint', {
       message: e.label
     })
 
-    this.checkpointView = CheckpointView.SHOW
+    this.checkpointView = readOnly ? CheckpointView.SHOW_READONLY : CheckpointView.SHOW
     this.questionId = e.id
   }
 
@@ -337,13 +374,14 @@ export default class Map extends Vue {
               longitude,
               name,
               radius,
-              link_form_question_id: questionId
+              link_form_question_id: questionId,
+              is_response_submitted: isResponseSubmitted
             }: ApiMarker): Marker => ({
               latitude,
               longitude,
               meterAccuracy: radius,
               label: String(name),
-              type: MarkerType.CHECKPOINT,
+              type: isResponseSubmitted ? MarkerType.CHECKPOINT_SUBMITTED : MarkerType.CHECKPOINT,
               id: String(questionId)
             })
           )
