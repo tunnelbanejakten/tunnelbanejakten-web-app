@@ -80,10 +80,9 @@ import CheckpointSelector from './map/CheckpointSelector.vue'
 import Checkpoint from './map/Checkpoint.vue'
 import * as LocationUtils from '@/utils/Location'
 import * as Analytics from '@/utils/Analytics'
+import store from '@/store'
 
 const apiHost = process.env.VUE_APP_API_HOST
-
-const LOW_ACCURACY_TIMEOUT = parseInt(process.env.VUE_APP_LOW_ACCURACY_TIMEOUT || '60', 10)
 
 enum State {
   INITIAL,
@@ -459,6 +458,12 @@ export default class Map extends Vue {
               'Vi har hittat dig på kartan.'
             )
             if (!this.lowAccuracyTimeoutId) {
+              const configuredTimeout = store.state.configuration.positioning.highAccuracyTimeout
+              const defaultTimeout = parseInt(process.env.VUE_APP_HIGH_ACCURACY_TIMEOUT || '60', 10)
+              const accuracyTimeout = configuredTimeout || defaultTimeout
+
+              console.log(`Will wait ${accuracyTimeout} seconds before accepting lower accuracy.`)
+
               this.lowAccuracyTimeoutId = setTimeout(() => {
                 Analytics.logEvent(
                   Analytics.AnalyticsEventType.MAP,
@@ -471,7 +476,7 @@ export default class Map extends Vue {
                 // Check right away (instead of waiting for next coordinate update from browser) if the
                 // lowered accuracy requirement means that checkpoints are now close enough to be shown.
                 this.updateActiveMarkers(this.markers, this.currentPosition)
-              }, LOW_ACCURACY_TIMEOUT * 1000)
+              }, accuracyTimeout * 1000)
             }
           }
 

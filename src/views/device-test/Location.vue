@@ -177,7 +177,7 @@ export default class Location extends Vue {
     return { ...this.currentPosition }
   }
 
-  unmouted() {
+  beforeDestroy() {
     if (this.watchId) {
       navigator.geolocation.clearWatch(this.watchId)
     }

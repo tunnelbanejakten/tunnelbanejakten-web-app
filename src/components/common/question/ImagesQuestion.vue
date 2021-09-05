@@ -59,9 +59,7 @@ import Message, { Type as MessageType } from '@/components/common/Message.vue'
 import { QuestionDto } from './model'
 import ImagesQuestionImage from './ImagesQuestionImage.vue'
 import ImagesQuestionUploader from './ImagesQuestionUploader.vue'
-
-// Upper bound for file size (if not overridden by individual question).
-const MAX_FILE_SIZE = parseInt(process.env.VUE_APP_MAX_FILE_SIZE || '5000000', 10)
+import store from '@/store'
 
 export type ImageData = {
   imageId: string
@@ -127,11 +125,16 @@ export default class ImageQuestion extends Vue {
 
   // The upper limit for uploads is MAX_FILE_SIZE, unless the question explicitly specifies a lower value.
   get maxFileSize(): number {
+    const configuredMaxFileSize = store.state.configuration.uploads.maxFileSize
+    const defaultMaxFileSize = parseInt(process.env.VUE_APP_MAX_FILE_SIZE || '5000000', 10)
+    // Upper bound for file size (if not overridden by individual question):
+    const overallMaxFileSize = configuredMaxFileSize ? configuredMaxFileSize * 1e6 : defaultMaxFileSize
+
     const questionSpecificLimit = this.question.config?.max_file_size
     if (questionSpecificLimit) {
-      return Math.min(questionSpecificLimit, MAX_FILE_SIZE)
+      return Math.min(questionSpecificLimit, overallMaxFileSize)
     } else {
-      return MAX_FILE_SIZE
+      return overallMaxFileSize
     }
   }
 
