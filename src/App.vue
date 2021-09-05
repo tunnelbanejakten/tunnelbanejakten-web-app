@@ -29,16 +29,28 @@
       >
     </div>
     <div id="nav">
-      <router-link to="/">
+      <router-link
+        to="/"
+        v-if="isAnswerPageEnabled"
+      >
         Svara
       </router-link>
-      <router-link to="/map">
+      <router-link
+        to="/map"
+        v-if="isMapPageEnabled"
+      >
         Karta
       </router-link>
-      <router-link to="/devicetest">
+      <router-link
+        to="/devicetest"
+        v-if="isDeviceTestPageEnabled"
+      >
         Mobiltest
       </router-link>
-      <router-link to="/about">
+      <router-link
+        to="/about"
+        v-if="isInfoPageEnabled"
+      >
         Info
       </router-link>
     </div>
@@ -51,6 +63,10 @@ import { Component, Mixins } from 'vue-property-decorator'
 import ServiceWorkerMixin from '@/mixins/ServiceWorkerMixin'
 import Button from '@/components/common/Button.vue'
 import * as Analytics from '@/utils/Analytics'
+import * as AuthUtils from '@/utils/Auth'
+import store, { Configuration } from '@/store'
+
+const apiHost = process.env.VUE_APP_API_HOST
 
 @Component({
   name: 'App',
@@ -59,12 +75,95 @@ import * as Analytics from '@/utils/Analytics'
   }
 })
 export default class App extends Mixins(ServiceWorkerMixin) {
+  private confPollTimer = 0
+
   onUpdateApp() {
     this.refreshApplication()
   }
 
-  mounted() {
+  get isAnswerPageEnabled() {
+    return store.state.configuration.views.answer
+  }
+
+  get isMapPageEnabled() {
+    return store.state.configuration.views.map
+  }
+
+  get isDeviceTestPageEnabled() {
+    return store.state.configuration.views.deviceTest
+  }
+
+  get isInfoPageEnabled() {
+    return store.state.configuration.views.info
+  }
+
+  async fetchConfiguration() {
+    try {
+      const token = AuthUtils.getTokenCookie()
+      if (token) {
+        const confResp = await fetch(
+          `${apiHost}/wp-json/tuja/v1/configuration?token=${token}`
+        )
+        if (confResp.ok) {
+          const confPayload = await confResp.json()
+          const conf: Configuration = {
+            positioning: {
+              highAccuracyThreshold: confPayload.app.positioning.high_accuracy_threshold,
+              highAccuracyTimeout: confPayload.app.positioning.high_accuracy_timeout
+            },
+            uploads: {
+              maxFileSize: confPayload.app.uploads.max_file_size
+            },
+            updates: {
+              configPollInterval: confPayload.app.updates.config_poll_interval
+            },
+            messages: {
+              infoPageContent: confPayload.app.messages.info_page_content
+            },
+            views: {
+              answer: confPayload.app.views.answer,
+              map: confPayload.app.views.map,
+              deviceTest: confPayload.app.views.device_test,
+              info: confPayload.app.views.info
+            }
+          }
+          store.setConfiguration(conf)
+        } else {
+          Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'app_configuration', {
+            message: 'Could not fetch app configuration. Reason: Non-ok http response.',
+            status: `Http response ${confResp.status}.`
+          })
+        }
+      }
+    } catch (e) {
+      Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'app_configuration', {
+        message: `Could not fetch app configuration. Reason: ${e.message}.`
+      })
+    }
+  }
+
+  async pollJob() {
+    await this.fetchConfiguration()
+
+    const pollInterval = (store.state.configuration.updates.configPollInterval || 60) * 1000
+
+    console.log(`Will fetch configuration in ${pollInterval} ms.`)
+    this.confPollTimer = setTimeout(this.pollJob, pollInterval)
+  }
+
+  async initConfigurationPoll() {
+    await this.pollJob()
+  }
+
+  async mounted() {
     Analytics.logEvent(Analytics.AnalyticsEventType.APP, 'load', 'page')
+    await this.initConfigurationPoll()
+  }
+
+  beforeDestroy() {
+    if (this.confPollTimer) {
+      clearTimeout(this.confPollTimer)
+    }
   }
 }
 </script>
