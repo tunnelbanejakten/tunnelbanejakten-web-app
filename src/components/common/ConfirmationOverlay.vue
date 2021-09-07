@@ -46,14 +46,16 @@ export default class ConfirmationOverlay extends Vue {
 .overlay-container {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  width: 100%;
+  justify-content: center;
   z-index: 1000; /* To put it above the map */
   text-align: center;
   position: absolute;
-  bottom: 0;
-
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: rgba(255, 255, 255, 0.9);
+  bottom: 20px;
+  right: 20px;
+  left: 20px;
+  min-height: 20%;
+  color: #000;
 }
 
 .overlay-container p {
