@@ -14,6 +14,8 @@ import * as LocationUtils from '@/utils/Location'
 
 const RECENTER_MAP_ICON_SIZE = 18
 
+const SHOW_PROXIMITY_AREAS = false
+
 const getZoomLevel = (accuracyLevel: LocationUtils.AccuracyLevel) => {
   switch (accuracyLevel) {
     case LocationUtils.AccuracyLevel.HIGHEST:
@@ -149,12 +151,14 @@ export default class Map extends Vue {
       }
 
       const keyMarker = key + '-marker'
-      const keyBounds = key + '-bounds'
+      const keyProximity = key + '-proximity'
 
       if (!Object.keys(this.mapObjects).includes(keyMarker)) {
         // Create new marker
-        this.mapObjects[keyBounds] = L.circle([latitude, longitude], style)
-        this.mapObjects[keyBounds].addTo(this.mapRef)
+        if (SHOW_PROXIMITY_AREAS) {
+          this.mapObjects[keyProximity] = L.circle([latitude, longitude], style)
+          this.mapObjects[keyProximity].addTo(this.mapRef)
+        }
         const mapMarker = L.marker([latitude, longitude], {
           icon: MARKER_TYPE_ICON[type],
           zIndexOffset: isCheckpoint ? 0 : 1000
@@ -164,11 +168,13 @@ export default class Map extends Vue {
         this.mapObjects[keyMarker].addTo(this.mapRef)
       }
 
-      // Update position and design for the "area or accuracy indicator"
-      const objBounds = this.mapObjects[keyBounds]
-      objBounds.setStyle({ fillColor: style.fillColor })
-      objBounds.setRadius(style.radius)
-      objBounds.setLatLng([latitude, longitude])
+      // Update position and design for the "proximity indicator"
+      if (SHOW_PROXIMITY_AREAS) {
+        const objBounds = this.mapObjects[keyProximity]
+        objBounds.setStyle({ fillColor: style.fillColor })
+        objBounds.setRadius(style.radius)
+        objBounds.setLatLng([latitude, longitude])
+      }
 
       // Update position and design for the "pin"
       const objMarker = this.mapObjects[keyMarker]

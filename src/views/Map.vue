@@ -350,7 +350,11 @@ export default class Map extends Vue {
   }
 
   get checkpoints(): Marker[] {
-    return [...this.markers, this.currentPosition]
+    if (this.currentPosition.meterAccuracy !== -1 && this.isAccurateEnough(this.currentPosition.meterAccuracy)) {
+      return [...this.markers, this.currentPosition]
+    } else {
+      return [...this.markers]
+    }
   }
 
   get isMarkerListLoaded() {
