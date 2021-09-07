@@ -288,8 +288,9 @@ export default class Map extends Vue {
     const isPositionAccurate = this.isAccurateEnough(position.meterAccuracy)
     if (!isPositionAccurate) {
       this.notification = this.isLowAccuracyAllowed
-        ? 'Vi är fortfarande osäkra på din position. Kontakta kundtjänst för att få hjälp.'
+        ? 'Din GPS är inte tillräckligt exakt just nu. Kontakta kundtjänst för att få hjälp.'
         : 'Vi är osäkra på din position. Stå still ett litet tag så löser det sig säkert.'
+      this.activeMarkers = []
       return
     }
     this.notification = ''
