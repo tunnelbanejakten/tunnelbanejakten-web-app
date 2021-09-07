@@ -316,7 +316,6 @@ export default class Map extends Vue {
     const isMarkerActiveAfter = this.activeMarkers.length > 0
     if (!isMarkerActiveBefore && isMarkerActiveAfter) {
       // User has walked into a "checkpoint region" (as opposed to walking out of it or walking around inside of it)
-      this.openCheckpointView()
       Analytics.logEvent(
         Analytics.AnalyticsEventType.MAP,
         'arrive',
@@ -329,8 +328,6 @@ export default class Map extends Vue {
       )
     } else if (isMarkerActiveBefore && !isMarkerActiveAfter) {
       // User has walked out of a "checkpoint region" (as opposed to walking into it or walking around inside of it).
-
-      this.checkpointView = CheckpointView.NONE
     }
   }
 
