@@ -59,6 +59,16 @@ const iconCheckpointSubmitted = L.icon({
   popupAnchor: [0, -34]
 })
 
+// Icon for START:
+//   https://www.mappity.org/marker_icons/home/
+//   Purple icon colour: #000000
+const iconStart = L.icon({
+  iconUrl: require('../../assets/map-markers/home-lowres.png'),
+  iconSize: [48, 48],
+  iconAnchor: [24, 24],
+  popupAnchor: [0, -34]
+})
+
 const getUserPositionColour = (meterAccuracy: number): any =>
   LocationUtils.getAccuracyLevel(meterAccuracy) === LocationUtils.AccuracyLevel.HIGHEST
     ? 'green'
@@ -69,6 +79,7 @@ const getUserPositionColour = (meterAccuracy: number): any =>
         : 'orange'
 
 export enum MarkerType {
+  START,
   CHECKPOINT,
   CHECKPOINT_SUBMITTED,
   USER_POSITION,
@@ -87,6 +98,7 @@ export type Marker = Coord & {
 };
 
 const MARKER_TYPE_ICON = {
+  [MarkerType.START]: iconStart,
   [MarkerType.USER_POSITION]: iconUserPosition,
   [MarkerType.CHECKPOINT]: iconCheckpoint,
   [MarkerType.CHECKPOINT_SUBMITTED]: iconCheckpointSubmitted
@@ -166,8 +178,16 @@ export default class Map extends Vue {
     const userPosition = Object.values(newMarkers).find(
       (marker: Marker) => marker.type === MarkerType.USER_POSITION
     )
+    const startPosition = Object.values(newMarkers).find(
+      (marker: Marker) => marker.type === MarkerType.START
+    )
     if (userPosition) {
       this.currentPosition = userPosition
+      if (!this.isUserPanning) {
+        this.panToCurrentPosition()
+      }
+    } else if (startPosition) {
+      this.currentPosition = startPosition
       if (!this.isUserPanning) {
         this.panToCurrentPosition()
       }
