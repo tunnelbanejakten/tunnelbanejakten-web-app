@@ -25,7 +25,7 @@
     >
       <MapComponent
         :markers="checkpoints"
-        @marker-clicked="onMarkerClicked"
+        @marker-clicked="onSelectCheckpoint"
       />
       <ConfirmationOverlay
         v-if="activeMarkers.length"
@@ -220,7 +220,7 @@ export default class Map extends Vue {
     }
   }
 
-  onMarkerClicked(marker: Marker) {
+  onSelectCheckpoint(marker: Marker) {
     const isActiveMarker = this.activeMarkers.some((activeMarker: Marker) => activeMarker.id === marker.id)
     switch (marker.type) {
       case MarkerType.USER_POSITION:
@@ -229,7 +229,7 @@ export default class Map extends Vue {
       case MarkerType.CHECKPOINT:
         if (isActiveMarker) {
           // console.log('User clicked a checkpoint which they have NOT submitted an answer to and which they are currently close to. SHOW CHECKPOINT.')
-          this.onSelectCheckpoint(marker)
+          this.showCheckpoint(marker, false)
         } else {
           // console.log('User clicked a checkpoint which they have NOT submitted an answer to and which they are currently NOT close to. DO NOTHING.')
         }
@@ -237,16 +237,16 @@ export default class Map extends Vue {
       case MarkerType.CHECKPOINT_SUBMITTED:
         if (isActiveMarker) {
           // console.log('User clicked a checkpoint which they HAVE submitted an answer to and which they are currently close to. SHOW CHECKPOINT.')
-          this.onSelectCheckpoint(marker)
+          this.showCheckpoint(marker, false)
         } else {
           // console.log('User clicked a checkpoint which they HAVE submitted an answer to and which they are currently NOT close to. SHOW READ-ONLY CHECKPOINT.')
-          this.onSelectCheckpoint(marker, true)
+          this.showCheckpoint(marker, true)
         }
         break
     }
   }
 
-  async onSelectCheckpoint(e: Marker, readOnly = false) {
+  async showCheckpoint(e: Marker, readOnly: boolean) {
     Analytics.logEvent(Analytics.AnalyticsEventType.MAP, 'open', 'checkpoint', {
       message: e.label
     })
