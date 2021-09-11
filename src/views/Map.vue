@@ -5,7 +5,7 @@
   >
     <div
       class="no-map"
-      v-if="isLoading"
+      v-if="isLoadingMarkers"
     >
       <Loader :message="stateMessage" />
     </div>
@@ -21,11 +21,11 @@
     </div>
     <div
       class="map-container"
-      v-if="!isLoading && !isError"
+      v-if="!isLoadingMarkers"
     >
       <MapComponent
         :markers="checkpoints"
-        @marker-clicked="onMarkerClicked"
+        @marker-clicked="onSelectCheckpoint"
       />
       <ConfirmationOverlay
         v-if="activeMarkers.length"
@@ -51,7 +51,7 @@
         @close="onCloseCheckpoint"
       >
         <Checkpoint
-          :question-id="questionId"
+          :question-id="selectedCheckpointQuestionId"
           :read-only="isCheckpointReadOnly"
           @submit-success="onCheckpointSuccess"
           @submit-failure="onCheckpointFailure"
@@ -87,6 +87,7 @@ const apiHost = process.env.VUE_APP_API_HOST
 enum State {
   INITIAL,
   LOADING_MARKERS,
+  MARKERS_LOADED,
   LOADING_POSITION,
   POSITION_ACQUIRED,
   ERROR
@@ -100,6 +101,7 @@ enum CheckpointView {
 }
 
 type ApiMarker = {
+  type: string;
   latitude: number;
   longitude: number;
   radius: number;
@@ -171,7 +173,7 @@ export default class Map extends Vue {
     id: ''
   };
 
-  private questionId: string | null = null;
+  private selectedCheckpointQuestionId: string | null = null;
 
   updateState(newState: State, newStateMessage: string) {
     this.state = newState
@@ -203,11 +205,10 @@ export default class Map extends Vue {
     return this.state === State.ERROR
   }
 
-  get isLoading() {
+  get isLoadingMarkers() {
     return (
       this.state === State.INITIAL ||
-      this.state === State.LOADING_MARKERS ||
-      this.state === State.LOADING_POSITION
+      this.state === State.LOADING_MARKERS
     )
   }
 
@@ -219,7 +220,7 @@ export default class Map extends Vue {
     }
   }
 
-  onMarkerClicked(marker: Marker) {
+  onSelectCheckpoint(marker: Marker) {
     const isActiveMarker = this.activeMarkers.some((activeMarker: Marker) => activeMarker.id === marker.id)
     switch (marker.type) {
       case MarkerType.USER_POSITION:
@@ -228,7 +229,7 @@ export default class Map extends Vue {
       case MarkerType.CHECKPOINT:
         if (isActiveMarker) {
           // console.log('User clicked a checkpoint which they have NOT submitted an answer to and which they are currently close to. SHOW CHECKPOINT.')
-          this.onSelectCheckpoint(marker)
+          this.showCheckpoint(marker, false)
         } else {
           // console.log('User clicked a checkpoint which they have NOT submitted an answer to and which they are currently NOT close to. DO NOTHING.')
         }
@@ -236,27 +237,27 @@ export default class Map extends Vue {
       case MarkerType.CHECKPOINT_SUBMITTED:
         if (isActiveMarker) {
           // console.log('User clicked a checkpoint which they HAVE submitted an answer to and which they are currently close to. SHOW CHECKPOINT.')
-          this.onSelectCheckpoint(marker)
+          this.showCheckpoint(marker, false)
         } else {
           // console.log('User clicked a checkpoint which they HAVE submitted an answer to and which they are currently NOT close to. SHOW READ-ONLY CHECKPOINT.')
-          this.onSelectCheckpoint(marker, true)
+          this.showCheckpoint(marker, true)
         }
         break
     }
   }
 
-  async onSelectCheckpoint(e: Marker, readOnly = false) {
+  async showCheckpoint(e: Marker, readOnly: boolean) {
     Analytics.logEvent(Analytics.AnalyticsEventType.MAP, 'open', 'checkpoint', {
       message: e.label
     })
 
     this.checkpointView = readOnly ? CheckpointView.SHOW_READONLY : CheckpointView.SHOW
-    this.questionId = e.id
+    this.selectedCheckpointQuestionId = e.id
   }
 
   onCloseCheckpoint() {
     this.checkpointView = CheckpointView.NONE
-    this.questionId = null
+    this.selectedCheckpointQuestionId = null
   }
 
   onCloseCheckpointSelector() {
@@ -269,7 +270,7 @@ export default class Map extends Vue {
 
   onCheckpointSuccess() {
     this.checkpointView = CheckpointView.SHOW
-    this.questionId = null
+    this.selectedCheckpointQuestionId = null
   }
 
   onCheckpointFailure(e: any) {
@@ -287,32 +288,34 @@ export default class Map extends Vue {
     const isPositionAccurate = this.isAccurateEnough(position.meterAccuracy)
     if (!isPositionAccurate) {
       this.notification = this.isLowAccuracyAllowed
-        ? 'Vi är fortfarande osäkra på din position. Kontakta kundtjänst för att få hjälp.'
+        ? 'Din GPS är inte tillräckligt exakt just nu. Kontakta kundtjänst för att få hjälp.'
         : 'Vi är osäkra på din position. Stå still ett litet tag så löser det sig säkert.'
+      this.activeMarkers = []
       return
     }
     this.notification = ''
 
     const isMarkerActiveBefore = this.activeMarkers.length > 0
-    this.activeMarkers = markers.filter((marker: Marker) => {
-      const distance = coordinateDistance(
-        {
-          latitude: position.latitude,
-          longitude: position.longitude
-        },
-        {
-          latitude: marker.latitude,
-          longitude: marker.longitude
-        }
-      )
-      const marginOfError = (marker.meterAccuracy || 0) + (position.meterAccuracy || 0)
-      const isWithinMarker = distance - marginOfError <= 0
-      return isWithinMarker
-    })
+    this.activeMarkers = markers
+      .filter((marker: Marker) => marker.type !== MarkerType.START)
+      .filter((marker: Marker) => {
+        const distance = coordinateDistance(
+          {
+            latitude: position.latitude,
+            longitude: position.longitude
+          },
+          {
+            latitude: marker.latitude,
+            longitude: marker.longitude
+          }
+        )
+        const marginOfError = (marker.meterAccuracy || 0) + (position.meterAccuracy || 0)
+        const isWithinMarker = distance - marginOfError <= 0
+        return isWithinMarker
+      })
     const isMarkerActiveAfter = this.activeMarkers.length > 0
     if (!isMarkerActiveBefore && isMarkerActiveAfter) {
       // User has walked into a "checkpoint region" (as opposed to walking out of it or walking around inside of it)
-      this.openCheckpointView()
       Analytics.logEvent(
         Analytics.AnalyticsEventType.MAP,
         'arrive',
@@ -325,8 +328,6 @@ export default class Map extends Vue {
       )
     } else if (isMarkerActiveBefore && !isMarkerActiveAfter) {
       // User has walked out of a "checkpoint region" (as opposed to walking into it or walking around inside of it).
-
-      this.checkpointView = CheckpointView.NONE
     }
   }
 
@@ -349,7 +350,11 @@ export default class Map extends Vue {
   }
 
   get checkpoints(): Marker[] {
-    return [...this.markers, this.currentPosition]
+    if (this.currentPosition.meterAccuracy !== -1 && this.isAccurateEnough(this.currentPosition.meterAccuracy)) {
+      return [...this.markers, this.currentPosition]
+    } else {
+      return [...this.markers]
+    }
   }
 
   get isMarkerListLoaded() {
@@ -369,6 +374,7 @@ export default class Map extends Vue {
         if (markers.length > 0) {
           this.markers = markers.map(
             ({
+              type,
               latitude,
               longitude,
               name,
@@ -380,8 +386,8 @@ export default class Map extends Vue {
               longitude,
               meterAccuracy: radius,
               label: String(name),
-              type: isResponseSubmitted ? MarkerType.CHECKPOINT_SUBMITTED : MarkerType.CHECKPOINT,
-              id: String(questionId)
+              type: type === 'START' ? MarkerType.START : (isResponseSubmitted ? MarkerType.CHECKPOINT_SUBMITTED : MarkerType.CHECKPOINT),
+              id: String(questionId ?? -1)
             })
           )
           Analytics.logEvent(
@@ -392,6 +398,7 @@ export default class Map extends Vue {
               count: this.markers.length
             }
           )
+          this.updateState(State.MARKERS_LOADED, 'Vi har hämtat kartmarkörerna.')
           return true
         } else {
           this.updateState(

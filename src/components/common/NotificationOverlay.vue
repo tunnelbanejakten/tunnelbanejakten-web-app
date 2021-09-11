@@ -21,16 +21,16 @@ export default class NotificationOverlay extends Vue {
 .overlay-container {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
   z-index: 1000; /* To put it above the map */
   text-align: center;
   position: absolute;
-  bottom: 10px;
-  background-color: rgba(255, 255, 255, 0.7);
-  right: 10px;
-  left: 10px;
-  color: rgba(0, 0, 0, 0.7);
-  font-size: 90%;
+  background-color: rgba(255, 255, 255, 0.9);
+  bottom: 20px;
+  right: 20px;
+  left: 20px;
+  min-height: 20%;
+  color: #000;
 }
 
 .overlay-container p {

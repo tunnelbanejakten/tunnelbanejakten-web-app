@@ -31,7 +31,7 @@
         :is="currentComponent()"
         :question="question"
         :question-id="questionId"
-        :read-only="readOnly"
+        :read-only="readOnly || isTimeLimitExceeded"
         :optimistic-lock-value="optimisticLockCurrentValue"
       />
 

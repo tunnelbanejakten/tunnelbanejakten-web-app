@@ -14,6 +14,8 @@ import * as LocationUtils from '@/utils/Location'
 
 const RECENTER_MAP_ICON_SIZE = 18
 
+const SHOW_PROXIMITY_AREAS = false
+
 const getZoomLevel = (accuracyLevel: LocationUtils.AccuracyLevel) => {
   switch (accuracyLevel) {
     case LocationUtils.AccuracyLevel.HIGHEST:
@@ -59,6 +61,16 @@ const iconCheckpointSubmitted = L.icon({
   popupAnchor: [0, -34]
 })
 
+// Icon for START:
+//   https://www.mappity.org/marker_icons/home/
+//   Purple icon colour: #000000
+const iconStart = L.icon({
+  iconUrl: require('../../assets/map-markers/home-lowres.png'),
+  iconSize: [48, 48],
+  iconAnchor: [24, 24],
+  popupAnchor: [0, -34]
+})
+
 const getUserPositionColour = (meterAccuracy: number): any =>
   LocationUtils.getAccuracyLevel(meterAccuracy) === LocationUtils.AccuracyLevel.HIGHEST
     ? 'green'
@@ -69,6 +81,7 @@ const getUserPositionColour = (meterAccuracy: number): any =>
         : 'orange'
 
 export enum MarkerType {
+  START,
   CHECKPOINT,
   CHECKPOINT_SUBMITTED,
   USER_POSITION,
@@ -87,6 +100,7 @@ export type Marker = Coord & {
 };
 
 const MARKER_TYPE_ICON = {
+  [MarkerType.START]: iconStart,
   [MarkerType.USER_POSITION]: iconUserPosition,
   [MarkerType.CHECKPOINT]: iconCheckpoint,
   [MarkerType.CHECKPOINT_SUBMITTED]: iconCheckpointSubmitted
@@ -137,12 +151,14 @@ export default class Map extends Vue {
       }
 
       const keyMarker = key + '-marker'
-      const keyBounds = key + '-bounds'
+      const keyProximity = key + '-proximity'
 
       if (!Object.keys(this.mapObjects).includes(keyMarker)) {
         // Create new marker
-        this.mapObjects[keyBounds] = L.circle([latitude, longitude], style)
-        this.mapObjects[keyBounds].addTo(this.mapRef)
+        if (SHOW_PROXIMITY_AREAS) {
+          this.mapObjects[keyProximity] = L.circle([latitude, longitude], style)
+          this.mapObjects[keyProximity].addTo(this.mapRef)
+        }
         const mapMarker = L.marker([latitude, longitude], {
           icon: MARKER_TYPE_ICON[type],
           zIndexOffset: isCheckpoint ? 0 : 1000
@@ -152,11 +168,13 @@ export default class Map extends Vue {
         this.mapObjects[keyMarker].addTo(this.mapRef)
       }
 
-      // Update position and design for the "area or accuracy indicator"
-      const objBounds = this.mapObjects[keyBounds]
-      objBounds.setStyle({ fillColor: style.fillColor })
-      objBounds.setRadius(style.radius)
-      objBounds.setLatLng([latitude, longitude])
+      // Update position and design for the "proximity indicator"
+      if (SHOW_PROXIMITY_AREAS) {
+        const objBounds = this.mapObjects[keyProximity]
+        objBounds.setStyle({ fillColor: style.fillColor })
+        objBounds.setRadius(style.radius)
+        objBounds.setLatLng([latitude, longitude])
+      }
 
       // Update position and design for the "pin"
       const objMarker = this.mapObjects[keyMarker]
@@ -166,8 +184,16 @@ export default class Map extends Vue {
     const userPosition = Object.values(newMarkers).find(
       (marker: Marker) => marker.type === MarkerType.USER_POSITION
     )
+    const startPosition = Object.values(newMarkers).find(
+      (marker: Marker) => marker.type === MarkerType.START
+    )
     if (userPosition) {
       this.currentPosition = userPosition
+      if (!this.isUserPanning) {
+        this.panToCurrentPosition()
+      }
+    } else if (startPosition) {
+      this.currentPosition = startPosition
       if (!this.isUserPanning) {
         this.panToCurrentPosition()
       }
