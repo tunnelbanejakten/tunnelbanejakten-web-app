@@ -67,7 +67,13 @@ export default class Home extends Vue {
         const resp = await fetch(
           `${apiHost}/wp-json/tuja/v1/questions?token=${token}`
         )
-        this.questions = await resp.json()
+        const payload = await resp.json()
+        this.questions = []
+        payload.forEach((formView: any) => {
+          formView.question_groups.forEach((questionGroupView: any) => {
+            this.questions.push(...questionGroupView.questions)
+          })
+        })
 
         if (!this.questions.length) {
           this.message = 'Det finns inga uppgifter att besvara just nu.'
