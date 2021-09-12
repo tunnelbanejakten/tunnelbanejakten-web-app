@@ -1,7 +1,7 @@
 <template>
   <Page
     title="Karta"
-    :no-padding="true"
+    :no-padding="!isError"
   >
     <div
       class="no-map"
@@ -21,7 +21,7 @@
     </div>
     <div
       class="map-container"
-      v-if="!isLoadingMarkers"
+      v-if="!isLoadingMarkers && !isError"
     >
       <MapComponent
         :markers="checkpoints"
@@ -369,42 +369,52 @@ export default class Map extends Vue {
         const resp = await fetch(
           `${apiHost}/wp-json/tuja/v1/map/markers?token=${token}`
         )
-        const markers = await resp.json()
 
-        if (markers.length > 0) {
-          this.markers = markers.map(
-            ({
-              type,
-              latitude,
-              longitude,
-              name,
-              radius,
-              link_form_question_id: questionId,
-              is_response_submitted: isResponseSubmitted
-            }: ApiMarker): Marker => ({
-              latitude,
-              longitude,
-              meterAccuracy: radius,
-              label: String(name),
-              type: type === 'START' ? MarkerType.START : (isResponseSubmitted ? MarkerType.CHECKPOINT_SUBMITTED : MarkerType.CHECKPOINT),
-              id: String(questionId ?? -1)
-            })
-          )
-          Analytics.logEvent(
-            Analytics.AnalyticsEventType.MAP,
-            'load',
-            'markers',
-            {
-              count: this.markers.length
-            }
-          )
-          this.updateState(State.MARKERS_LOADED, 'Vi har hämtat kartmarkörerna.')
-          return true
-        } else {
+        if (resp.status === 200) {
+          const markers = await resp.json()
+
+          if (markers.length > 0) {
+            this.markers = markers.map(
+              ({
+                type,
+                latitude,
+                longitude,
+                name,
+                radius,
+                link_form_question_id: questionId,
+                is_response_submitted: isResponseSubmitted
+              }: ApiMarker): Marker => ({
+                latitude,
+                longitude,
+                meterAccuracy: radius,
+                label: String(name),
+                type: type === 'START' ? MarkerType.START : (isResponseSubmitted ? MarkerType.CHECKPOINT_SUBMITTED : MarkerType.CHECKPOINT),
+                id: String(questionId ?? -1)
+              })
+            )
+            Analytics.logEvent(
+              Analytics.AnalyticsEventType.MAP,
+              'load',
+              'markers',
+              {
+                count: this.markers.length
+              }
+            )
+            this.updateState(State.MARKERS_LOADED, 'Vi har hämtat kartmarkörerna.')
+            return true
+          } else {
+            this.updateState(
+              State.ERROR,
+              'Det finns inga kontroller att visa på kartan.'
+            )
+          }
+        } else if (resp.status === 204) {
           this.updateState(
             State.ERROR,
-            'Det finns inga kontroller att visa på kartan.'
+            'Ert lag har inte blivit tilldelad en karta. Kontakta kundtjänst så löser de detta.'
           )
+        } else {
+          this.updateState(State.ERROR, 'Kunde inte läsa in kontroller.')
         }
       } catch (e) {
         this.updateState(State.ERROR, 'Kunde inte läsa in kontroller.')
