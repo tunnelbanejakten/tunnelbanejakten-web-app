@@ -145,6 +145,9 @@ export default class QuestionForm extends Vue {
           }
         )
         if (resp.ok) {
+          const payload = await resp.json()
+          this.loadedQuestion = payload
+
           this.onSubmitSuccess()
         } else {
           this.onSubmitFailure(new Error('Kunde inte spara svar'))

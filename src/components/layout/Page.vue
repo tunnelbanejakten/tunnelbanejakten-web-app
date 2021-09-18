@@ -61,6 +61,8 @@ h1 {
     flex: 1;
 
     padding: 10px;
+
+    background-color: #ddd;
 }
 
 .body.no-padding {

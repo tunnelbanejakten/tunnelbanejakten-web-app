@@ -22,3 +22,11 @@ export type QuestionDto = {
     limit_time_remaining?: number;
     config: any;
 }
+
+export type QuestionGroupDto = {
+    description: string;
+    id: number;
+    is_marker_set: boolean;
+    name: string;
+    questions: QuestionDto[];
+}

@@ -239,6 +239,7 @@ export default class Question extends Vue {
 p.time-status {
   font-size: 90%;
   font-style: italic;
+  margin: 10px 0 0 0;
 }
 div.text >>> img {
   width: 100%;

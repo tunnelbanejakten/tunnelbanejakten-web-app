@@ -18,14 +18,33 @@
         />
       </div>
       <div
-        class="question"
-        v-for="question in questions"
-        :key="question.id"
+        class="question-group"
+        v-for="questionGroup in questionGroups"
+        :key="questionGroup.id"
       >
-        <QuestionForm
-          :question="question"
-          :question-id="question.id"
+        <div
+          v-if="questionGroup.name"
+          class="name"
+        >
+          {{ questionGroup.name }}
+        </div>
+        <div
+          v-if="questionGroup.description"
+          v-html="questionGroup.description"
+          class="description"
         />
+        <div>
+          <div
+            class="question"
+            v-for="question in questionGroup.questions"
+            :key="question.id"
+          >
+            <QuestionForm
+              :question="question"
+              :question-id="question.id"
+            />
+          </div>
+        </div>
       </div>
     </div>
   </Page>
@@ -38,7 +57,7 @@ import Page from '@/components/layout/Page.vue'
 import QuestionForm from '@/components/QuestionForm.vue'
 import * as AuthUtils from '@/utils/Auth'
 import * as Analytics from '@/utils/Analytics'
-import { QuestionDto } from '@/components/common/question/model'
+import { QuestionDto, QuestionGroupDto } from '@/components/common/question/model'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
 
 const apiHost = process.env.VUE_APP_API_HOST
@@ -52,7 +71,7 @@ const apiHost = process.env.VUE_APP_API_HOST
   }
 })
 export default class Home extends Vue {
-  private questions: QuestionDto[] = []
+  private questionGroups: QuestionGroupDto[] = []
   private isLoadingQuestions = false
 
   private message = ''
@@ -68,14 +87,16 @@ export default class Home extends Vue {
           `${apiHost}/wp-json/tuja/v1/questions?token=${token}`
         )
         const payload = await resp.json()
-        this.questions = []
+        this.questionGroups = []
         payload.forEach((formView: any) => {
           formView.question_groups.forEach((questionGroupView: any) => {
-            this.questions.push(...questionGroupView.questions)
+            if (questionGroupView.questions && questionGroupView.questions.length) {
+              this.questionGroups.push(questionGroupView)
+            }
           })
         })
 
-        if (!this.questions.length) {
+        if (!this.questionGroups.length) {
           this.message = 'Det finns inga uppgifter att besvara just nu.'
           this.messageType = MessageType.INFO
         }
@@ -94,11 +115,26 @@ export default class Home extends Vue {
 </script>
 
 <style scoped>
-.question {
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  margin: 10px 0;
-  padding: 0 10px 10px 10px;
+div.question {
+  border-top: 1px solid #ccc;
+  margin: 15px 0 0 0;
+  padding: 15px 0 0 0;
+}
+div.question:first-child {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}
+div.question-group {
+  background-color: #fff;
+  border-radius: 10px;
+  margin: 15px 0;
+  padding: 15px;
+}
+div.question-group div.name,
+div.question-group div.description {
+  margin-top: 0;
+  padding: 0;
 }
 div.map-link-wrapper {
   font-size: 90%;
