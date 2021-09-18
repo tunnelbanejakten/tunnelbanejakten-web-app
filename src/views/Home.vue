@@ -131,7 +131,7 @@ div.question-group {
   margin: 15px 0;
   padding: 15px;
 }
-div.question-group .description > p > img {
+div.question-group::v-deep .description img {
   max-width: 100%;
 }
 div.question-group div.name,
