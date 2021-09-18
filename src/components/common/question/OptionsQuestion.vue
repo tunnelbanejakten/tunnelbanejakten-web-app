@@ -44,7 +44,7 @@ export default class OptionsQuestion extends Vue {
   }
 
   get fieldName() {
-    return this.question.response.field_name + '[]'
+    return this.question.response.field_name + (!this.question.config?.is_single_select ? '[]' : '')
   }
 
   get fieldValues() {
