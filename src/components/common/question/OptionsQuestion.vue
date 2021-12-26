@@ -2,6 +2,7 @@
   <div>
     <div
       v-for="opt in possibleAnswers"
+      class="option"
       :key="opt"
     >
       <label>
@@ -44,14 +45,38 @@ export default class OptionsQuestion extends Vue {
   }
 
   get fieldName() {
-    return this.question.response.field_name + (!this.question.config?.is_single_select ? '[]' : '')
+    return (
+      this.question.response.field_name +
+      (!this.question.config?.is_single_select ? '[]' : '')
+    )
   }
 
   get fieldValues() {
-    return this.question && this.question.response && this.question.response.current_value ? this.question.response.current_value : []
+    return this.question &&
+      this.question.response &&
+      this.question.response.current_value
+      ? this.question.response.current_value
+      : []
   }
 }
 </script>
 
 <style scoped>
+div.option label {
+  display: block;
+  width: 100%;
+  line-height: 36px;
+  padding: 0 5px;
+}
+div.option {
+  border: 1px solid #bbb;
+  border-width: 1px 1px 0 1px;
+}
+div.option:first-child {
+  border-radius: 5px 5px 0 0;
+}
+div.option:last-child {
+  border-radius: 0 0 5px 5px;
+  border-width: 1px 1px 1px 1px;
+}
 </style>

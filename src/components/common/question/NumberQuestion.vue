@@ -39,7 +39,11 @@ export default class TextQuestion extends Vue {
   }
 
   get fieldValue() {
-    return this.question && this.question.response && this.question.response.current_value ? this.question.response.current_value[0] : ''
+    return this.question &&
+      this.question.response &&
+      this.question.response.current_value
+      ? this.question.response.current_value[0]
+      : ''
   }
 }
 </script>
