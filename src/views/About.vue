@@ -1,6 +1,9 @@
 <template>
   <Page title="Info">
-    <div v-html="bodyText" />
+    <div
+      v-html="bodyText"
+      class="body-text"
+    />
   </Page>
 </template>
 
@@ -20,3 +23,12 @@ export default class About extends Vue {
   }
 }
 </script>
+
+<style scoped>
+div.body-text {
+  background-color: #fff;
+  border-radius: 10px;
+  margin: 5px 0;
+  padding: 15px;
+}
+</style>
