@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <DebugPopup />
     <div
       v-if="isUpdatePending"
       class="new-version-container"
@@ -62,6 +63,7 @@
 import { Component, Mixins } from 'vue-property-decorator'
 import ServiceWorkerMixin from '@/mixins/ServiceWorkerMixin'
 import Button from '@/components/common/Button.vue'
+import DebugPopup from '@/components/DebugPopup.vue'
 import * as Analytics from '@/utils/Analytics'
 import * as AuthUtils from '@/utils/Auth'
 import store, { Configuration } from '@/store'
@@ -71,7 +73,8 @@ const apiHost = process.env.VUE_APP_API_HOST
 @Component({
   name: 'App',
   components: {
-    Button
+    Button,
+    DebugPopup
   }
 })
 export default class App extends Mixins(ServiceWorkerMixin) {

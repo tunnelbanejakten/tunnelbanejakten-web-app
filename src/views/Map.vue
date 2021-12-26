@@ -430,16 +430,15 @@ export default class Map extends Vue {
     // Only consider it "a proper change" if it changes by at least 10 meters.
     const approxAccuracy = Math.round(accuracy / 10) * 10
     const isAccuracyChange = this.lastApproxAccuracy !== approxAccuracy
-    if (isAccuracyChange) {
-      Analytics.logEvent(
-        Analytics.AnalyticsEventType.MAP,
-        'acquire',
-        'location',
-        {
-          accuracy: approxAccuracy
-        }
-      )
-    }
+    Analytics.logEvent(
+      Analytics.AnalyticsEventType.MAP,
+      'acquire',
+      'location',
+      {
+        accuracy: approxAccuracy
+      },
+      isAccuracyChange ? Analytics.LogLevel.INFO : Analytics.LogLevel.DEBUG
+    )
     this.lastApproxAccuracy = approxAccuracy
   }
 

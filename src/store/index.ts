@@ -38,6 +38,12 @@ export type Configuration = {
 type State = {
   deviceTest: Record<string, DeviceTestStatus>
   configuration: Configuration
+  eventLog: EventLog
+}
+
+type EventLog = {
+  events: Analytics.AppEvent[],
+  cursorPosition: number
 }
 
 const state: State = {
@@ -70,6 +76,13 @@ const state: State = {
       deviceTest: true,
       info: true
     }
+  },
+  // The event log is a fixed-length array of the most recent log entries. The cursorPosition property
+  // species where in the array the most-recent log entry has been stored. Older entries are, eventually,
+  // overwritten when currentPosition "wraps around" to index 0.
+  eventLog: {
+    events: Array(10).fill(null),
+    cursorPosition: -1
   }
 }
 
@@ -86,6 +99,25 @@ const store = {
   },
   setConfiguration(updatedConf: Configuration) {
     this.state.configuration = updatedConf
+  },
+  // Insert event and move cursor to the next position.
+  addEvent(event: Analytics.AppEvent) {
+    this.state.eventLog.cursorPosition = (this.state.eventLog.cursorPosition + 1) % this.state.eventLog.events.length
+    this.state.eventLog.events[this.state.eventLog.cursorPosition] = event
+  },
+  // Retrieve events in correct order.
+  getEvents(): Analytics.AppEvent[] {
+    const { events, cursorPosition } = this.state.eventLog;
+    const res = [];
+    for (let i = 0; i < events.length; i++) {
+      const eventLogIndex =
+        (cursorPosition + 1 + events.length + i) % events.length;
+      const event = events[eventLogIndex];
+      if (event) {
+        res.push(event);
+      }
+    }
+    return res;
   }
 }
 
