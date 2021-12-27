@@ -13,6 +13,12 @@ type DeviceTestStatus = {
   statusMessage?: string
 }
 
+export enum QuestionGrouping {
+  NONE,
+  BY_QUESTION_GROUP,
+  BY_QUESTION,
+}
+
 export type Configuration = {
   positioning: {
     highAccuracyThreshold: number,
@@ -32,6 +38,9 @@ export type Configuration = {
     map: boolean,
     deviceTest: boolean,
     info: boolean
+  },
+  answer: {
+    questionGrouping: QuestionGrouping
   }
 }
 
@@ -75,6 +84,9 @@ const state: State = {
       map: true,
       deviceTest: true,
       info: true
+    },
+    answer: {
+      questionGrouping: QuestionGrouping.NONE
     }
   },
   // The event log is a fixed-length array of the most recent log entries. The cursorPosition property

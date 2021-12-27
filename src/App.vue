@@ -66,9 +66,14 @@ import Button from '@/components/common/Button.vue'
 import DebugPopup from '@/components/DebugPopup.vue'
 import * as Analytics from '@/utils/Analytics'
 import * as AuthUtils from '@/utils/Auth'
-import store, { Configuration } from '@/store'
+import store, { Configuration, QuestionGrouping } from '@/store'
 
 const apiHost = process.env.VUE_APP_API_HOST
+
+const questionGroupingMapper: Record<string, QuestionGrouping> = {
+  by_group: QuestionGrouping.BY_QUESTION_GROUP,
+  by_question: QuestionGrouping.BY_QUESTION
+}
 
 @Component({
   name: 'App',
@@ -128,6 +133,9 @@ export default class App extends Mixins(ServiceWorkerMixin) {
               map: confPayload.app.views.map,
               deviceTest: confPayload.app.views.device_test,
               info: confPayload.app.views.info
+            },
+            answer: {
+              questionGrouping: questionGroupingMapper[confPayload.app.answer.question_grouping] ?? QuestionGrouping.NONE
             }
           }
           store.setConfiguration(conf)
@@ -138,7 +146,7 @@ export default class App extends Mixins(ServiceWorkerMixin) {
           })
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'app_configuration', {
         message: `Could not fetch app configuration. Reason: ${e.message}.`
       })
