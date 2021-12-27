@@ -5,16 +5,16 @@
       :statuses="statuses"
     />
     <div class="test-component-wrapper">
-      <component
-        :is="currentComponent()"
-      />
+      <Card :verticalMargin="false">
+        <component :is="currentComponent()" />
+        <Message
+          v-if="isStatusMessageAvailable"
+          :header="statusHeader"
+          :message="statusMessage"
+          :type="statusType"
+        />
+      </Card>
     </div>
-    <Message
-      v-if="isStatusMessageAvailable"
-      :header="statusHeader"
-      :message="statusMessage"
-      :type="statusType"
-    />
     <div class="step-navigation">
       <div class="step-navigate-button">
         <Button
@@ -38,6 +38,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
 import Page from '@/components/layout/Page.vue'
+import Card from '@/components/layout/Card.vue'
 import store, { Status } from '@/store'
 
 import StepbystepProgress from '@/components/common/StepbystepProgress.vue'
@@ -61,6 +62,7 @@ type Step = {
 @Component({
   components: {
     Page,
+    Card,
     StepbystepProgress,
     Button,
     Intro,
@@ -189,5 +191,6 @@ export default class DeviceTest extends Vue {
 }
 .test-component-wrapper {
   text-align: center;
+  margin: 10px 0 20px 0;
 }
 </style>

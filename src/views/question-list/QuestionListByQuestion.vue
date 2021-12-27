@@ -1,12 +1,12 @@
 <template>
   <div>
     <div v-if="selectedQuestion" class="selected-question-group">
+      <QuestionGroupForm :question-group="selectedQuestionGroup" />
       <Button
         @click="onDeselect()"
         label="Tillbaka"
         type="secondary"
       />
-      <QuestionGroupForm :question-group="selectedQuestionGroup" />
     </div>
     <div v-if="!selectedQuestion">
       <div
@@ -17,6 +17,7 @@
         <Button
           @click="onSelect(question)"
           :label="getQuestionLabel(question, index)"
+          :wide="true"
         />
       </div>
     </div>

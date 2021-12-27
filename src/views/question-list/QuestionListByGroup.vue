@@ -10,13 +10,14 @@
     </div>
     <div v-if="!selectedGroup">
       <div
-        v-for="(questionGroup, index) in questions"
+        v-for="(questionGroup, index) in groups"
         :key="questionGroup.id"
         class="question-group-selector"
       >
         <Button
           @click="onSelect(questionGroup)"
           :label="getQuestionGroupLabel(questionGroup, index)"
+          :wide="true"
         />
       </div>
     </div>
@@ -40,7 +41,7 @@ export default class QuestionListByGroup extends Vue {
 
   private selectedGroup: QuestionGroupDto | null = null
 
-  get questions() {
+  get groups() {
     return this.questionGroups || []
   }
 
