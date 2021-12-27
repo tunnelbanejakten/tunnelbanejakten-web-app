@@ -148,7 +148,7 @@ export default class Map extends Vue {
         color: isCheckpoint
           ? '#794794'
           : getUserPositionColour(meterAccuracy),
-        opacity: 0.5,
+        opacity: 1.0,
         weight: 1,
       }
 
@@ -187,7 +187,7 @@ export default class Map extends Vue {
             obj.setStyle({
               ...proximityAreaStyle,
               radius: obj.getRadius(),
-              opacity: 0.3 + (index * 0.1)
+              opacity: (index + 1) * 0.15
             })
           })
 
