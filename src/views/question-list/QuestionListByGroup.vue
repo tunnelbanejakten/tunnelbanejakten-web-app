@@ -6,7 +6,7 @@
         label="Tillbaka"
         type="secondary"
       />
-      <QuestionListFlat :question-groups="[selectedGroup]" />
+      <QuestionGroupForm :question-group="selectedGroup" />
     </div>
     <div v-if="!selectedGroup">
       <div
@@ -27,11 +27,11 @@
 import { QuestionGroupDto } from '@/components/common/question/model'
 import Button from '@/components/common/Button.vue'
 import { Component, Vue, Prop } from 'vue-property-decorator'
-import QuestionListFlat from '@/views/question-list/QuestionListFlat.vue'
+import QuestionGroupForm from '@/components/QuestionGroupForm.vue'
 
 @Component({
   components: {
-    QuestionListFlat,
+    QuestionGroupForm,
     Button
   }
 })
