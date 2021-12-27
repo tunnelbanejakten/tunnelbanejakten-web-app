@@ -14,7 +14,7 @@ import * as LocationUtils from '@/utils/Location'
 
 const RECENTER_MAP_ICON_SIZE = 18
 
-const SHOW_PROXIMITY_AREAS = false
+const SHOW_PROXIMITY_AREAS = true
 
 const getZoomLevel = (accuracyLevel: LocationUtils.AccuracyLevel) => {
   switch (accuracyLevel) {
@@ -112,6 +112,7 @@ const MARKER_TYPE_ICON = {
 export default class Map extends Vue {
   @Prop() private markers!: Record<string, Marker>;
   private mapObjects: Record<string, any> = {};
+  private userPositionBreadCrumbsObjects: any[] = [];
   private mapRef: any;
   private panLockControl: any;
   private isUserPanning = false
@@ -138,16 +139,17 @@ export default class Map extends Vue {
       const { label, latitude, longitude, type, meterAccuracy } = marker
 
       const isCheckpoint = type === MarkerType.CHECKPOINT || type === MarkerType.CHECKPOINT_SUBMITTED
+      const isUserPosition = type === MarkerType.USER_POSITION
 
-      const style = {
-        stroke: false,
+      const proximityAreaStyle = {
         radius: meterAccuracy || 10,
-
-        fillColor:
-          isCheckpoint
-            ? '#794794'
-            : getUserPositionColour(meterAccuracy),
-        fillOpacity: isCheckpoint ? 0.5 : 0.25
+        stroke: true,
+        fill: false,
+        color: isCheckpoint
+          ? '#794794'
+          : getUserPositionColour(meterAccuracy),
+        opacity: 0.5,
+        weight: 1,
       }
 
       const keyMarker = key + '-marker'
@@ -156,7 +158,7 @@ export default class Map extends Vue {
       if (!Object.keys(this.mapObjects).includes(keyMarker)) {
         // Create new marker
         if (SHOW_PROXIMITY_AREAS) {
-          this.mapObjects[keyProximity] = L.circle([latitude, longitude], style)
+          this.mapObjects[keyProximity] = L.circle([latitude, longitude], proximityAreaStyle)
           this.mapObjects[keyProximity].addTo(this.mapRef)
         }
         const mapMarker = L.marker([latitude, longitude], {
@@ -171,8 +173,34 @@ export default class Map extends Vue {
       // Update position and design for the "proximity indicator"
       if (SHOW_PROXIMITY_AREAS) {
         const objBounds = this.mapObjects[keyProximity]
-        objBounds.setStyle({ fillColor: style.fillColor })
-        objBounds.setRadius(style.radius)
+        const trackHistory = isUserPosition
+        if (trackHistory) {
+          // Remove oldest breadcrumb
+          if (this.userPositionBreadCrumbsObjects.length > 5) {
+            console.log('Remove oldest breadcrumb')
+            const oldestBreadcrumb = this.userPositionBreadCrumbsObjects.shift()
+            oldestBreadcrumb.remove()
+          }
+
+          // Dim older breadcrumbs
+          this.userPositionBreadCrumbsObjects.forEach((obj, index) => {
+            obj.setStyle({
+              ...proximityAreaStyle,
+              radius: obj.getRadius(),
+              opacity: 0.3 + (index * 0.1)
+            })
+          })
+
+          // Add new breadcrumb
+          const newBreadcrumb = L.circle(objBounds.getLatLng(), {
+            ...proximityAreaStyle,
+            radius: objBounds.getRadius(),
+            opacity: 1.0
+          })
+          newBreadcrumb.addTo(this.mapRef)
+          this.userPositionBreadCrumbsObjects.push(newBreadcrumb)
+        }
+        objBounds.setRadius(proximityAreaStyle.radius)
         objBounds.setLatLng([latitude, longitude])
       }
 
