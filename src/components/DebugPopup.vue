@@ -2,8 +2,8 @@
   <div :class="cssClasses">
     <div class="event-log">
       <div
-        v-for="event in events"
-        :key="event.timestamp"
+        v-for="(event, index) in events"
+        :key="`${event.timestamp}-${index}`"
         class="event"
       >
         <div :class="'event-header event-level-' + event.level">
