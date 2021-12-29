@@ -25,6 +25,7 @@
         <QuestionForm
           :question="question"
           :question-id="question.id"
+          @submit-success="onSubmitSuccess"
         />
       </div>
     </div>
@@ -32,8 +33,8 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from 'vue-property-decorator'
-import { QuestionGroupDto } from '@/components/common/question/model'
+import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
+import { QuestionDto, QuestionGroupDto } from '@/components/common/question/model'
 import Card from '@/components/layout/Card.vue'
 import QuestionForm from '@/components/QuestionForm.vue'
 
@@ -45,6 +46,11 @@ import QuestionForm from '@/components/QuestionForm.vue'
 })
 export default class QuestionGroupForm extends Vue {
   @Prop() private questionGroup!: QuestionGroupDto
+
+  @Emit('submit-success')
+  onSubmitSuccess(updatedQuestionData: QuestionDto) {
+    return updatedQuestionData
+  }
 }
 </script>
 

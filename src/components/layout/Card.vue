@@ -9,7 +9,7 @@ import { Component, Vue, Prop } from 'vue-property-decorator'
 
 @Component
 export default class Card extends Vue {
-  @Prop() private readonly verticalMargin: boolean
+  @Prop({ default: false }) private readonly verticalMargin!: boolean
 }
 </script>
 
@@ -25,5 +25,4 @@ div.card.card-vertical-margin-false {
 div.card.card-vertical-margin-true {
   margin: 20px 0;
 }
-
 </style>

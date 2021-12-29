@@ -1,7 +1,13 @@
 <template>
   <div>
-    <div v-if="selectedQuestion" class="selected-question-group">
-      <QuestionGroupForm :question-group="selectedQuestionGroup" />
+    <div
+      v-if="selectedQuestion"
+      class="selected-question-group"
+    >
+      <QuestionGroupForm
+        :question-group="selectedQuestionGroup"
+        @submit-success="onSubmitSuccess"
+      />
       <Button
         @click="onDeselect()"
         label="Tillbaka"
@@ -9,17 +15,26 @@
       />
     </div>
     <div v-if="!selectedQuestion">
-      <div
+      <Card
         v-for="(question, index) in questions"
         :key="question.id"
-        class="question-group-selector"
+        :verticalMargin="true"
       >
-        <Button
-          @click="onSelect(question)"
-          :label="getQuestionLabel(question, index)"
-          :wide="true"
-        />
-      </div>
+        <div class="question-wrapper">
+          <Button
+            @click="onSelect(question)"
+            :label="getQuestionLabel(question, index)"
+            :wide="true"
+          />
+          <div
+            class="submitted-marker"
+            v-if="isSubmitted(question)"
+          >
+            <font-awesome-icon icon="check" />
+            Klar
+          </div>
+        </div>
+      </Card>
     </div>
   </div>
 </template>
@@ -27,13 +42,15 @@
 <script lang="ts">
 import { QuestionDto, QuestionGroupDto } from '@/components/common/question/model'
 import Button from '@/components/common/Button.vue'
-import { Component, Vue, Prop } from 'vue-property-decorator'
+import Card from '@/components/layout/Card.vue'
+import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import QuestionGroupForm from '@/components/QuestionGroupForm.vue'
 
 @Component({
   components: {
     QuestionGroupForm,
-    Button
+    Button,
+    Card
   }
 })
 export default class QuestionListByQuestion extends Vue {
@@ -42,7 +59,7 @@ export default class QuestionListByQuestion extends Vue {
   private selectedQuestion: QuestionDto | null = null
 
   get questions() {
-    const questions = (this.questionGroups || []).map(({questions}) => questions).reduce((all, some) => all.concat(some), [])
+    const questions = (this.questionGroups || []).map(({ questions }) => questions).reduce((all, some) => all.concat(some), [])
     return questions
   }
 
@@ -65,12 +82,30 @@ export default class QuestionListByQuestion extends Vue {
   onDeselect() {
     this.selectedQuestion = null
   }
+
+  isSubmitted(question: QuestionDto) {
+    return question.response.current_value !== null
+  }
+
+  @Emit('submit-success')
+  onSubmitSuccess(updatedQuestionData: QuestionDto) {
+    return updatedQuestionData
+  }
 }
 </script>
 
 <style scoped>
-div.selected-question-group,
-div.question-group-selector {
-    margin-top: 10px;
+div.selected-question-group {
+  margin-top: 10px;
+}
+div.question-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+div.submitted-marker {
+  flex: 0;
+  margin-left: 20px;
+  white-space: nowrap;
 }
 </style>

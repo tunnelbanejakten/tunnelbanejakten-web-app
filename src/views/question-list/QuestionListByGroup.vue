@@ -1,39 +1,57 @@
 <template>
   <div>
-    <div v-if="selectedGroup" class="selected-question-group">
+    <div
+      v-if="selectedGroup"
+      class="selected-question-group"
+    >
       <Button
         @click="onDeselect()"
         label="Tillbaka"
         type="secondary"
       />
-      <QuestionGroupForm :question-group="selectedGroup" />
+      <QuestionGroupForm
+        :question-group="selectedGroup"
+        @submit-success="onSubmitSuccess"
+      />
     </div>
     <div v-if="!selectedGroup">
-      <div
+      <Card
         v-for="(questionGroup, index) in groups"
         :key="questionGroup.id"
-        class="question-group-selector"
+        :verticalMargin="true"
       >
-        <Button
-          @click="onSelect(questionGroup)"
-          :label="getQuestionGroupLabel(questionGroup, index)"
-          :wide="true"
-        />
-      </div>
+        <div class="question-wrapper">
+          <Button
+            @click="onSelect(questionGroup)"
+            :label="getQuestionGroupLabel(questionGroup, index)"
+            :wide="true"
+          />
+          <div
+            class="submitted-marker"
+            v-if="submittedRatio(questionGroup)"
+          >
+            <font-awesome-icon icon="check" />
+            <span v-if="submittedRatio(questionGroup) === 100"> Klar</span>
+            <span v-if="submittedRatio(questionGroup) !== 100"> {{ submittedRatio(questionGroup) }} % klar</span>
+          </div>
+        </div>
+      </Card>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { QuestionGroupDto } from '@/components/common/question/model'
+import { QuestionDto, QuestionGroupDto } from '@/components/common/question/model'
 import Button from '@/components/common/Button.vue'
-import { Component, Vue, Prop } from 'vue-property-decorator'
+import Card from '@/components/layout/Card.vue'
+import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import QuestionGroupForm from '@/components/QuestionGroupForm.vue'
 
 @Component({
   components: {
     QuestionGroupForm,
-    Button
+    Button,
+    Card
   }
 })
 export default class QuestionListByGroup extends Vue {
@@ -56,12 +74,32 @@ export default class QuestionListByGroup extends Vue {
   onDeselect() {
     this.selectedGroup = null
   }
+
+  submittedRatio(questionGroup: QuestionGroupDto) {
+    const answeredQuestions = questionGroup.questions.filter(question => question.response.current_value !== null).length
+    const countQuestions = questionGroup.questions.length
+    return Math.round(100 * (countQuestions > 0 ? answeredQuestions / countQuestions : 0))
+  }
+
+  @Emit('submit-success')
+  onSubmitSuccess(updatedQuestionData: QuestionDto) {
+    return updatedQuestionData
+  }
 }
 </script>
 
 <style scoped>
-div.selected-question-group,
-div.question-group-selector {
-    margin-top: 10px;
+div.selected-question-group {
+  margin-top: 10px;
+}
+div.question-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+div.submitted-marker {
+  flex: 0;
+  margin-left: 20px;
+  white-space: nowrap;
 }
 </style>
