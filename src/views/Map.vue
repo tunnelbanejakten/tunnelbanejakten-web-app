@@ -142,7 +142,14 @@ const deg2rad = (deg: number) => {
   return deg * (Math.PI / 180)
 }
 
+// Show circles indicating the accuracy of the measuments:
 const SHOW_PROXIMITY_AREAS = true
+// Minimum time to pass between two location measurements (more frequest measurements might be reported to app but will not trigger GUI update):
+const IGNORE_LOCATION_UPDATE_TIMEFRAME_MS = 2000
+// Minimum distance between two location measurements for GUI to be updated:
+const IGNORE_LOCATION_UPDATE_DISTANCE_METERS = 1
+// Number of past user locations to render on map:
+const MAX_BREADCRUMB_COUNT = 5
 
 @Component({
   components: {
@@ -486,6 +493,13 @@ export default class Map extends Vue {
               console.log('🙈 Ignoring duplicate measurement. Maybe this only happens during debugging?')
               return
             }
+            const isShortlyAfterLastReportedPosition = (Date.now() - lastLoggedPosition.timestamp) < IGNORE_LOCATION_UPDATE_TIMEFRAME_MS
+            const distanceTravelled = coordinateDistance(lastLoggedPosition, { longitude, latitude } as Coord)
+            const isSmallDistanceTravelled = distanceTravelled < IGNORE_LOCATION_UPDATE_DISTANCE_METERS
+            if (isShortlyAfterLastReportedPosition && isSmallDistanceTravelled) {
+              console.log('🙈 Ignoring measurement. Too small difference since previous measurement and too close in time.')
+              return
+            }
           }
 
           const newCurrentPosition = new UserPositionMarker()
@@ -496,8 +510,8 @@ export default class Map extends Vue {
           newCurrentPosition.showAccuracyCircle = SHOW_PROXIMITY_AREAS
           this.currentPosition = newCurrentPosition
           this.userPositions.push(newCurrentPosition)
-          if (this.userPositions.length > 5) {
-            this.userPositions.splice(0, this.userPositions.length - 5)
+          if (this.userPositions.length > MAX_BREADCRUMB_COUNT) {
+            this.userPositions.splice(0, this.userPositions.length - MAX_BREADCRUMB_COUNT)
           }
 
           if (this.state !== State.POSITION_ACQUIRED) {

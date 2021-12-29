@@ -199,7 +199,7 @@ export default class Map extends Vue {
     userPositionMarkers.forEach((userPositionMarker, index) => {
       const isCurrent = index === userPositionMarkers.length - 1
       const positionRelativeAge = userPositionMarkers.length - index
-      const opacity = 1.0 - (positionRelativeAge * 0.15)
+      const opacity = Math.max(0.1, 1.0 - (positionRelativeAge * 0.15))
 
       const key = `userPosition-${userPositionMarker.timestamp}-${isCurrent}`
       const accuracyCircleKey = `${key}-accuracyCircle`
@@ -242,12 +242,12 @@ export default class Map extends Vue {
         // Update position
         if (!isCurrent) {
           existingMapObject.setStyle({
-            fillOpacity: opacity
+            opacity
           })
           const accuracyCircle = this.mapObjects[accuracyCircleKey]
           if (accuracyCircle) {
             accuracyCircle.setStyle({
-              opacity: opacity
+              opacity
             })
           }
         }
