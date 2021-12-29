@@ -562,7 +562,8 @@ export default class Map extends Vue {
           }
         },
         {
-          enableHighAccuracy: true
+          enableHighAccuracy: true,
+          maximumAge: 2000
         }
       )
     } else {
