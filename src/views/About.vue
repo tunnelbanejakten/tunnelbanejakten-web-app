@@ -3,6 +3,9 @@
     <Card
       v-html="bodyText"
     />
+    <Card :verticalMargin="true">
+      <Profile />
+    </Card> 
   </Page>
 </template>
 
@@ -10,12 +13,14 @@
 import { Component, Vue } from 'vue-property-decorator'
 import Page from '@/components/layout/Page.vue'
 import Card from '@/components/layout/Card.vue'
+import Profile from './about/Profile.vue'
 import store from '@/store'
 
 @Component({
   components: {
     Page,
-    Card
+    Card,
+    Profile
   }
 })
 export default class About extends Vue {

@@ -4,7 +4,7 @@ import './registerServiceWorker'
 import router from './router'
 
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faCamera, faSyncAlt, faTimes, faCrosshairs, faTrashAlt, faBug, faCheck } from '@fortawesome/free-solid-svg-icons'
+import { faCamera, faSyncAlt, faTimes, faCrosshairs, faTrashAlt, faBug, faCheck, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 library.add(faCamera)
@@ -14,6 +14,7 @@ library.add(faCrosshairs)
 library.add(faTrashAlt)
 library.add(faBug)
 library.add(faCheck)
+library.add(faExternalLinkAlt)
 
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 
