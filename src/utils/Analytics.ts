@@ -1,6 +1,6 @@
 import amplitude from 'amplitude-js'
 import store from '@/store'
-
+import * as Auth from './Auth'
 const APIKEY = process.env.VUE_APP_AMPLITUDE_APIKEY
 const APP_VERSION = process.env.VUE_APP_VERSION
 
@@ -30,9 +30,37 @@ export type AppEvent = {
 
 let isAnalyticsInitialized = false
 
+let lastTokenCookieValue: string | null = null
+
 const initAmplitude = () => {
   amplitude.getInstance().init(APIKEY)
   isAnalyticsInitialized = true
+}
+
+// Credits: https://stackoverflow.com/a/38552302
+function parseJwt(token: string) {
+  var base64Url = token.split('.')[1];
+  var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  var jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+
+  return JSON.parse(jsonPayload);
+};
+
+const updateUserId = () => {
+  const token = Auth.getTokenCookie()
+  if (token !== lastTokenCookieValue) {
+    if (token) {
+      const parsedToken = parseJwt(token)
+      if (parsedToken.group_key) {
+        amplitude.getInstance().setUserId(parsedToken.group_key);
+      }
+    } else {
+      amplitude.getInstance().setUserId(null);
+    }
+    lastTokenCookieValue = token
+  }
 }
 
 export type UserProperties = {
@@ -64,6 +92,7 @@ const logToAmplitude = ({ type, eventObject, eventVerb, props, level }: AppEvent
     if (!isAnalyticsInitialized) {
       initAmplitude()
     }
+    updateUserId()
     amplitude.getInstance().logEvent(eventName, patchedProps)
   }
 }
