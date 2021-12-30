@@ -68,7 +68,10 @@ import * as AuthUtils from '@/utils/Auth'
 import MapComponent, {
   Coord,
   Marker,
-  MarkerType
+  // MarkerType,
+  UserPositionMarker,
+  CheckpointMarker,
+  StartPositionMarker
 } from '@/components/common/Map.vue'
 import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
 import NotificationOverlay from '@/components/common/NotificationOverlay.vue'
@@ -81,6 +84,7 @@ import Checkpoint from './map/Checkpoint.vue'
 import * as LocationUtils from '@/utils/Location'
 import * as Analytics from '@/utils/Analytics'
 import store from '@/store'
+import { logEventWithGroups } from 'amplitude-js'
 
 const apiHost = process.env.VUE_APP_API_HOST
 
@@ -138,6 +142,15 @@ const deg2rad = (deg: number) => {
   return deg * (Math.PI / 180)
 }
 
+// Show circles indicating the accuracy of the measuments:
+const SHOW_PROXIMITY_AREAS = true
+// Minimum time to pass between two location measurements (more frequest measurements might be reported to app but will not trigger GUI update):
+const IGNORE_LOCATION_UPDATE_TIMEFRAME_MS = 2000
+// Minimum distance between two location measurements for GUI to be updated:
+const IGNORE_LOCATION_UPDATE_DISTANCE_METERS = 1
+// Number of past user locations to render on map:
+const MAX_BREADCRUMB_COUNT = 5
+
 @Component({
   components: {
     Page,
@@ -165,13 +178,14 @@ export default class Map extends Vue {
 
   private markers: Marker[] = [];
   private activeMarkers: Marker[] = [];
-  private currentPosition: Marker = {
+  private currentPosition: UserPositionMarker = {
     longitude: 0,
     latitude: 0,
     meterAccuracy: -1,
-    type: MarkerType.USER_POSITION,
-    id: ''
+    timestamp: -1
   };
+
+  private userPositions: UserPositionMarker[] = []
 
   private selectedCheckpointQuestionId: string | null = null;
 
@@ -198,7 +212,7 @@ export default class Map extends Vue {
   }
 
   get curPos() {
-    return { ...this.currentPosition }
+    return this.userPositions.length ? { ...this.userPositions[this.userPositions.length - 1] } : null
   }
 
   get isError() {
@@ -221,20 +235,20 @@ export default class Map extends Vue {
   }
 
   onSelectCheckpoint(marker: Marker) {
-    const isActiveMarker = this.activeMarkers.some((activeMarker: Marker) => activeMarker.id === marker.id)
-    switch (marker.type) {
-      case MarkerType.USER_POSITION:
-        // console.log('User clicked their own position marker.')
-        break
-      case MarkerType.CHECKPOINT:
+    if (marker instanceof UserPositionMarker) {
+      // console.log('User clicked their own position marker.')
+    } else if (marker instanceof CheckpointMarker) {
+      const isActiveMarker = this.activeMarkers
+        .filter((activeMarker: Marker) => activeMarker instanceof CheckpointMarker)
+        .some((activeMarker: Marker) => (activeMarker as CheckpointMarker).id === marker.id)
+      if (!marker.submitted) {
         if (isActiveMarker) {
           // console.log('User clicked a checkpoint which they have NOT submitted an answer to and which they are currently close to. SHOW CHECKPOINT.')
           this.showCheckpoint(marker, false)
         } else {
           // console.log('User clicked a checkpoint which they have NOT submitted an answer to and which they are currently NOT close to. DO NOTHING.')
         }
-        break
-      case MarkerType.CHECKPOINT_SUBMITTED:
+      } else {
         if (isActiveMarker) {
           // console.log('User clicked a checkpoint which they HAVE submitted an answer to and which they are currently close to. SHOW CHECKPOINT.')
           this.showCheckpoint(marker, false)
@@ -242,11 +256,11 @@ export default class Map extends Vue {
           // console.log('User clicked a checkpoint which they HAVE submitted an answer to and which they are currently NOT close to. SHOW READ-ONLY CHECKPOINT.')
           this.showCheckpoint(marker, true)
         }
-        break
+      }
     }
   }
 
-  async showCheckpoint(e: Marker, readOnly: boolean) {
+  async showCheckpoint(e: CheckpointMarker, readOnly: boolean) {
     Analytics.logEvent(Analytics.AnalyticsEventType.MAP, 'open', 'checkpoint', {
       message: e.label
     })
@@ -297,7 +311,7 @@ export default class Map extends Vue {
 
     const isMarkerActiveBefore = this.activeMarkers.length > 0
     this.activeMarkers = markers
-      .filter((marker: Marker) => marker.type !== MarkerType.START)
+      .filter((marker: Marker) => !(marker instanceof StartPositionMarker))
       .filter((marker: Marker) => {
         const distance = coordinateDistance(
           {
@@ -351,7 +365,7 @@ export default class Map extends Vue {
 
   get checkpoints(): Marker[] {
     if (this.currentPosition.meterAccuracy !== -1 && this.isAccurateEnough(this.currentPosition.meterAccuracy)) {
-      return [...this.markers, this.currentPosition]
+      return this.markers.concat(this.userPositions)
     } else {
       return [...this.markers]
     }
@@ -383,14 +397,26 @@ export default class Map extends Vue {
                 radius,
                 link_form_question_id: questionId,
                 is_response_submitted: isResponseSubmitted
-              }: ApiMarker): Marker => ({
-                latitude,
-                longitude,
-                meterAccuracy: radius,
-                label: String(name),
-                type: type === 'START' ? MarkerType.START : (isResponseSubmitted ? MarkerType.CHECKPOINT_SUBMITTED : MarkerType.CHECKPOINT),
-                id: String(questionId ?? -1)
-              })
+              }: ApiMarker): Marker => {
+                if (type === 'START') {
+                  const marker = new StartPositionMarker()
+                  marker.latitude = latitude
+                  marker.longitude = longitude
+                  marker.meterAccuracy = radius
+                  marker.label = String(name)
+                  return marker
+                } else {
+                  const marker = new CheckpointMarker()
+                  marker.latitude = latitude
+                  marker.longitude = longitude
+                  marker.meterAccuracy = radius
+                  marker.label = String(name)
+                  marker.id = String(questionId)
+                  marker.submitted = isResponseSubmitted
+                  marker.showAccuracyCircle = SHOW_PROXIMITY_AREAS
+                  return marker
+                }
+              }
             )
             Analytics.logEvent(
               Analytics.AnalyticsEventType.MAP,
@@ -461,13 +487,33 @@ export default class Map extends Vue {
             coords: { accuracy, latitude, longitude }
           } = position
 
-          this.currentPosition = {
-            meterAccuracy: accuracy,
-            latitude: latitude,
-            longitude: longitude,
-            type: MarkerType.USER_POSITION,
-            id: ''
+          if (this.userPositions.length) {
+            const lastLoggedPosition = this.userPositions[this.userPositions.length - 1]
+            if (lastLoggedPosition.meterAccuracy === accuracy && lastLoggedPosition.latitude === latitude && lastLoggedPosition.longitude === longitude) {
+              console.log('🙈 Ignoring duplicate measurement. Maybe this only happens during debugging?')
+              return
+            }
+            const isShortlyAfterLastReportedPosition = (Date.now() - lastLoggedPosition.timestamp) < IGNORE_LOCATION_UPDATE_TIMEFRAME_MS
+            const distanceTravelled = coordinateDistance(lastLoggedPosition, { longitude, latitude } as Coord)
+            const isSmallDistanceTravelled = distanceTravelled < IGNORE_LOCATION_UPDATE_DISTANCE_METERS
+            if (isShortlyAfterLastReportedPosition && isSmallDistanceTravelled) {
+              console.log('🙈 Ignoring measurement. Too small difference since previous measurement and too close in time.')
+              return
+            }
           }
+
+          const newCurrentPosition = new UserPositionMarker()
+          newCurrentPosition.meterAccuracy = accuracy
+          newCurrentPosition.latitude = latitude
+          newCurrentPosition.longitude = longitude
+          newCurrentPosition.timestamp = Date.now()
+          newCurrentPosition.showAccuracyCircle = SHOW_PROXIMITY_AREAS
+          this.currentPosition = newCurrentPosition
+          this.userPositions.push(newCurrentPosition)
+          if (this.userPositions.length > MAX_BREADCRUMB_COUNT) {
+            this.userPositions.splice(0, this.userPositions.length - MAX_BREADCRUMB_COUNT)
+          }
+
           if (this.state !== State.POSITION_ACQUIRED) {
             this.updateState(
               State.POSITION_ACQUIRED,
@@ -528,6 +574,10 @@ export default class Map extends Vue {
               )
               break
           }
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 2000
         }
       )
     } else {

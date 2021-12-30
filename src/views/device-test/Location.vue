@@ -65,7 +65,7 @@ import { Component, Vue, Watch } from 'vue-property-decorator'
 import Button from '@/components/common/Button.vue'
 import Fullscreen from '@/components/common/Fullscreen.vue'
 import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
-import Map, { Marker, MarkerType } from '@/components/common/Map.vue'
+import Map, { UserPositionMarker } from '@/components/common/Map.vue'
 import store, { Status } from '@/store'
 import * as Analytics from '@/utils/Analytics'
 import * as LocationUtils from '@/utils/Location'
@@ -102,12 +102,11 @@ const LOGGED_STATUS = [
 export default class Location extends Vue {
   private geolocationStatus = '';
   private geolocationMessage = '';
-  private currentPosition: Marker = {
+  private currentPosition: UserPositionMarker = {
     latitude: 0.0,
     longitude: 0.0,
     meterAccuracy: 0,
-    type: MarkerType.USER_POSITION,
-    id: ''
+    timestamp: 0
   };
 
   private isTestStarted = false;

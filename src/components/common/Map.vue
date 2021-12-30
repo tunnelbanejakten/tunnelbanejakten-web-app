@@ -14,8 +14,6 @@ import * as LocationUtils from '@/utils/Location'
 
 const RECENTER_MAP_ICON_SIZE = 18
 
-const SHOW_PROXIMITY_AREAS = false
-
 const getZoomLevel = (accuracyLevel: LocationUtils.AccuracyLevel) => {
   switch (accuracyLevel) {
     case LocationUtils.AccuracyLevel.HIGHEST:
@@ -80,37 +78,35 @@ const getUserPositionColour = (meterAccuracy: number): any =>
         ? 'yellow'
         : 'orange'
 
-export enum MarkerType {
-  START,
-  CHECKPOINT,
-  CHECKPOINT_SUBMITTED,
-  USER_POSITION,
+export class Coord {
+  latitude: number = 0;
+  longitude: number = 0;
+};
+
+export class Marker extends Coord {
+  meterAccuracy: number = 0;
+  label?: string;
+  showAccuracyCircle?: boolean;
+};
+
+export class StartPositionMarker extends Marker {
+  // Only one start position is assumed
 }
 
-export type Coord = {
-  latitude: number;
-  longitude: number;
-};
+export class UserPositionMarker extends Marker {
+  timestamp: number = 0 // Assumed to be unique
+}
 
-export type Marker = Coord & {
-  meterAccuracy: number;
-  label?: string;
-  type: MarkerType;
-  id: string;
-};
-
-const MARKER_TYPE_ICON = {
-  [MarkerType.START]: iconStart,
-  [MarkerType.USER_POSITION]: iconUserPosition,
-  [MarkerType.CHECKPOINT]: iconCheckpoint,
-  [MarkerType.CHECKPOINT_SUBMITTED]: iconCheckpointSubmitted
+export class CheckpointMarker extends Marker {
+  id: string = '' // Assumed to be unique
+  submitted: boolean = false
 }
 
 @Component({
   components: { Button }
 })
 export default class Map extends Vue {
-  @Prop() private markers!: Record<string, Marker>;
+  @Prop() private markers!: Marker[];
   private mapObjects: Record<string, any> = {};
   private mapRef: any;
   private panLockControl: any;
@@ -133,71 +129,162 @@ export default class Map extends Vue {
   }
 
   @Watch('markers')
-  updateMarkers(newMarkers: Record<string, Marker>) {
-    for (const [key, marker] of Object.entries(newMarkers)) {
-      const { label, latitude, longitude, type, meterAccuracy } = marker
+  updateMarkers(newMarkers: Marker[]) {
 
-      const isCheckpoint = type === MarkerType.CHECKPOINT || type === MarkerType.CHECKPOINT_SUBMITTED
+    const startPositionMarker = newMarkers.find(m => m instanceof StartPositionMarker) as StartPositionMarker
+    this.updateStartPositionMarker(startPositionMarker)
 
-      const style = {
-        stroke: false,
-        radius: meterAccuracy || 10,
+    const userPositionMarkers = newMarkers.filter(m => m instanceof UserPositionMarker) as UserPositionMarker[]
+    this.updateUserPositionMarkers(userPositionMarkers)
 
-        fillColor:
-          isCheckpoint
-            ? '#794794'
-            : getUserPositionColour(meterAccuracy),
-        fillOpacity: isCheckpoint ? 0.5 : 0.25
+    const checkpointMarkers = newMarkers.filter(m => m instanceof CheckpointMarker) as CheckpointMarker[]
+    this.updateCheckpointMarkers(checkpointMarkers)
+
+    const curentUserPosition = userPositionMarkers.length ? userPositionMarkers[userPositionMarkers.length - 1] : null
+    if (curentUserPosition) {
+      this.currentPosition = curentUserPosition as Marker
+      if (!this.isUserPanning) {
+        this.panToCurrentPosition()
       }
+    } else if (startPositionMarker) {
+      this.currentPosition = startPositionMarker
+      if (!this.isUserPanning) {
+        this.panToCurrentPosition()
+      }
+    }
+  }
 
-      const keyMarker = key + '-marker'
-      const keyProximity = key + '-proximity'
+  updateCheckpointMarkers(checkpointMarkers: CheckpointMarker[]) {
+    const currentKeys: string[] = []
+    for (const checkpointMarker of checkpointMarkers) {
+      const latLong = [checkpointMarker.latitude, checkpointMarker.longitude]
+      const key = `checkpoint-${checkpointMarker.id}`
+      currentKeys.push(key)
 
-      if (!Object.keys(this.mapObjects).includes(keyMarker)) {
-        // Create new marker
-        if (SHOW_PROXIMITY_AREAS) {
-          this.mapObjects[keyProximity] = L.circle([latitude, longitude], style)
-          this.mapObjects[keyProximity].addTo(this.mapRef)
-        }
-        const mapMarker = L.marker([latitude, longitude], {
-          icon: MARKER_TYPE_ICON[type],
-          zIndexOffset: isCheckpoint ? 0 : 1000
+      const accuracyCircleKey = `${key}-accuracyCircle`
+      currentKeys.push(accuracyCircleKey)
+
+      const existingMapObject = this.mapObjects[key]
+      if (!existingMapObject) {
+        // First time this checkpoint is rendered
+        const mapMarker = L.marker(latLong, {
+          icon: checkpointMarker.submitted ? iconCheckpointSubmitted : iconCheckpoint,
+          zIndexOffset: 500
         })
-        mapMarker.on('click', () => this.onMarkerClicked(marker))
-        this.mapObjects[keyMarker] = mapMarker
-        this.mapObjects[keyMarker].addTo(this.mapRef)
-      }
+        mapMarker.addTo(this.mapRef)
+        this.mapObjects[key] = mapMarker
 
-      // Update position and design for the "proximity indicator"
-      if (SHOW_PROXIMITY_AREAS) {
-        const objBounds = this.mapObjects[keyProximity]
-        objBounds.setStyle({ fillColor: style.fillColor })
-        objBounds.setRadius(style.radius)
-        objBounds.setLatLng([latitude, longitude])
-      }
-
-      // Update position and design for the "pin"
-      const objMarker = this.mapObjects[keyMarker]
-      objMarker.setLatLng([latitude, longitude])
-    }
-
-    const userPosition = Object.values(newMarkers).find(
-      (marker: Marker) => marker.type === MarkerType.USER_POSITION
-    )
-    const startPosition = Object.values(newMarkers).find(
-      (marker: Marker) => marker.type === MarkerType.START
-    )
-    if (userPosition) {
-      this.currentPosition = userPosition
-      if (!this.isUserPanning) {
-        this.panToCurrentPosition()
-      }
-    } else if (startPosition) {
-      this.currentPosition = startPosition
-      if (!this.isUserPanning) {
-        this.panToCurrentPosition()
+        if (checkpointMarker.showAccuracyCircle) {
+          const accuracyCircle = L.circle(latLong, {
+            stroke: true,
+            fill: false,
+            color: '#794794',
+            weight: 1,
+            radius: checkpointMarker.meterAccuracy
+          })
+          accuracyCircle.addTo(this.mapRef)
+          this.mapObjects[accuracyCircleKey] = accuracyCircle
+        }
+      } else {
+        // Update position
+        existingMapObject.setLatLng(latLong)
       }
     }
+    this.removeMapMarkers('checkpoint-', currentKeys)
+  }
+
+  updateUserPositionMarkers(userPositionMarkers: UserPositionMarker[]) {
+    userPositionMarkers.sort((a, b) => a.timestamp - b.timestamp) // Oldest first
+    const currentKeys: string[] = []
+    userPositionMarkers.forEach((userPositionMarker, index) => {
+      const isCurrent = index === userPositionMarkers.length - 1
+      const positionRelativeAge = userPositionMarkers.length - index
+      const opacity = Math.max(0.1, 1.0 - (positionRelativeAge * 0.15))
+
+      const key = `userPosition-${userPositionMarker.timestamp}-${isCurrent}`
+      const accuracyCircleKey = `${key}-accuracyCircle`
+      currentKeys.push(key, accuracyCircleKey)
+
+      const existingMapObject = this.mapObjects[key]
+      if (!existingMapObject) {
+        const latLong = [userPositionMarker.latitude, userPositionMarker.longitude]
+        const lineStyle = {
+          stroke: true,
+          fill: false,
+          color: getUserPositionColour(userPositionMarker.meterAccuracy),
+          opacity: opacity,
+          weight: 1
+        }
+        // First time this user position is rendered
+        const mapMarker = isCurrent
+          // Render map pin for current position:
+          ? L.marker(latLong, {
+            icon: iconUserPosition,
+            zIndexOffset: 1000
+          })
+          // Render (fading) line for breadcrumbs:
+          : L.polyline(
+            [
+              latLong,
+              [userPositionMarkers[index + 1].latitude, userPositionMarkers[index + 1].longitude]
+            ],
+            lineStyle)
+        mapMarker.addTo(this.mapRef)
+        this.mapObjects[key] = mapMarker
+
+        if (userPositionMarker.showAccuracyCircle) {
+          const accuracyCircle = L.circle(latLong, lineStyle)
+          accuracyCircle.setRadius(userPositionMarker.meterAccuracy)
+          accuracyCircle.addTo(this.mapRef)
+          this.mapObjects[accuracyCircleKey] = accuracyCircle
+        }
+      } else {
+        // Update position
+        if (!isCurrent) {
+          existingMapObject.setStyle({
+            opacity
+          })
+          const accuracyCircle = this.mapObjects[accuracyCircleKey]
+          if (accuracyCircle) {
+            accuracyCircle.setStyle({
+              opacity
+            })
+          }
+        }
+      }
+    })
+    this.removeMapMarkers('userPosition-', currentKeys)
+  }
+
+  updateStartPositionMarker(startPositionMarker: StartPositionMarker) {
+    const existingMapObject = this.mapObjects.startPosition
+    if (!startPositionMarker && !existingMapObject) {
+      // Nothing to do
+    } else if (startPositionMarker && !existingMapObject) {
+      // First time start position is rendered
+      const mapMarker = L.marker([startPositionMarker.latitude, startPositionMarker.longitude], {
+        icon: iconStart,
+        zIndexOffset: 0
+      })
+      mapMarker.on('click', () => this.onMarkerClicked(startPositionMarker))
+      mapMarker.addTo(this.mapRef)
+      this.mapObjects.startPosition = mapMarker
+    } else if (!startPositionMarker && existingMapObject) {
+      // Start position should no longer be rendered
+      existingMapObject.remove()
+    } else {
+      // Update position
+      existingMapObject.setLatLng([startPositionMarker.latitude, startPositionMarker.longitude])
+    }
+  }
+
+  removeMapMarkers(includeKeyPrefix: string, excludeKeys: string[]) {
+    Object.keys(this.mapObjects)
+      .filter(key => key.substring(0, includeKeyPrefix.length) === includeKeyPrefix && !excludeKeys.includes(key))
+      .forEach(key => {
+        this.mapObjects[key].remove()
+        delete this.mapObjects[key]
+      })
   }
 
   panToCurrentPosition() {
@@ -275,8 +362,7 @@ export default class Map extends Vue {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       zoom: 15,
       id: 'openstreetmap',
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(this.mapRef)
 
     this.mapRef.on('movestart', this.onUserMapPan)
