@@ -1,5 +1,6 @@
 /* eslint-disable camelcase */
 export type QuestionDto = {
+    id: number;
     type: string;
     is_read_only: boolean;
     response: {

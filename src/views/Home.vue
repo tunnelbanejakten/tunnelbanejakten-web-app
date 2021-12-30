@@ -17,35 +17,11 @@
           :type="messageType"
         />
       </div>
-      <div
-        class="question-group"
-        v-for="questionGroup in questionGroups"
-        :key="questionGroup.id"
-      >
-        <div
-          v-if="questionGroup.name"
-          class="name"
-        >
-          {{ questionGroup.name }}
-        </div>
-        <div
-          v-if="questionGroup.description"
-          v-html="questionGroup.description"
-          class="description"
-        />
-        <div>
-          <div
-            class="question"
-            v-for="question in questionGroup.questions"
-            :key="question.id"
-          >
-            <QuestionForm
-              :question="question"
-              :question-id="question.id"
-            />
-          </div>
-        </div>
-      </div>
+      <component
+        :is="currentComponent"
+        :question-groups="questionGroups"
+        @submit-success="onSubmitSuccess"
+      />
     </div>
   </Page>
 </template>
@@ -55,10 +31,14 @@ import { Component, Vue } from 'vue-property-decorator'
 import Loader from '@/components/common/Loader.vue'
 import Page from '@/components/layout/Page.vue'
 import QuestionForm from '@/components/QuestionForm.vue'
+import QuestionListFlat from '@/views/question-list/QuestionListFlat.vue'
+import QuestionListByGroup from '@/views/question-list/QuestionListByGroup.vue'
+import QuestionListByQuestion from '@/views/question-list/QuestionListByQuestion.vue'
 import * as AuthUtils from '@/utils/Auth'
 import * as Analytics from '@/utils/Analytics'
 import { QuestionDto, QuestionGroupDto } from '@/components/common/question/model'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
+import store, { QuestionGrouping } from '@/store'
 
 const apiHost = process.env.VUE_APP_API_HOST
 
@@ -67,7 +47,10 @@ const apiHost = process.env.VUE_APP_API_HOST
     Page,
     QuestionForm,
     Loader,
-    Message
+    Message,
+    QuestionListFlat,
+    QuestionListByGroup,
+    QuestionListByQuestion
   }
 })
 export default class Home extends Vue {
@@ -100,7 +83,7 @@ export default class Home extends Vue {
           this.message = 'Det finns inga uppgifter att besvara just nu.'
           this.messageType = MessageType.INFO
         }
-      } catch (e) {
+      } catch (e: any) {
         Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'fetch', {
           message: `Could not fetch questions. Reason: ${e.message}.`
         })
@@ -111,34 +94,33 @@ export default class Home extends Vue {
       this.isLoadingQuestions = false
     }
   }
+
+  get questionGrouping() {
+    return store.state.configuration.answer.questionGrouping
+  }
+
+  get currentComponent() {
+    if (this.questionGrouping === QuestionGrouping.BY_QUESTION_GROUP) {
+      return 'QuestionListByGroup'
+    } else if (this.questionGrouping === QuestionGrouping.BY_QUESTION) {
+      return 'QuestionListByQuestion'
+    } else {
+      return 'QuestionListFlat'
+    }
+  }
+
+  onSubmitSuccess(updatedQuestionData: QuestionDto) {
+    this.questionGroups.forEach(questionGroup => {
+      const index = questionGroup.questions.findIndex(q => q.id === updatedQuestionData.id)
+      if (index !== -1) {
+        questionGroup.questions.splice(index, 1, updatedQuestionData)
+      }
+    })
+  }
 }
 </script>
 
 <style scoped>
-div.question {
-  border-top: 1px solid #ccc;
-  margin: 15px 0 0 0;
-  padding: 15px 0 0 0;
-}
-div.question:first-child {
-  border-top: none;
-  margin-top: 0;
-  padding-top: 0;
-}
-div.question-group {
-  background-color: #fff;
-  border-radius: 10px;
-  margin: 15px 0;
-  padding: 15px;
-}
-div.question-group::v-deep .description img {
-  max-width: 100%;
-}
-div.question-group div.name,
-div.question-group div.description {
-  margin-top: 0;
-  padding: 0;
-}
 div.map-link-wrapper {
   font-size: 90%;
   font-style: italic;

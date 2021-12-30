@@ -37,6 +37,7 @@ export default class Button extends Vue {
   @Prop() private pending!: boolean
   @Prop({ default: Type.PRIMARY }) readonly type!: Type
   @Prop({ default: Size.NORMAL }) readonly size!: Size
+  @Prop({ default: false }) readonly wide!: boolean
 
   @Emit('click')
   onClick() {
@@ -44,7 +45,7 @@ export default class Button extends Vue {
   }
 
   get buttonClass(): string {
-    return `type-${this.type} size-${this.size} pending-${this.pending ? 'yes' : 'no'}`
+    return `type-${this.type} size-${this.size} pending-${this.pending ? 'yes' : 'no'} width-${this.wide ? 'full' : 'auto'}`
   }
 }
 </script>
@@ -63,6 +64,14 @@ button.size-normal {
 button.size-huge {
   padding: 15px 30px;
   font-size: 20px;
+}
+
+button.width-full {
+  width: 100%;
+}
+
+button.width-autp {
+  width: auto;
 }
 
 button.type-primary {

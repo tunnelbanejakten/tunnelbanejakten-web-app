@@ -146,9 +146,7 @@ export default class QuestionForm extends Vue {
         )
         if (resp.ok) {
           const payload = await resp.json()
-          this.loadedQuestion = payload
-
-          this.onSubmitSuccess()
+          this.onSubmitSuccess({ ...payload, id: this.questionId })
         } else {
           this.onSubmitFailure(new Error('Kunde inte spara svar'))
         }
@@ -160,7 +158,8 @@ export default class QuestionForm extends Vue {
   }
 
   @Emit('submit-success')
-  onSubmitSuccess() {
+  onSubmitSuccess(updatedQuestionData: QuestionDto) {
+    this.loadedQuestion = updatedQuestionData
     Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'submitted', 'answer', {
       message: `Submitted answer to question ${this.questionId}.`
     })
@@ -168,7 +167,7 @@ export default class QuestionForm extends Vue {
     this.message = 'Ditt svar sparades'
     this.messageType = MessageType.SUCCESS
 
-    return true
+    return updatedQuestionData
   }
 
   @Emit('submit-failure')

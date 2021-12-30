@@ -1,8 +1,7 @@
 <template>
   <Page title="Info">
-    <div
+    <Card
       v-html="bodyText"
-      class="body-text"
     />
   </Page>
 </template>
@@ -10,11 +9,13 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
 import Page from '@/components/layout/Page.vue'
+import Card from '@/components/layout/Card.vue'
 import store from '@/store'
 
 @Component({
   components: {
-    Page
+    Page,
+    Card
   }
 })
 export default class About extends Vue {
@@ -25,10 +26,10 @@ export default class About extends Vue {
 </script>
 
 <style scoped>
-div.body-text {
-  background-color: #fff;
-  border-radius: 10px;
-  margin: 5px 0;
-  padding: 15px;
+.card::v-deep p:first-child {
+  margin-top: 0;
+}
+.card::v-deep p:last-child {
+  margin-bottom: 0;
 }
 </style>
