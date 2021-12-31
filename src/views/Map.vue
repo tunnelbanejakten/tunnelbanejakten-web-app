@@ -68,7 +68,6 @@ import * as AuthUtils from '@/utils/Auth'
 import MapComponent, {
   Coord,
   Marker,
-  // MarkerType,
   UserPositionMarker,
   CheckpointMarker,
   StartPositionMarker
@@ -84,7 +83,6 @@ import Checkpoint from './map/Checkpoint.vue'
 import * as LocationUtils from '@/utils/Location'
 import * as Analytics from '@/utils/Analytics'
 import store from '@/store'
-import { logEventWithGroups } from 'amplitude-js'
 
 const apiHost = process.env.VUE_APP_API_HOST
 
@@ -142,8 +140,6 @@ const deg2rad = (deg: number) => {
   return deg * (Math.PI / 180)
 }
 
-// Show circles indicating the accuracy of the measuments:
-const SHOW_PROXIMITY_AREAS = true
 // Minimum time to pass between two location measurements (more frequest measurements might be reported to app but will not trigger GUI update):
 const IGNORE_LOCATION_UPDATE_TIMEFRAME_MS = 2000
 // Minimum distance between two location measurements for GUI to be updated:
@@ -398,24 +394,20 @@ export default class Map extends Vue {
                 link_form_question_id: questionId,
                 is_response_submitted: isResponseSubmitted
               }: ApiMarker): Marker => {
+                let marker
                 if (type === 'START') {
-                  const marker = new StartPositionMarker()
-                  marker.latitude = latitude
-                  marker.longitude = longitude
-                  marker.meterAccuracy = radius
-                  marker.label = String(name)
-                  return marker
+                  marker = new StartPositionMarker()
                 } else {
-                  const marker = new CheckpointMarker()
-                  marker.latitude = latitude
-                  marker.longitude = longitude
-                  marker.meterAccuracy = radius
-                  marker.label = String(name)
+                  marker = new CheckpointMarker()
                   marker.id = String(questionId)
                   marker.submitted = isResponseSubmitted
-                  marker.showAccuracyCircle = SHOW_PROXIMITY_AREAS
-                  return marker
+                  marker.showAccuracyCircle = store.state.debugSettings.map
                 }
+                marker.latitude = latitude
+                marker.longitude = longitude
+                marker.meterAccuracy = radius
+                marker.label = String(name)
+                return marker
               }
             )
             Analytics.logEvent(
@@ -507,11 +499,14 @@ export default class Map extends Vue {
           newCurrentPosition.latitude = latitude
           newCurrentPosition.longitude = longitude
           newCurrentPosition.timestamp = Date.now()
-          newCurrentPosition.showAccuracyCircle = SHOW_PROXIMITY_AREAS
+          newCurrentPosition.showAccuracyCircle = store.state.debugSettings.map
+
           this.currentPosition = newCurrentPosition
+
           this.userPositions.push(newCurrentPosition)
-          if (this.userPositions.length > MAX_BREADCRUMB_COUNT) {
-            this.userPositions.splice(0, this.userPositions.length - MAX_BREADCRUMB_COUNT)
+          const userPositionsHistoryLimit = store.state.debugSettings.map ? 1 : MAX_BREADCRUMB_COUNT
+          if (this.userPositions.length > userPositionsHistoryLimit) {
+            this.userPositions.splice(0, this.userPositions.length - userPositionsHistoryLimit)
           }
 
           if (this.state !== State.POSITION_ACQUIRED) {

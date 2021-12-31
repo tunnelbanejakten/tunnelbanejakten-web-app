@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <DebugPopup />
+    <DebugPopup v-if="isDebugPopupEnabled" />
     <div
       v-if="isUpdatePending"
       class="new-version-container"
@@ -175,6 +175,10 @@ export default class App extends Mixins(ServiceWorkerMixin) {
     if (this.confPollTimer) {
       clearTimeout(this.confPollTimer)
     }
+  }
+
+  get isDebugPopupEnabled(): boolean {
+    return store.state.debugSettings.console
   }
 }
 </script>

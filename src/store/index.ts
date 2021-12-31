@@ -1,5 +1,12 @@
 import * as Analytics from '@/utils/Analytics'
+import * as LocalSettings from '@/utils/LocalSettings'
 import Vue from 'vue'
+
+const VALUE_TRUE = 'true'
+const VALUE_FALSE = 'false'
+
+const LOCALSETTING_DEBUG_MAP = 'debug-map'
+const LOCALSETTING_DEBUG_CONSOLE = 'debug-console'
 
 export enum Status {
   PENDING,
@@ -44,10 +51,16 @@ export type Configuration = {
   }
 }
 
+type Debug = {
+  map: boolean
+  console: boolean
+}
+
 type State = {
   deviceTest: Record<string, DeviceTestStatus>
   configuration: Configuration
   eventLog: EventLog
+  debugSettings: Debug
 }
 
 type EventLog = {
@@ -95,6 +108,10 @@ const state: State = {
   eventLog: {
     events: Array(10).fill(null),
     cursorPosition: -1
+  },
+  debugSettings: {
+    map: LocalSettings.get(LOCALSETTING_DEBUG_MAP) === VALUE_TRUE,
+    console: LocalSettings.get(LOCALSETTING_DEBUG_CONSOLE) === VALUE_TRUE
   }
 }
 
@@ -130,6 +147,14 @@ const store = {
       }
     }
     return res;
+  },
+  setDebugMap(value: boolean) {
+    this.state.debugSettings.map = value
+    LocalSettings.set(LOCALSETTING_DEBUG_MAP, value ? VALUE_TRUE : VALUE_FALSE)
+  },
+  setDebugConsole(value: boolean) {
+    this.state.debugSettings.console = value
+    LocalSettings.set(LOCALSETTING_DEBUG_CONSOLE, value ? VALUE_TRUE : VALUE_FALSE)
   }
 }
 
