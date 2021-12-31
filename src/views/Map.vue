@@ -504,7 +504,7 @@ export default class Map extends Vue {
           this.currentPosition = newCurrentPosition
 
           this.userPositions.push(newCurrentPosition)
-          const userPositionsHistoryLimit = store.state.debugSettings.map ? 1 : MAX_BREADCRUMB_COUNT
+          const userPositionsHistoryLimit = store.state.debugSettings.map ? MAX_BREADCRUMB_COUNT : 1
           if (this.userPositions.length > userPositionsHistoryLimit) {
             this.userPositions.splice(0, this.userPositions.length - userPositionsHistoryLimit)
           }
