@@ -99,7 +99,7 @@ export default class Camera extends Vue {
     const cam: any = this.$refs.webcam
     const image = cam.capture()
     Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'capture', 'photo', { byteCount: image.length }, Analytics.LogLevel.INFO)
-    this.$emit('captured', image)    
+    this.$emit('captured', image)
   }
 
   beforeDestroy() {
@@ -126,7 +126,7 @@ export default class Camera extends Vue {
 
     mediaStream.getVideoTracks().forEach((videoTrack: any) => {
       const currentSettings = videoTrack.getSettings()
-      console.log(`Got ${currentSettings.width}x${currentSettings.height}`)
+      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'start', 'camera', { ...currentSettings }, Analytics.LogLevel.INFO)
       this.videoActualDimensions = {
         width: currentSettings.width,
         height: currentSettings.height
