@@ -39,8 +39,11 @@ import IconButton from '@/components/common/IconButton.vue'
 import { WebCam } from 'vue-web-cam'
 import * as Analytics from '@/utils/Analytics'
 
-type DeviceData = {
+type MediaDeviceInfo = {
   deviceId: string;
+  groupId: string;
+  kind: string;
+  label: string;
 };
 
 type Dimensions = {
@@ -53,7 +56,7 @@ type Dimensions = {
 })
 export default class Camera extends Vue {
   private deviceId?= '';
-  private devices: DeviceData[] = [];
+  private devices: MediaDeviceInfo[] = [];
   private isPlaying = false;
   private videoActualDimensions: Dimensions | null = null;
   private videoPreviewDimensions: Dimensions | null = {
@@ -142,7 +145,7 @@ export default class Camera extends Vue {
 
   onCameras(cameras: any) {
     this.devices = cameras
-    Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'get', 'camera list', { count: cameras.length, deviceIds: cameras.map(({ deviceId }: any) => deviceId) }, Analytics.LogLevel.INFO)
+    Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'get', 'camera list', { count: cameras.length, devices: cameras }, Analytics.LogLevel.INFO)
   }
 
   onCameraChange(deviceId: string) {
