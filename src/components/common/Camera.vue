@@ -37,6 +37,7 @@ import { Component, Vue, Watch } from 'vue-property-decorator'
 import Button from '@/components/common/Button.vue'
 import IconButton from '@/components/common/IconButton.vue'
 import { WebCam } from 'vue-web-cam'
+import * as Analytics from '@/utils/Analytics'
 
 type DeviceData = {
   deviceId: string;
@@ -51,7 +52,7 @@ type Dimensions = {
   components: { WebCam, Button, IconButton }
 })
 export default class Camera extends Vue {
-  private deviceId? = '';
+  private deviceId?= '';
   private devices: DeviceData[] = [];
   private isPlaying = false;
   private videoActualDimensions: Dimensions | null = null;
@@ -60,11 +61,9 @@ export default class Camera extends Vue {
     height: 300
   };
 
-  private camera? = '';
-
-  @Watch('camera')
-  onCameraValueChange(id: string) {
-    this.deviceId = id
+  @Watch('deviceId')
+  onDeviceIdChange(deviceId: string) {
+    Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'set', 'camera', { deviceId }, Analytics.LogLevel.INFO)
   }
 
   @Watch('devices')
@@ -72,7 +71,6 @@ export default class Camera extends Vue {
     // Once we have a list select the first one
     const [first, ...tail]: any[] = this.devices
     if (first) {
-      this.camera = first.deviceId
       this.deviceId = first.deviceId
     }
   }
@@ -97,8 +95,8 @@ export default class Camera extends Vue {
   capture() {
     const cam: any = this.$refs.webcam
     const image = cam.capture()
-    console.log(`📷 Captured photo. Got ${image.length} bytes.`)
-    this.$emit('captured', image)
+    Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'capture', 'photo', { byteCount: image.length }, Analytics.LogLevel.INFO)
+    this.$emit('captured', image)    
   }
 
   beforeDestroy() {
@@ -139,18 +137,16 @@ export default class Camera extends Vue {
   }
 
   onError(error: any) {
-    console.log('On Error Event', error)
+    Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'caught', 'error', { ...error }, Analytics.LogLevel.WARNING)
   }
 
   onCameras(cameras: any) {
     this.devices = cameras
-    console.log('On Cameras Event', cameras)
+    Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'get', 'camera list', { count: cameras.length, deviceIds: cameras.map(({ deviceId }: any) => deviceId) }, Analytics.LogLevel.INFO)
   }
 
   onCameraChange(deviceId: string) {
     this.deviceId = deviceId
-    this.camera = deviceId
-    console.log('On Camera Change Event', deviceId)
   }
 }
 </script>

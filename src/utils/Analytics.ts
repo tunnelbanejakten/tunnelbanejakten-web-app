@@ -9,7 +9,8 @@ export enum AnalyticsEventType {
   DEVICE_TEST,
   LOCATION,
   MAP,
-  FORM
+  FORM,
+  CAMERA
 }
 
 export enum LogLevel {
