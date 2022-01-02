@@ -6,6 +6,7 @@
       :label="startTestButtonLabel"
       :type="startTestButtonType"
       size="huge"
+      :wide="true"
       @click="onStartTest"
     />
     <p v-if="isChecking">

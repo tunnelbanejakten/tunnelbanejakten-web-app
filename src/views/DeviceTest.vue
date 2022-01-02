@@ -190,7 +190,6 @@ export default class DeviceTest extends Vue {
   justify-content: space-between;
 }
 .test-component-wrapper {
-  text-align: center;
   margin: 10px 0 20px 0;
 }
 </style>

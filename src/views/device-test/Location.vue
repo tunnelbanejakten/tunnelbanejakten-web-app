@@ -6,6 +6,7 @@
     </p>
     <Button
       @click="onStartTest"
+      :wide="true"
       size="huge"
       :label="startTestButtonLabel"
       :type="startTestButtonType"

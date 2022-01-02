@@ -5,6 +5,7 @@
       :label="startTestButtonLabel"
       :type="startTestButtonType"
       size="huge"
+      :wide="true"
       @click="onStartTest"
     />
     <Fullscreen
@@ -57,7 +58,7 @@ import store, { Status } from '@/store'
 export default class Camera extends Vue {
   private isCameraShown = false;
 
-  private img? = '';
+  private img?= '';
 
   get startTestButtonLabel() {
     return [Status.PENDING, Status.USER_INTERACTION_REQUIRED].includes(store.state.deviceTest.camera.status)

@@ -8,6 +8,7 @@
       <Message
         :message="test.message"
         :header="test.header"
+        :headerIcon="test.headerIcon"
         :type="test.messageType"
       />
     </p>
@@ -23,6 +24,12 @@ const LABELS: Record<string, string> = {
   connectivity: 'Uppkoppling',
   camera: 'Kamera',
   location: 'Plats'
+}
+
+const HEADER_ICONS: Record<string, string> = {
+  connectivity: 'wifi',
+  camera: 'camera',
+  location: 'map-marker-alt'
 }
 
 const STATUSES: Record<Status, string> = {
@@ -50,6 +57,7 @@ export default class Summary extends Vue {
       return {
         key,
         header: LABELS[key],
+        headerIcon: HEADER_ICONS[key],
         message: STATUSES[this.state[key].status],
         messageType: MESSAGE_TYPES[this.state[key].status]
       }
