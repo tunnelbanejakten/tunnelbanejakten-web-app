@@ -54,6 +54,9 @@ export default class Button extends Vue {
 button {
   border-radius: 10px;
   font: 16px/1.4 "Open Sans", Tahoma, Verdana, Segoe, sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 button.size-normal {
