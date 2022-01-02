@@ -15,9 +15,16 @@
     >
       <Message
         header="Problem med kartan"
+        headerIcon="map-marker-alt"
         :message="stateMessage"
         :type="stateMessageType"
-      />
+      >
+        <Button
+          label="Testa igen"
+          :wide="false"
+          @click="initLocationListener"
+        />
+      </Message>
     </div>
     <div
       class="map-container"
@@ -545,7 +552,7 @@ export default class Map extends Vue {
             case 1:
               this.updateState(
                 State.ERROR,
-                'Antingen är din GPS inte påslagen eller så blockerade du den.'
+                'Antingen är din GPS inte påslagen eller så har du blockerat du den här sidan från att använda den.'
               )
               break
             // 2 POSITION_UNAVAILABLE The acquisition of the geolocation failed because one or several internal sources of position returned an internal error.
@@ -569,6 +576,7 @@ export default class Map extends Vue {
               )
               break
           }
+          this.stopLocationListener()
         },
         {
           enableHighAccuracy: true,
@@ -587,7 +595,7 @@ export default class Map extends Vue {
     }
   }
 
-  beforeDestroy() {
+  stopLocationListener() {
     if (this.watchId) {
       navigator.geolocation.clearWatch(this.watchId)
     }
@@ -595,6 +603,10 @@ export default class Map extends Vue {
       clearTimeout(this.lowAccuracyTimeoutId)
       this.lowAccuracyTimeoutId = 0
     }
+  }
+
+  beforeDestroy() {
+    this.stopLocationListener()
   }
 }
 </script>

@@ -28,6 +28,12 @@
       >
         {{ message }}
       </div>
+      <div
+        v-if="isExtraContentDefined"
+        class="extra-content"
+      >
+        <slot name="default" />
+      </div>
     </div>
   </div>
 </template>
@@ -69,9 +75,15 @@ export default class Message extends Vue {
   get icon(): string {
     return icons[this.type]
   }
+
   get iconColor(): string {
     return iconColors[this.type]
   }
+
+  get isExtraContentDefined() {
+    return !!this.$slots.default
+  }
+
 }
 </script>
 
@@ -105,6 +117,11 @@ export default class Message extends Vue {
 .content {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+}
+
+.extra-content {
+  margin: 15px 0 0 0;
 }
 
 .icon {
@@ -120,6 +137,7 @@ export default class Message extends Vue {
 .content div {
   margin: 15px 0 0 0;
 }
+
 .content div:first-child {
   margin: 5px 0 0 0;
 }
