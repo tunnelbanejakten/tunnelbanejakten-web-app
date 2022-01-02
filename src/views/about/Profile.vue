@@ -21,16 +21,17 @@
       </tbody>
     </table>
     <p>
-      Administrera er anmälan i
-      <a
-        :href="groupPortalLink"
-        target="_blank"
-        class="group-portal-link"
-      >Lagportalen</a>
-      <font-awesome-icon
-        icon="external-link-alt"
-        size="xs"
-      />.
+      Ni kan ändra er anmälan i
+      <span class="group-portal-link">
+        <a
+          :href="groupPortalLink"
+          target="_blank"
+        >Lagportalen</a>
+        <font-awesome-icon
+          icon="external-link-alt"
+          size="xs"
+        />
+      </span>.
     </p>
   </div>
 </template>
@@ -52,7 +53,10 @@ export default class Profile extends Vue {
 </script>
 
 <style scoped>
-a.group-portal-link {
+span.group-portal-link {
+  white-space: nowrap;
+}
+span.group-portal-link a {
   padding-right: 0.3em;
 }
 table {
