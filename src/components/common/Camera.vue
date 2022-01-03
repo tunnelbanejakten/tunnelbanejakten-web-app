@@ -145,7 +145,14 @@ export default class Camera extends Vue {
 
   onCameras(cameras: any) {
     this.devices = cameras
-    Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'get', 'camera list', { count: cameras.length, devices: cameras }, Analytics.LogLevel.INFO)
+    const props = cameras.reduce((res: Record<string, string>, { deviceId, label }: any, index: number) => ({
+      ...res,
+      [`camera${index}DeviceId`]: deviceId,
+      [`camera${index}Label`]: label
+    }), {
+      cameraCount: cameras.length
+    })
+    Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'get', 'camera list', props, Analytics.LogLevel.INFO)
   }
 
   onCameraChange(deviceId: string) {
