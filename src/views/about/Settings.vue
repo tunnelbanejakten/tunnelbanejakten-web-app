@@ -13,12 +13,13 @@
           v-model="debugConsole"
         >Visa loggfönster</label>
     </div>
-    <p v-if="groupKey">Om Kundtjänst frågar så är erat grupp-id <code>{{ groupKey }}</code>.</p>
+    <p v-if="groupKey">Om Kundtjänst frågar så är erat grupp-id <code @click="toggleFullGroupIdShown">{{ groupId }}</code>.</p>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue, Prop, Watch } from 'vue-property-decorator'
+import * as Analytics from '@/utils/Analytics'
 import store from '@/store'
 
 @Component({
@@ -28,8 +29,20 @@ import store from '@/store'
 export default class Settings extends Vue {
   @Prop({ default: '' }) private readonly groupKey!: string
 
+  private isFullGroupIdShown: boolean = false
+
   get debugMap() {
     return store.state.debugSettings.map
+  }
+
+  get groupId() {
+    const groupKey = this.groupKey
+    const deviceId = Analytics.getDeviceId() ?? ''
+    return this.isFullGroupIdShown ? `${groupKey}-${deviceId}` : `${groupKey.substring(0,5).toUpperCase()}-${deviceId.substring(0,5).toUpperCase()}`
+  }
+
+  get deviceId() {
+    return 
   }
 
   get debugConsole() {
@@ -42,6 +55,10 @@ export default class Settings extends Vue {
 
   set debugConsole(value: boolean) {
     store.setDebugConsole(value)
+  }
+
+  toggleFullGroupIdShown() {
+    this.isFullGroupIdShown = !this.isFullGroupIdShown
   }
 }
 </script>

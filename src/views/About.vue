@@ -78,7 +78,7 @@ export default class About extends Vue {
       this.isLoading = false
       if (profileResp.ok) {
         const profilePayload = await profileResp.json()
-        this.groupKey = (profilePayload.key ?? '').toUpperCase()
+        this.groupKey = profilePayload.key ?? ''
         this.groupName = profilePayload.name
         this.groupPortalLink = profilePayload.portal_link
         this.categoryName = profilePayload.category_name

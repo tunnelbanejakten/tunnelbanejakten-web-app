@@ -106,6 +106,13 @@ const logToConsole = (event: AppEvent) => {
   store.addEvent(event)
 }
 
+export const getDeviceId = () => {
+  if (!isAnalyticsInitialized) {
+    initAmplitude()
+  }
+  return amplitude.getInstance().options.deviceId
+}
+
 export const logEvent = (type: AnalyticsEventType, eventVerb: string, eventObject: string, props?: Record<string, any>, level: LogLevel = LogLevel.INFO) => {
   const appEvent = {
     level,
