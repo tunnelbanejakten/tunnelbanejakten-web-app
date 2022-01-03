@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="view-finder">
-      <WebCam
+      <CameraViewfinder
         height="100%"
         width="100%"
         :resolution="{ width: 1980, height: 1080 }"
@@ -36,7 +36,7 @@
 import { Component, Vue, Watch } from 'vue-property-decorator'
 import Button from '@/components/common/Button.vue'
 import IconButton from '@/components/common/IconButton.vue'
-import { WebCam } from 'vue-web-cam'
+import CameraViewfinder from './CameraViewfinder.vue'
 import * as Analytics from '@/utils/Analytics'
 
 type MediaDeviceInfo = {
@@ -52,7 +52,7 @@ type Dimensions = {
 };
 
 @Component({
-  components: { WebCam, Button, IconButton }
+  components: { CameraViewfinder, Button, IconButton }
 })
 export default class Camera extends Vue {
   private deviceId?= '';
