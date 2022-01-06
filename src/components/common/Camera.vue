@@ -260,6 +260,11 @@ export default class Camera extends Vue {
           this.state = State.FAILED
         }
       }
+      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'list', 'camera lookup', {
+        environmentDeviceId: this.environmentDeviceId,
+        selfieDeviceId: this.selfieDeviceId,
+        selectedDeviceId: this.selectedDeviceId
+      }, Analytics.LogLevel.DEBUG)
     } catch (e: any) {
       this.state = State.FAILED
       console.log('💥💥', e)
