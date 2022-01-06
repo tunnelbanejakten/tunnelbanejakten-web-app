@@ -159,7 +159,7 @@ export default class Camera extends Vue {
 
   onStopped(stream: any) {
     Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'stopped', 'camera', {}, Analytics.LogLevel.DEBUG)
-    this.state = State.FAILED
+    // this.state = State.FAILED
   }
 
   // onError(error: any) {

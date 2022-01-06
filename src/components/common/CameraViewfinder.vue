@@ -27,6 +27,7 @@ export default class CameraViewfinder extends Vue {
   }
 
   loadSrcStream(stream: any) {
+    this.stop()
     const videoElement: any = this.$refs.video
     if ("srcObject" in videoElement) {
       // new browsers api
