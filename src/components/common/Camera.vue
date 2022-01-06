@@ -284,7 +284,8 @@ export default class Camera extends Vue {
       .getUserMedia(constraints)
       .then((stream: any) => cam.loadSrcStream(stream))
       .catch((error: any) => {
-        Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera', { error: JSON.stringify(error) }, Analytics.LogLevel.DEBUG)
+        const { code, message, name } = error
+        Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera', { error: JSON.stringify(error), code, message, name }, Analytics.LogLevel.DEBUG)
         this.state = State.FAILED
         this.$emit("error", error)
       });
