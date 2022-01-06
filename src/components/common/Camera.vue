@@ -149,7 +149,7 @@ export default class Camera extends Vue {
 
     mediaStream.getVideoTracks().forEach((videoTrack: any) => {
       const currentSettings = videoTrack.getSettings()
-      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'start', 'camera', { ...currentSettings }, Analytics.LogLevel.INFO)
+      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'start', 'camera', { ...currentSettings }, Analytics.LogLevel.DEBUG)
       this.videoActualDimensions = {
         width: currentSettings.width,
         height: currentSettings.height
@@ -158,7 +158,7 @@ export default class Camera extends Vue {
   }
 
   onStopped(stream: any) {
-    console.log('On Stopped Event', stream)
+    Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'stopped', 'camera', {}, Analytics.LogLevel.DEBUG)
     this.state = State.FAILED
   }
 
@@ -254,6 +254,7 @@ export default class Camera extends Vue {
           this.environmentDeviceId = undefined
           this.selfieDeviceId = undefined
           this.selectedDeviceId = undefined
+          Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera lookup', {}, Analytics.LogLevel.DEBUG)
           this.state = State.FAILED
         }
       }
@@ -263,8 +264,8 @@ export default class Camera extends Vue {
         selectedDeviceId: this.selectedDeviceId
       }, Analytics.LogLevel.DEBUG)
     } catch (e: any) {
+      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera lookup', e, Analytics.LogLevel.DEBUG)
       this.state = State.FAILED
-      console.log('💥💥', e)
     }
   }
 
@@ -285,8 +286,8 @@ export default class Camera extends Vue {
       .getUserMedia(constraints)
       .then((stream: any) => cam.loadSrcStream(stream))
       .catch((error: Error) => {
+        Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera', error, Analytics.LogLevel.DEBUG)
         this.state = State.FAILED
-        console.log('💥💥💥', error)
         this.$emit("error", error)
       });
   }
