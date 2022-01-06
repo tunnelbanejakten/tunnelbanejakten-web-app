@@ -18,7 +18,7 @@
         size="huge"
       />
       <IconButton
-        v-if="!!deviceIds && deviceIds.length > 1"
+        v-if="isCameraSwitchingEnabled"
         @click="switchCamera"
         icon="switch"
         type="secondary"
@@ -61,7 +61,6 @@ export default class Camera extends Vue {
   private _selectedDeviceId: string | undefined;
   private selfieDeviceId: string | undefined
   private environmentDeviceId: string | undefined
-  private deviceIds: Set<string> = new Set()
   private videoActualDimensions: Dimensions | null = null;
   private state: State = State.INIT
 
@@ -91,6 +90,9 @@ export default class Camera extends Vue {
   get isStartingState() { return this.state === State.STARTING }
   get isStartedState() { return this.state === State.STARTED }
   get isFailedState() { return this.state === State.FAILED }
+  get isCameraSwitchingEnabled() {
+    return this.environmentDeviceId && this.selfieDeviceId
+  }
   // get isViewfinderActive() { return this.isStartingState || this.isStartedState }
   get stateDescription() {
     switch (this.state) {
@@ -216,10 +218,10 @@ export default class Camera extends Vue {
       })
       const deviceId = stream.getVideoTracks().map(track => track.getSettings().deviceId).shift()
       stream.getTracks().forEach(track => track.stop())
-      console.log('📹 Found camera', videoConstraint, deviceId)
+      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'completed', 'camera lookup', { deviceId, videoConstraint: JSON.stringify(videoConstraint) }, Analytics.LogLevel.DEBUG)
       return deviceId
-    } catch (e: any) {
-      console.log('💥', e, e.name, e.code, e.message)
+    } catch ({ name, code, message }: any) {
+      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera lookup', { name, code, message }, Analytics.LogLevel.DEBUG)
       return undefined
     }
   }
