@@ -29,9 +29,7 @@
         @close="onStopCamera"
       >
         <div class="camera-container">
-          <div class="camera">
-            <Camera @captured="onCaptured" />
-          </div>
+          <Camera @captured="onCaptured" />
         </div>
         <div
           v-if="!!imageDataUrl"
@@ -339,6 +337,13 @@ export default class ImagesQuestionImage extends Vue {
 }
 .mode-uploaded {
   position: relative;
+}
+.camera-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 .camera-container .buttons button {
   margin-left: 10px;

@@ -13,9 +13,7 @@
       @close="onEndTest"
     >
       <div class="camera-container">
-        <div class="camera">
-          <CameraComponent @captured="onCaptured" />
-        </div>
+        <CameraComponent @captured="onCaptured" />
       </div>
       <div
         v-if="!!img"
@@ -99,6 +97,13 @@ export default class Camera extends Vue {
 </script>
 
 <style scoped>
+.camera-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
 .camera-container .buttons button {
   margin-left: 10px;
 }

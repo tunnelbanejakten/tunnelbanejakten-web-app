@@ -1,29 +1,24 @@
 <template>
-  <div class="container">
-    <div class="view-finder">
-      <CameraViewfinder
-        height="100%"
-        width="100%"
-        :resolution="{ width: 1980, height: 1080 }"
-        ref="webcam"
-        screenshot-format="image/jpg"
-        :device-id="deviceId"
-        @started="onStarted"
-        @stopped="onStopped"
-        @error="onError"
-        @cameras="onCameras"
-        @camera-change="onCameraChange"
-      />
-    </div>
+  <div :class="containerClass">
+    <div
+      v-if="!isStartedState"
+      class="state"
+    >{{ stateDescription }}</div>
+    <CameraViewfinder
+      ref="webcam"
+      @started="onStarted"
+      @stopped="onStopped"
+      @video-live="onVideoLive"
+    />
     <div class="buttons">
       <IconButton
-        v-if="isPlaying"
+        v-if="isStartedState"
         @click="capture"
         icon="camera"
         size="huge"
       />
       <IconButton
-        v-if="!!devices && devices.length > 1"
+        v-if="!!deviceIds && deviceIds.length > 1"
         @click="switchCamera"
         icon="switch"
         type="secondary"
@@ -51,30 +46,64 @@ type Dimensions = {
   height: number;
 };
 
+enum State {
+  INIT,
+  CHECKING,
+  STARTING,
+  STARTED,
+  FAILED
+}
+
 @Component({
   components: { CameraViewfinder, Button, IconButton }
 })
 export default class Camera extends Vue {
-  private deviceId?= '';
-  private devices: MediaDeviceInfo[] = [];
-  private isPlaying = false;
+  private _selectedDeviceId: string | undefined;
+  private selfieDeviceId: string | undefined
+  private environmentDeviceId: string | undefined
+  private deviceIds: Set<string> = new Set()
   private videoActualDimensions: Dimensions | null = null;
-  private videoPreviewDimensions: Dimensions | null = {
-    width: 300,
-    height: 300
-  };
+  private state: State = State.INIT
 
-  @Watch('deviceId')
-  onDeviceIdChange(deviceId: string) {
-    Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'set', 'camera', { deviceId }, Analytics.LogLevel.INFO)
+  get containerClass() {
+    return `container state-${State[this.state].toLowerCase()}`
   }
 
-  @Watch('devices')
-  onDevicesValueChange() {
-    // Once we have a list select the first one
-    const [first, ...tail]: any[] = this.devices
-    if (first) {
-      this.deviceId = first.deviceId
+  set selectedDeviceId(deviceId: string | undefined) {
+    this._selectedDeviceId = deviceId
+    if (deviceId) {
+      this.startCamera(deviceId)
+    } else {
+      this.state = State.FAILED
+      const cam: any = this.$refs.webcam
+      if (cam) {
+        cam.stop()
+      }
+    }
+  }
+
+  get selectedDeviceId(): string | undefined {
+    return this._selectedDeviceId
+  }
+
+  get isInitState() { return this.state === State.INIT }
+  get isCheckingState() { return this.state === State.CHECKING }
+  get isStartingState() { return this.state === State.STARTING }
+  get isStartedState() { return this.state === State.STARTED }
+  get isFailedState() { return this.state === State.FAILED }
+  // get isViewfinderActive() { return this.isStartingState || this.isStartedState }
+  get stateDescription() {
+    switch (this.state) {
+      case State.INIT:
+        return 'Kollar om det ens kan finnas några kameror'
+      case State.CHECKING:
+        return 'Kollar vilka kameror som finns'
+      case State.STARTING:
+        return 'Kameran startas'
+      case State.STARTED:
+        return 'Kameran är igång'
+      case State.FAILED:
+        return 'Oj, något gick fel'
     }
   }
 
@@ -84,45 +113,40 @@ export default class Camera extends Vue {
       ? videoActualDimensions
       : { width: 1980, height: 1080 }
     const ratio = width / height
-    console.log(
-      `📐 Aspect ratio of ${width}x${height} is ${ratio.toFixed(2)}.`
-    )
-    const maxSize = 400
-    if (width > height) {
-      this.videoPreviewDimensions = { width: maxSize, height: maxSize / ratio }
-    } else {
-      this.videoPreviewDimensions = { width: maxSize * ratio, height: maxSize }
-    }
+    console.log(`📐 Aspect ratio of ${width}x${height} is ${ratio.toFixed(2)}.`)
   }
 
   capture() {
     const cam: any = this.$refs.webcam
-    const image = cam.capture()
-    Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'capture', 'photo', { byteCount: image.length }, Analytics.LogLevel.INFO)
-    this.$emit('captured', image)
+    if (cam) {
+      const image = cam.capture()
+      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'capture', 'photo', { byteCount: image.length }, Analytics.LogLevel.INFO)
+      this.$emit('captured', image)
+    }
   }
 
   beforeDestroy() {
     const cam: any = this.$refs.webcam
-    cam.stop()
+    if (cam) {
+      cam.stop()
+    }
   }
 
   mounted() {
-    const cam: any = this.$refs.webcam
-    cam.start()
+    this.initBrowserApi()
   }
 
   switchCamera() {
-    const currentIndex = this.devices.findIndex(
-      (device) => device.deviceId === this.deviceId
-    )
-    this.deviceId =
-      this.devices[(currentIndex + 1) % this.devices.length].deviceId
+    this.selectedDeviceId = (this.selectedDeviceId == this.environmentDeviceId) ? this.selfieDeviceId : this.environmentDeviceId
+  }
+
+  onVideoLive(mediaStream: any) {
+    this.state = State.STARTED
+    console.log('On Video Live Event', mediaStream)
   }
 
   onStarted(mediaStream: any) {
     console.log('On Started Event', mediaStream)
-    this.isPlaying = true
 
     mediaStream.getVideoTracks().forEach((videoTrack: any) => {
       const currentSettings = videoTrack.getSettings()
@@ -136,32 +160,150 @@ export default class Camera extends Vue {
 
   onStopped(stream: any) {
     console.log('On Stopped Event', stream)
-    this.isPlaying = false
+    this.state = State.FAILED
   }
 
-  onError(error: any) {
-    Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'caught', 'error', { ...error }, Analytics.LogLevel.WARNING)
+  // onError(error: any) {
+  //   Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'caught', 'error', { ...error }, Analytics.LogLevel.WARNING)
+  // }
+
+  createLegacyGetUserMediaWrapper() {
+    return (constraints: any) => {
+      // First get ahold of the legacy getUserMedia, if present
+      const legacyNavigator: any = navigator
+      const getUserMedia =
+        legacyNavigator.getUserMedia ||
+        legacyNavigator.webkitGetUserMedia ||
+        legacyNavigator.mozGetUserMedia ||
+        legacyNavigator.msGetUserMedia ||
+        legacyNavigator.oGetUserMedia;
+
+      // Some browsers just don't implement it - return a rejected promise with an error
+      // to keep a consistent interface
+      if (!getUserMedia) {
+        return Promise.reject(
+          new Error("getUserMedia is not implemented in this browser")
+        );
+      }
+
+      // Otherwise, wrap the call to the old navigator.getUserMedia with a Promise
+      return new Promise(function (resolve, reject) {
+        getUserMedia.call(navigator, constraints, resolve, reject);
+      });
+    };
   }
 
-  onCameras(cameras: any) {
-    this.devices = cameras
-    const props = cameras.reduce((res: Record<string, string>, { deviceId, label }: any, index: number) => ({
-      ...res,
-      [`camera${index}DeviceId`]: deviceId,
-      [`camera${index}Label`]: label
-    }), {
-      cameraCount: cameras.length
-    })
-    Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'get', 'camera list', props, Analytics.LogLevel.INFO)
+  /**
+   * setup media
+   */
+  initBrowserApi() {
+    const legacyNavigator: any = navigator
+    if (legacyNavigator.mediaDevices === undefined) {
+      legacyNavigator.mediaDevices = {};
+    }
+
+    if (legacyNavigator.mediaDevices.getUserMedia === undefined) {
+      legacyNavigator.mediaDevices.getUserMedia = this.createLegacyGetUserMediaWrapper();
+    }
+
+    this.testMediaAccess();
   }
 
-  onCameraChange(deviceId: string) {
-    this.deviceId = deviceId
+  async findCamera(videoConstraint: any): Promise<string | undefined> {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: videoConstraint
+      })
+      const deviceId = stream.getVideoTracks().map(track => track.getSettings().deviceId).shift()
+      stream.getTracks().forEach(track => track.stop())
+      console.log('📹 Found camera', videoConstraint, deviceId)
+      return deviceId
+    } catch (e: any) {
+      console.log('💥', e, e.name, e.code, e.message)
+      return undefined
+    }
+  }
+
+  /**
+   * test access
+   */
+  async testMediaAccess() {
+    this.state = State.CHECKING
+    try {
+      const environmentDeviceId = await this.findCamera({ facingMode: 'environment' })
+      const selfieDeviceId = await this.findCamera({ facingMode: 'user' })
+      if (environmentDeviceId && selfieDeviceId) {
+        this.environmentDeviceId = environmentDeviceId
+        if (environmentDeviceId != selfieDeviceId) {
+          this.selfieDeviceId = selfieDeviceId
+        } else {
+          this.selfieDeviceId = undefined
+        }
+        this.selectedDeviceId = this.environmentDeviceId
+      } else if (environmentDeviceId || selfieDeviceId) {
+        this.environmentDeviceId = environmentDeviceId
+        this.selfieDeviceId = selfieDeviceId
+        this.selectedDeviceId = this.environmentDeviceId || this.selfieDeviceId
+      } else {
+        const deviceId = await this.findCamera(true)
+        if (deviceId) {
+          this.environmentDeviceId = deviceId
+          this.selfieDeviceId = undefined
+          this.selectedDeviceId = this.environmentDeviceId
+        } else {
+          // No camera detected
+          this.environmentDeviceId = undefined
+          this.selfieDeviceId = undefined
+          this.selectedDeviceId = undefined
+          this.state = State.FAILED
+        }
+      }
+    } catch (e: any) {
+      this.state = State.FAILED
+      console.log('💥💥', e)
+    }
+  }
+
+  startCamera(deviceId: any) {
+    this.state = State.STARTING
+    Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'set', 'camera', { deviceId }, Analytics.LogLevel.INFO)
+    const constraints: any = {
+      video: {
+        deviceId: { exact: deviceId },
+        width: 1980,
+        height: 1080
+      }
+    };
+
+    const cam: any = this.$refs.webcam
+
+    navigator.mediaDevices
+      .getUserMedia(constraints)
+      .then((stream: any) => cam.loadSrcStream(stream))
+      .catch((error: Error) => {
+        this.state = State.FAILED
+        console.log('💥💥💥', error)
+        this.$emit("error", error)
+      });
   }
 }
 </script>
 
 <style scoped>
+.container {
+  /* display: flex; */
+  height: 100%;
+  width: 100%;
+}
+.container .state {
+  position: absolute;
+  top: 50%;
+  width: 100%;
+  margin-top: -20px;
+  height: 40px;
+  line-height: 40px;
+  text-align: center;
+}
 .container .buttons {
   position: absolute;
   bottom: 10px;
@@ -188,5 +330,10 @@ export default class Camera extends Vue {
   background-color: rgba(255, 255, 255, 0.5);
   color: black;
   font-size: 150%;
+}
+.container.state-init video,
+.container.state-checking video,
+.container.state-failed video {
+  visibility: hidden;
 }
 </style>
