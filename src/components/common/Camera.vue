@@ -274,9 +274,7 @@ export default class Camera extends Vue {
     Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'set', 'camera', { deviceId }, Analytics.LogLevel.INFO)
     const constraints: any = {
       video: {
-        deviceId: { exact: deviceId },
-        width: 1980,
-        height: 1080
+        deviceId: { exact: deviceId }
       }
     };
 
