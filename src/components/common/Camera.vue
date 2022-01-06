@@ -18,7 +18,7 @@
         size="huge"
       />
       <IconButton
-        v-if="isCameraSwitchingEnabled"
+        v-if="isStartedState && environmentDeviceId && selfieDeviceId"
         @click="switchCamera"
         icon="switch"
         type="secondary"
@@ -90,10 +90,7 @@ export default class Camera extends Vue {
   get isStartingState() { return this.state === State.STARTING }
   get isStartedState() { return this.state === State.STARTED }
   get isFailedState() { return this.state === State.FAILED }
-  get isCameraSwitchingEnabled() {
-    return this.environmentDeviceId && this.selfieDeviceId
-  }
-  // get isViewfinderActive() { return this.isStartingState || this.isStartedState }
+
   get stateDescription() {
     switch (this.state) {
       case State.INIT:
@@ -239,7 +236,7 @@ export default class Camera extends Vue {
         if (environmentDeviceId != selfieDeviceId) {
           this.selfieDeviceId = selfieDeviceId
         } else {
-          this.selfieDeviceId = undefined
+          this.selfieDeviceId = selfieDeviceId
         }
         this.selectedDeviceId = this.environmentDeviceId
       } else if (environmentDeviceId || selfieDeviceId) {
