@@ -68,21 +68,14 @@ export default class Camera extends Vue {
     return `container state-${State[this.state].toLowerCase()}`
   }
 
-  set selectedDeviceId(deviceId: string | undefined) {
+  selectedDevice(deviceId: string | undefined) {
     this._selectedDeviceId = deviceId
     if (deviceId) {
       this.startCamera(deviceId)
     } else {
       this.state = State.FAILED
-      const cam: any = this.$refs.webcam
-      if (cam) {
-        cam.stop()
-      }
+      this.stopCamera()
     }
-  }
-
-  get selectedDeviceId(): string | undefined {
-    return this._selectedDeviceId
   }
 
   get isInitState() { return this.state === State.INIT }
@@ -125,10 +118,7 @@ export default class Camera extends Vue {
   }
 
   beforeDestroy() {
-    const cam: any = this.$refs.webcam
-    if (cam) {
-      cam.stop()
-    }
+    this.stopCamera()
   }
 
   mounted() {
@@ -136,17 +126,17 @@ export default class Camera extends Vue {
   }
 
   switchCamera() {
-    this.selectedDeviceId = (this.selectedDeviceId == this.environmentDeviceId) ? this.selfieDeviceId : this.environmentDeviceId
+    const nextDevice = this._selectedDeviceId === this.environmentDeviceId
+      ? this.selfieDeviceId
+      : this.environmentDeviceId
+    this.selectedDevice(nextDevice)
   }
 
   onVideoLive(mediaStream: any) {
     this.state = State.STARTED
-    console.log('On Video Live Event', mediaStream)
   }
 
   onStarted(mediaStream: any) {
-    console.log('On Started Event', mediaStream)
-
     mediaStream.getVideoTracks().forEach((videoTrack: any) => {
       const currentSettings = videoTrack.getSettings()
       Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'start', 'camera', { ...currentSettings }, Analytics.LogLevel.DEBUG)
@@ -159,12 +149,7 @@ export default class Camera extends Vue {
 
   onStopped(stream: any) {
     Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'stopped', 'camera', {}, Analytics.LogLevel.DEBUG)
-    // this.state = State.FAILED
   }
-
-  // onError(error: any) {
-  //   Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'caught', 'error', { ...error }, Analytics.LogLevel.WARNING)
-  // }
 
   createLegacyGetUserMediaWrapper() {
     return (constraints: any) => {
@@ -238,22 +223,22 @@ export default class Camera extends Vue {
         } else {
           this.selfieDeviceId = selfieDeviceId
         }
-        this.selectedDeviceId = this.environmentDeviceId
+        this.selectedDevice(this.environmentDeviceId)
       } else if (environmentDeviceId || selfieDeviceId) {
         this.environmentDeviceId = environmentDeviceId
         this.selfieDeviceId = selfieDeviceId
-        this.selectedDeviceId = this.environmentDeviceId || this.selfieDeviceId
+        this.selectedDevice(this.environmentDeviceId || this.selfieDeviceId)
       } else {
         const deviceId = await this.findCamera(true)
         if (deviceId) {
           this.environmentDeviceId = deviceId
           this.selfieDeviceId = undefined
-          this.selectedDeviceId = this.environmentDeviceId
+          this.selectedDevice(this.environmentDeviceId)
         } else {
           // No camera detected
           this.environmentDeviceId = undefined
           this.selfieDeviceId = undefined
-          this.selectedDeviceId = undefined
+          this.selectedDevice(undefined)
           Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera lookup', {}, Analytics.LogLevel.DEBUG)
           this.state = State.FAILED
         }
@@ -261,11 +246,18 @@ export default class Camera extends Vue {
       Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'list', 'camera lookup', {
         environmentDeviceId: this.environmentDeviceId,
         selfieDeviceId: this.selfieDeviceId,
-        selectedDeviceId: this.selectedDeviceId
+        selectedDeviceId: this._selectedDeviceId
       }, Analytics.LogLevel.DEBUG)
     } catch (e: any) {
       Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera lookup', e, Analytics.LogLevel.DEBUG)
       this.state = State.FAILED
+    }
+  }
+
+  stopCamera() {
+    const cam: any = this.$refs.webcam
+    if (cam) {
+      cam.stop()
     }
   }
 
@@ -278,11 +270,16 @@ export default class Camera extends Vue {
       }
     };
 
-    const cam: any = this.$refs.webcam
+    this.stopCamera()
 
     navigator.mediaDevices
       .getUserMedia(constraints)
-      .then((stream: any) => cam.loadSrcStream(stream))
+      .then((stream: any) => {
+        const cam: any = this.$refs.webcam
+        if (cam) {
+          cam.loadSrcStream(stream)
+        }
+      })
       .catch((error: any) => {
         const { code, message, name } = error
         Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera', { error: JSON.stringify(error), code, message, name }, Analytics.LogLevel.DEBUG)
