@@ -54,6 +54,12 @@ enum State {
   FAILED
 }
 
+enum CameryType {
+  ANY,
+  USER,
+  ENVIRONMENT
+}
+
 @Component({
   components: { CameraViewfinder, Button, IconButton }
 })
@@ -177,9 +183,6 @@ export default class Camera extends Vue {
     };
   }
 
-  /**
-   * setup media
-   */
   initBrowserApi() {
     const legacyNavigator: any = navigator
     if (legacyNavigator.mediaDevices === undefined) {
@@ -193,14 +196,13 @@ export default class Camera extends Vue {
     this.testMediaAccess();
   }
 
-  async findCamera(videoConstraint: any): Promise<string | undefined> {
+  async findCamera(cameraType: CameryType): Promise<string | undefined> {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: videoConstraint
-      })
+      const constraints = this.getCameraConstraints({ cameraType })
+      const stream = await navigator.mediaDevices.getUserMedia(constraints)
       const deviceId = stream.getVideoTracks().map(track => track.getSettings().deviceId).shift()
       stream.getTracks().forEach(track => track.stop())
-      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'completed', 'camera lookup', { deviceId, videoConstraint: JSON.stringify(videoConstraint) }, Analytics.LogLevel.DEBUG)
+      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'completed', 'camera lookup', { deviceId, constraints: JSON.stringify(constraints) }, Analytics.LogLevel.DEBUG)
       return deviceId
     } catch ({ name, code, message }: any) {
       Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera lookup', { name, code, message }, Analytics.LogLevel.DEBUG)
@@ -208,14 +210,11 @@ export default class Camera extends Vue {
     }
   }
 
-  /**
-   * test access
-   */
   async testMediaAccess() {
     this.state = State.CHECKING
     try {
-      const environmentDeviceId = await this.findCamera({ facingMode: 'environment' })
-      const selfieDeviceId = await this.findCamera({ facingMode: 'user' })
+      const environmentDeviceId = await this.findCamera(CameryType.ENVIRONMENT)
+      const selfieDeviceId = await this.findCamera(CameryType.USER)
       if (environmentDeviceId && selfieDeviceId) {
         this.environmentDeviceId = environmentDeviceId
         if (environmentDeviceId != selfieDeviceId) {
@@ -229,7 +228,7 @@ export default class Camera extends Vue {
         this.selfieDeviceId = selfieDeviceId
         this.selectedDevice(this.environmentDeviceId || this.selfieDeviceId)
       } else {
-        const deviceId = await this.findCamera(true)
+        const deviceId = await this.findCamera(CameryType.ANY)
         if (deviceId) {
           this.environmentDeviceId = deviceId
           this.selfieDeviceId = undefined
@@ -261,17 +260,29 @@ export default class Camera extends Vue {
     }
   }
 
+  getCameraConstraints({ deviceId = '', cameraType = CameryType.ANY }: { deviceId?: string, cameraType?: CameryType }): any {
+    const video: any = {
+      width: 1280,
+      height: 720
+    }
+    if (deviceId) {
+      video.deviceId = { exact: deviceId }
+    }
+    if (cameraType !== CameryType.ANY) {
+      video.facingMode = cameraType === CameryType.USER ? 'user' : 'environment'
+    }
+    return {
+      video
+    }
+  }
+
   startCamera(deviceId: any) {
     this.state = State.STARTING
     Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'set', 'camera', { deviceId }, Analytics.LogLevel.INFO)
-    const constraints: any = {
-      video: {
-        deviceId: { exact: deviceId }
-      }
-    };
 
     this.stopCamera()
 
+    const constraints = this.getCameraConstraints({ deviceId })
     navigator.mediaDevices
       .getUserMedia(constraints)
       .then((stream: any) => {
