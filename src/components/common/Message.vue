@@ -127,18 +127,17 @@ export default class Message extends Vue {
 .icon {
   margin: 0 15px 0 0;
   width: 36px;
-  text-align: center;
 }
 
 .header {
   font-weight: bold;
 }
 
-.content div {
+.content > div {
   margin: 15px 0 0 0;
 }
 
-.content div:first-child {
+.content > div:first-child {
   margin: 5px 0 0 0;
 }
 </style>

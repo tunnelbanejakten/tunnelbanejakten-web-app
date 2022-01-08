@@ -46,7 +46,7 @@ export default class Fullscreen extends Vue {
   z-index: 1001;
 }
 
-.background {
+.fullscreen > .background {
   position: absolute;
   top: 0;
   left: 0;
@@ -56,7 +56,7 @@ export default class Fullscreen extends Vue {
   background-color: rgba(0, 0, 0, 0.5);
 }
 
-.content {
+.fullscreen > .content {
   position: absolute;
   top: 10px;
   left: 10px;
@@ -70,7 +70,7 @@ export default class Fullscreen extends Vue {
   border: 1px solid #738489;
 }
 
-.top-buttons {
+.fullscreen > .content > .top-buttons {
   position: absolute;
   top: 10px;
   display: flex;

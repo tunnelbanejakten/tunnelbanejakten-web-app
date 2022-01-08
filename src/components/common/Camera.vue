@@ -3,7 +3,17 @@
     <div
       v-if="!isStartedState"
       class="state"
-    >{{ stateDescription }}</div>
+    >
+      <span v-if="!isFailedState">
+        {{ stateDescription }}
+      </span>
+      <Message
+        v-if="isFailedState"
+        header="Oj då"
+        :message="stateDescription"
+        type="failure"
+      />
+    </div>
     <CameraViewfinder
       ref="webcam"
       @started="onStarted"
@@ -29,17 +39,11 @@
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator'
+import Message from '@/components/common/Message.vue'
 import Button from '@/components/common/Button.vue'
 import IconButton from '@/components/common/IconButton.vue'
 import CameraViewfinder from './CameraViewfinder.vue'
 import * as Analytics from '@/utils/Analytics'
-
-type MediaDeviceInfo = {
-  deviceId: string;
-  groupId: string;
-  kind: string;
-  label: string;
-};
 
 type Dimensions = {
   width: number;
@@ -61,7 +65,7 @@ enum CameryType {
 }
 
 @Component({
-  components: { CameraViewfinder, Button, IconButton }
+  components: { CameraViewfinder, Button, IconButton, Message }
 })
 export default class Camera extends Vue {
   private _selectedDeviceId: string | undefined;
@@ -69,6 +73,7 @@ export default class Camera extends Vue {
   private environmentDeviceId: string | undefined
   private videoActualDimensions: Dimensions | null = null;
   private state: State = State.INIT
+  private failedMessage: string = ''
 
   get containerClass() {
     return `container state-${State[this.state].toLowerCase()}`
@@ -79,7 +84,7 @@ export default class Camera extends Vue {
     if (deviceId) {
       this.startCamera(deviceId)
     } else {
-      this.state = State.FAILED
+      this.setFailed('Ingen kamera vald')
       this.stopCamera()
     }
   }
@@ -101,7 +106,7 @@ export default class Camera extends Vue {
       case State.STARTED:
         return 'Kameran är igång'
       case State.FAILED:
-        return 'Oj, något gick fel'
+        return this.failedMessage || 'Oj, något gick fel'
     }
   }
 
@@ -140,6 +145,11 @@ export default class Camera extends Vue {
 
   onVideoLive(mediaStream: any) {
     this.state = State.STARTED
+  }
+
+  setFailed(message: string = '') {
+    this.state = State.FAILED
+    this.failedMessage = message
   }
 
   onStarted(mediaStream: any) {
@@ -196,6 +206,45 @@ export default class Camera extends Vue {
     this.testMediaAccess();
   }
 
+  translateGetUserMediaError(errorName: string): string {
+    switch (errorName) {
+      case 'AbortError':
+        // Although the user and operating system both granted access to the hardware device, and no hardware issues occurred that would 
+        // cause a NotReadableError, throw if some problem occurred which prevented the device from being used.
+        return 'Kameran kunde inte startas'
+      case 'NotAllowedError':
+        // Thrown if one or more of the requested source devices cannot be used at this time. This will happen if the browsing context is 
+        // insecure (that is, the page was loaded using HTTP rather than HTTPS). It also happens if the user has specified that the current browsing 
+        // instance is not permitted access to the device, the user has denied access for the current session, or the user has denied all access to 
+        // user media devices globally. On browsers that support managing media permissions with Feature Policy, this error is returned if 
+        // Feature Policy is not configured to allow access to the input source(s).
+        return 'Kameran kan inte användas. Godkände du att den här sidan får använda kameran?'
+      case 'NotFoundError':
+        // Thrown if no media tracks of the type specified were found that satisfy the given constraints.
+        return 'Vi hittade ingen kamera'
+        break
+      case 'NotReadableError':
+        // Thrown if, although the user granted permission to use the matching devices, a hardware error occurred at the 
+        // operating system, browser, or web page level which prevented access to the device.
+        return 'Kameran kunde inte startas'
+      case 'OverconstrainedError':
+        // Thrown if the specified constraints resulted in no candidate devices which met the criteria requested.
+        // The error is an object of type OverconstrainedError, and has a constraint property whose string value is the name of a 
+        // constraint which was impossible to meet, and a message property containing a human - readable string explaining the problem.
+        return 'Din kamera uppfyller tyvärr inte våra krav'
+      case 'SecurityError':
+        // Thrown if user media support is disabled on the Document on which getUserMedia() was called. The mechanism by which 
+        // user media support is enabled and disabled is left up to the individual user agent.
+        return 'Kameran har blockerats av säkerhetsskäl. Testa med en annan webbläsare eller kontrollera dina kamerainställningar.'
+      case 'TypeError':
+        // Thrown if the list of constraints specified is empty, or has all constraints set to false. This can also happen if you 
+        // try to call getUserMedia() in an insecure context, since navigator.mediaDevices is undefined in an insecure context.
+        return 'Din kamera uppfyller tyvärr inte våra krav'
+      default:
+        return 'Ett oväntat fel uppstod'
+    }
+  }
+
   async findCamera(cameraType: CameryType): Promise<string | undefined> {
     try {
       const constraints = this.getCameraConstraints({ cameraType })
@@ -206,6 +255,7 @@ export default class Camera extends Vue {
       return deviceId
     } catch ({ name, code, message }: any) {
       Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera lookup', { name, code, message }, Analytics.LogLevel.DEBUG)
+      this.setFailed(this.translateGetUserMediaError(String(name)))
       return undefined
     }
   }
@@ -238,8 +288,8 @@ export default class Camera extends Vue {
           this.environmentDeviceId = undefined
           this.selfieDeviceId = undefined
           this.selectedDevice(undefined)
-          Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera lookup', {}, Analytics.LogLevel.DEBUG)
-          this.state = State.FAILED
+          Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera lookup', { message: 'No camera detected.' }, Analytics.LogLevel.DEBUG)
+          this.setFailed('Hittade ingen lämplig kamera')
         }
       }
       Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'list', 'camera lookup', {
@@ -249,7 +299,7 @@ export default class Camera extends Vue {
       }, Analytics.LogLevel.DEBUG)
     } catch (e: any) {
       Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera lookup', e, Analytics.LogLevel.DEBUG)
-      this.state = State.FAILED
+      this.setFailed('Ett oväntat problem uppstod')
     }
   }
 
@@ -294,7 +344,7 @@ export default class Camera extends Vue {
       .catch((error: any) => {
         const { code, message, name } = error
         Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera', { error: JSON.stringify(error), code, message, name }, Analytics.LogLevel.DEBUG)
-        this.state = State.FAILED
+        this.setFailed(this.translateGetUserMediaError(String(name)))
         this.$emit("error", error)
       });
   }
@@ -309,12 +359,14 @@ export default class Camera extends Vue {
 }
 .container .state {
   position: absolute;
-  top: 50%;
+  top: 0;
+  left: 0;
   width: 100%;
-  margin-top: -20px;
-  height: 40px;
-  line-height: 40px;
-  text-align: center;
+  height: 100%;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .container .buttons {
   position: absolute;
