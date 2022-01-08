@@ -137,7 +137,7 @@ export default class Camera extends Vue {
 
     mediaStream.getVideoTracks().forEach((videoTrack: any) => {
       const currentSettings = videoTrack.getSettings()
-      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'start', 'camera', { ...currentSettings }, Analytics.LogLevel.DEBUG)
+      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'start', 'camera', { ...currentSettings }, Analytics.LogLevel.INFO)
     })
   }
 
@@ -234,10 +234,10 @@ export default class Camera extends Vue {
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
       const deviceId = stream.getVideoTracks().map(track => track.getSettings().deviceId).shift()
       stream.getTracks().forEach(track => track.stop())
-      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'completed', 'camera lookup', { deviceId, constraints: JSON.stringify(constraints) }, Analytics.LogLevel.DEBUG)
+      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'completed', 'camera lookup', { deviceId, constraints: JSON.stringify(constraints) }, Analytics.LogLevel.INFO)
       return deviceId
     } catch ({ name, code, message }: any) {
-      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera lookup', { name, code, message }, Analytics.LogLevel.DEBUG)
+      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera lookup', { name, code, message }, Analytics.LogLevel.WARNING)
       this.setFailed(this.translateGetUserMediaError(String(name)))
       return undefined
     }
@@ -271,7 +271,7 @@ export default class Camera extends Vue {
           this.environmentDeviceId = undefined
           this.selfieDeviceId = undefined
           this.selectedDevice(undefined)
-          Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera lookup', { message: 'No camera detected.' }, Analytics.LogLevel.DEBUG)
+          Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera lookup', { message: 'No camera detected.' }, Analytics.LogLevel.WARNING)
           this.setFailed('Hittade ingen lämplig kamera')
         }
       }
@@ -281,7 +281,7 @@ export default class Camera extends Vue {
         selectedDeviceId: this._selectedDeviceId
       }, Analytics.LogLevel.DEBUG)
     } catch (e: any) {
-      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera lookup', e, Analytics.LogLevel.DEBUG)
+      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera lookup', e, Analytics.LogLevel.ERROR)
       this.setFailed('Ett oväntat problem uppstod')
     }
   }
@@ -326,7 +326,7 @@ export default class Camera extends Vue {
       })
       .catch((error: any) => {
         const { code, message, name } = error
-        Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera', { error: JSON.stringify(error), code, message, name }, Analytics.LogLevel.DEBUG)
+        Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'failed', 'camera', { error: JSON.stringify(error), code, message, name }, Analytics.LogLevel.ERROR)
         this.setFailed(this.translateGetUserMediaError(String(name)))
         this.$emit("error", error)
       });
