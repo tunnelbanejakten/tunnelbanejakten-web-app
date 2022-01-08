@@ -16,7 +16,6 @@
     </div>
     <CameraViewfinder
       ref="webcam"
-      @started="onStarted"
       @stopped="onStopped"
       @video-live="onVideoLive"
     />
@@ -71,7 +70,6 @@ export default class Camera extends Vue {
   private _selectedDeviceId: string | undefined;
   private selfieDeviceId: string | undefined
   private environmentDeviceId: string | undefined
-  private videoActualDimensions: Dimensions | null = null;
   private state: State = State.INIT
   private failedMessage: string = ''
 
@@ -110,15 +108,6 @@ export default class Camera extends Vue {
     }
   }
 
-  @Watch('videoActualDimensions')
-  onVideoActualDimensionsChange(videoActualDimensions: Dimensions) {
-    const { width, height } = videoActualDimensions.width
-      ? videoActualDimensions
-      : { width: 1980, height: 1080 }
-    const ratio = width / height
-    console.log(`📐 Aspect ratio of ${width}x${height} is ${ratio.toFixed(2)}.`)
-  }
-
   capture() {
     const cam: any = this.$refs.webcam
     if (cam) {
@@ -145,22 +134,16 @@ export default class Camera extends Vue {
 
   onVideoLive(mediaStream: any) {
     this.state = State.STARTED
+
+    mediaStream.getVideoTracks().forEach((videoTrack: any) => {
+      const currentSettings = videoTrack.getSettings()
+      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'start', 'camera', { ...currentSettings }, Analytics.LogLevel.DEBUG)
+    })
   }
 
   setFailed(message: string = '') {
     this.state = State.FAILED
     this.failedMessage = message
-  }
-
-  onStarted(mediaStream: any) {
-    mediaStream.getVideoTracks().forEach((videoTrack: any) => {
-      const currentSettings = videoTrack.getSettings()
-      Analytics.logEvent(Analytics.AnalyticsEventType.CAMERA, 'start', 'camera', { ...currentSettings }, Analytics.LogLevel.DEBUG)
-      this.videoActualDimensions = {
-        width: currentSettings.width,
-        height: currentSettings.height
-      }
-    })
   }
 
   onStopped(stream: any) {
