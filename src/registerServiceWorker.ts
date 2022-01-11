@@ -14,10 +14,8 @@ if (process.env.NODE_ENV === 'production') {
     registered(registration: ServiceWorkerRegistration) {
       console.log('Service worker has been registered.')
       setInterval(() => {
-        console.log('Checking for updates.')
-        Analytics.logEvent(Analytics.AnalyticsEventType.APP, 'check', 'update')
-        registration.update()
-      }, 30 * 1000)
+        document.dispatchEvent(new CustomEvent('serviceWorkerRegistered', { detail: registration }))
+      }, 1000)
     },
     cached() {
       console.log('Content has been cached for offline use.')
