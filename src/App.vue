@@ -158,6 +158,8 @@ export default class App extends Mixins(ServiceWorkerMixin) {
 
     const pollInterval = (store.state.configuration.updates.configPollInterval || 60) * 1000
 
+    this.setCheckUpdateInterval(pollInterval)
+
     console.log(`Will fetch configuration in ${pollInterval} ms.`)
     this.confPollTimer = setTimeout(this.pollJob, pollInterval)
   }

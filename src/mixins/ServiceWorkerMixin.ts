@@ -1,7 +1,7 @@
 import { Component, Vue } from 'vue-property-decorator'
 import * as Analytics from '@/utils/Analytics'
 
-const CHECK_FOR_UPDATES_INTERVAL_SECONDS = 30
+const DEFAULT_UPDATE_CHECK_INTERVAL_SECONDS = 5 * 60
 
 // Credits: https://dev.to/drbragg/handling-service-worker-updates-in-your-vue-pwa-1pip
 @Component
@@ -12,6 +12,7 @@ export default class ServiceWorkerMixin extends Vue {
   private pendingRegistration: any = null
   private currentRegistration: any = null
   private checkUpdateTimer: number = 0
+  private checkUpdateInterval: number = DEFAULT_UPDATE_CHECK_INTERVAL_SECONDS
 
   created() {
     // Listen for event when the service worker is registrered/started (emitted by registerServiceWorker)
@@ -55,11 +56,24 @@ export default class ServiceWorkerMixin extends Vue {
   onServiceWorkerRegistrered(event: any) {
     if (this.checkUpdateTimer === 0) {
       this.currentRegistration = event.detail
-      this.checkUpdateTimer = setInterval(() => {
-        Analytics.logEvent(Analytics.AnalyticsEventType.APP, 'check', 'update')
-        this.currentRegistration.update()
-      }, CHECK_FOR_UPDATES_INTERVAL_SECONDS * 1000)
+      this.scheduleUpdateCheck()
     }
+  }
+
+  checkForUpdate() {
+    console.log('🔎 Checking for update')
+    Analytics.logEvent(Analytics.AnalyticsEventType.APP, 'check', 'update')
+    this.currentRegistration.update()
+
+    this.scheduleUpdateCheck()
+  }
+
+  scheduleUpdateCheck() {
+    if (this.checkUpdateTimer) {
+      clearTimeout(this.checkUpdateTimer)
+    }
+    console.log(`⏱ Next update check will happen in ${this.checkUpdateInterval} seconds.`)
+    this.checkUpdateTimer = setTimeout(this.checkForUpdate.bind(this), this.checkUpdateInterval * 1000);
   }
 
   /**
@@ -72,6 +86,14 @@ export default class ServiceWorkerMixin extends Vue {
       this.pendingRegistration.waiting.postMessage({
         type: 'SKIP_WAITING'
       })
+    }
+  }
+
+  setCheckUpdateInterval(interval: number) {
+    if (interval !== this.checkUpdateInterval) {
+      console.log(`⏱ Changing update-check interval from ${this.checkUpdateInterval} to ${interval}.`)
+      this.checkUpdateInterval = interval
+      this.scheduleUpdateCheck()
     }
   }
 }
