@@ -61,7 +61,6 @@ export default class ServiceWorkerMixin extends Vue {
   }
 
   checkForUpdate() {
-    console.log('🔎 Checking for update', this.currentRegistration)
     Analytics.logEvent(Analytics.AnalyticsEventType.APP, 'check', 'update')
     this.currentRegistration.update()
 
@@ -72,7 +71,6 @@ export default class ServiceWorkerMixin extends Vue {
     if (this.checkUpdateTimer) {
       clearTimeout(this.checkUpdateTimer)
     }
-    console.log(`⏱ Next update check will happen in ${this.checkUpdateInterval} seconds.`, this.currentRegistration)
     this.checkUpdateTimer = setTimeout(this.checkForUpdate, this.checkUpdateInterval * 1000);
   }
 
@@ -91,7 +89,6 @@ export default class ServiceWorkerMixin extends Vue {
 
   setCheckUpdateInterval(interval: number) {
     if (interval !== this.checkUpdateInterval) {
-      console.log(`⏱ Changing update-check interval from ${this.checkUpdateInterval} to ${interval}.`)
       this.checkUpdateInterval = interval
     }
   }
