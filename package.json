@@ -1,6 +1,6 @@
 {
   "name": "tunnelbanejakten-web-app",
-  "version": "0.13.7",
+  "version": "0.13.8",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
