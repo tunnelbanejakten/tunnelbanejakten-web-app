@@ -46,34 +46,31 @@ export default class Fullscreen extends Vue {
   z-index: 1001;
 }
 
-.background {
+.fullscreen > .background {
   position: absolute;
   top: 0;
   left: 0;
   height: 100%;
   width: 100%;
 
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(0, 0, 0, 0.5);
 }
-.content {
+
+.fullscreen > .content {
   position: absolute;
-  top: 20px;
-  left: 20px;
-  bottom: 20px;
-  right: 20px;
+  top: 10px;
+  left: 10px;
+  bottom: 10px;
+  right: 10px;
 
   overflow: scroll;
 
   /* Theme from tunnelbanejakten.se: */
   background-color: #fff;
   border: 1px solid #738489;
-  /* border-radius: 20px; */
-
-  box-shadow: 0px 0 20px 0px rgb(0 0 0 / 75%);
-  -webkit-box-shadow: 0px 0 20px 0px rgb(0 0 0 / 75%);
-  -moz-box-shadow: 0px 0 20px 0px rgb(0 0 0 / 75%);
 }
-.top-buttons {
+
+.fullscreen > .content > .top-buttons {
   position: absolute;
   top: 10px;
   display: flex;

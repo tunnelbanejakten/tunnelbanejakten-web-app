@@ -9,7 +9,8 @@ export enum AnalyticsEventType {
   DEVICE_TEST,
   LOCATION,
   MAP,
-  FORM
+  FORM,
+  CAMERA
 }
 
 export enum LogLevel {
@@ -103,6 +104,13 @@ const logToConsole = (event: AppEvent) => {
     type: AnalyticsEventType[event.type].toLowerCase()
   })
   store.addEvent(event)
+}
+
+export const getDeviceId = () => {
+  if (!isAnalyticsInitialized) {
+    initAmplitude()
+  }
+  return amplitude.getInstance().options.deviceId
 }
 
 export const logEvent = (type: AnalyticsEventType, eventVerb: string, eventObject: string, props?: Record<string, any>, level: LogLevel = LogLevel.INFO) => {
