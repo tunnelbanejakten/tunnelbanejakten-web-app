@@ -73,7 +73,7 @@ export default class ServiceWorkerMixin extends Vue {
       clearTimeout(this.checkUpdateTimer)
     }
     console.log(`⏱ Next update check will happen in ${this.checkUpdateInterval} seconds.`)
-    this.checkUpdateTimer = setTimeout(() => this.checkForUpdate(), this.checkUpdateInterval * 1000);
+    this.checkUpdateTimer = setTimeout(this.checkForUpdate, this.checkUpdateInterval * 1000);
   }
 
   /**
