@@ -93,7 +93,6 @@ export default class ServiceWorkerMixin extends Vue {
     if (interval !== this.checkUpdateInterval) {
       console.log(`⏱ Changing update-check interval from ${this.checkUpdateInterval} to ${interval}.`)
       this.checkUpdateInterval = interval
-      this.scheduleUpdateCheck()
     }
   }
 }
