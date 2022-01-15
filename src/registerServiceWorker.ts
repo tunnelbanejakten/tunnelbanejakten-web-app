@@ -11,8 +11,11 @@ if (process.env.NODE_ENV === 'production') {
         'For more details, visit https://goo.gl/AFskqB'
       )
     },
-    registered() {
+    registered(registration: ServiceWorkerRegistration) {
       console.log('Service worker has been registered.')
+      setInterval(() => {
+        document.dispatchEvent(new CustomEvent('serviceWorkerRegistered', { detail: registration }))
+      }, 1000)
     },
     cached() {
       console.log('Content has been cached for offline use.')
@@ -20,7 +23,7 @@ if (process.env.NODE_ENV === 'production') {
     updatefound() {
       console.log('New content is downloading.')
     },
-    updated(registration) {
+    updated(registration: ServiceWorkerRegistration) {
       Analytics.logEvent(Analytics.AnalyticsEventType.APP, 'found', 'update')
       console.log('New content is available; please refresh.')
       document.dispatchEvent(new CustomEvent('serviceWorkerUpdate', { detail: registration }))

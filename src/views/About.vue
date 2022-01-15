@@ -17,7 +17,7 @@
         <div v-if="!isLoading && !groupKey">
           <Message
             header="Oj då"
-            message="Kunde inte hitta information om erat lag."
+            message="Kunde inte hitta information om ditt lag."
           />
         </div>
       </Card>
