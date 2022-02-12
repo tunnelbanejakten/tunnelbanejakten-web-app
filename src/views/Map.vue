@@ -118,6 +118,8 @@ type ApiMarker = {
   // eslint-disable-next-line camelcase
   link_form_question_id: number;
   // eslint-disable-next-line camelcase
+  link_station_id: number;
+  // eslint-disable-next-line camelcase
   is_response_submitted: boolean;
 };
 
@@ -243,7 +245,7 @@ export default class Map extends Vue {
     } else if (marker instanceof CheckpointMarker) {
       const isActiveMarker = this.activeMarkers
         .filter((activeMarker: Marker) => activeMarker instanceof CheckpointMarker)
-        .some((activeMarker: Marker) => (activeMarker as CheckpointMarker).id === marker.id)
+        .some((activeMarker: Marker) => (activeMarker as CheckpointMarker).key === marker.key)
       if (!marker.submitted) {
         if (isActiveMarker) {
           // console.log('User clicked a checkpoint which they have NOT submitted an answer to and which they are currently close to. SHOW CHECKPOINT.')
@@ -269,7 +271,7 @@ export default class Map extends Vue {
     })
 
     this.checkpointView = readOnly ? CheckpointView.SHOW_READONLY : CheckpointView.SHOW
-    this.selectedCheckpointQuestionId = e.id
+    this.selectedCheckpointQuestionId = e.key
   }
 
   onCloseCheckpoint() {
@@ -399,6 +401,7 @@ export default class Map extends Vue {
                 name,
                 radius,
                 link_form_question_id: questionId,
+                link_station_id: stationId,
                 is_response_submitted: isResponseSubmitted
               }: ApiMarker): Marker => {
                 let marker
@@ -406,7 +409,8 @@ export default class Map extends Vue {
                   marker = new StartPositionMarker()
                 } else {
                   marker = new CheckpointMarker()
-                  marker.id = String(questionId)
+                  marker.id = String(questionId || stationId)
+                  marker.isStation = stationId > 0
                   marker.submitted = isResponseSubmitted
                   marker.showAccuracyCircle = store.state.debugSettings.map
                 }

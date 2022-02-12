@@ -32,7 +32,7 @@ const getZoomLevel = (accuracyLevel: LocationUtils.AccuracyLevel) => {
 //   Red icon colour: #ff1100
 //   Purple icon colour: #794794
 const iconUserPosition = L.icon({
-  iconUrl: require('../../assets/map-markers/user-position-red-lowres.png'),
+  iconUrl: require('../../assets/map-markers/user-position-red-highres.png'),
   iconSize: [48, 48],
   iconAnchor: [24, 48],
   popupAnchor: [0, -34]
@@ -42,8 +42,9 @@ const iconUserPosition = L.icon({
 //   https://www.mappity.org/marker_icons/bullseye/
 //   Orange icon colour: #ffaa00
 //   Purple icon colour: #794794
+//   Green icon colour: #0c7614
 const iconCheckpoint = L.icon({
-  iconUrl: require('../../assets/map-markers/checkpoint-purple-lowres.png'),
+  iconUrl: require('../../assets/map-markers/bullseye-round-purple-highres.png'),
   iconSize: [48, 48],
   iconAnchor: [24, 24],
   popupAnchor: [0, -34]
@@ -53,7 +54,27 @@ const iconCheckpoint = L.icon({
 //   https://www.mappity.org/marker_icons/check/
 //   Purple icon colour: #794794
 const iconCheckpointSubmitted = L.icon({
-  iconUrl: require('../../assets/map-markers/checkmark-purple-lowres.png'),
+  iconUrl: require('../../assets/map-markers/checkmark-round-green-highres.png'),
+  iconSize: [48, 48],
+  iconAnchor: [24, 24],
+  popupAnchor: [0, -34]
+})
+
+// Icon for PERSON (MANNED CHECK POINT):
+//   hhttps://www.mappity.org/marker_icons/street-view/
+//   Blue icon colour: #474f94
+const iconPerson = L.icon({
+  iconUrl: require('../../assets/map-markers/streetview-purple-highres.png'),
+  iconSize: [48, 48],
+  iconAnchor: [24, 24],
+  popupAnchor: [0, -34]
+})
+
+// Icon for PERSON (MANNED CHECK POINT) SUBMITTED:
+//   https://www.mappity.org/marker_icons/check/
+//   Blue icon colour: #474f94
+const iconPersonSubmitted = L.icon({
+  iconUrl: require('../../assets/map-markers/checkmark-green-highres.png'),
   iconSize: [48, 48],
   iconAnchor: [24, 24],
   popupAnchor: [0, -34]
@@ -63,7 +84,7 @@ const iconCheckpointSubmitted = L.icon({
 //   https://www.mappity.org/marker_icons/home/
 //   Purple icon colour: #000000
 const iconStart = L.icon({
-  iconUrl: require('../../assets/map-markers/home-lowres.png'),
+  iconUrl: require('../../assets/map-markers/home-highres.png'),
   iconSize: [48, 48],
   iconAnchor: [24, 24],
   popupAnchor: [0, -34]
@@ -79,14 +100,14 @@ const getUserPositionColour = (meterAccuracy: number): any =>
         : 'orange'
 
 export class Coord {
-  latitude: number = 0;
-  longitude: number = 0;
+  latitude: number = 0
+  longitude: number = 0
 };
 
 export class Marker extends Coord {
-  meterAccuracy: number = 0;
-  label?: string;
-  showAccuracyCircle?: boolean;
+  meterAccuracy: number = 0
+  label?: string
+  showAccuracyCircle?: boolean
 };
 
 export class StartPositionMarker extends Marker {
@@ -100,6 +121,12 @@ export class UserPositionMarker extends Marker {
 export class CheckpointMarker extends Marker {
   id: string = '' // Assumed to be unique
   submitted: boolean = false
+  isStation: boolean = false
+
+  get key(): string {
+    return `checkpoint-${this.isStation ? "s" : "q"}-${this.id}`
+  }
+}
 
 type ViewportBounds = {
   topLeft: Coord | null
@@ -163,7 +190,7 @@ export default class Map extends Vue {
     const currentKeys: string[] = []
     for (const checkpointMarker of checkpointMarkers) {
       const latLong = [checkpointMarker.latitude, checkpointMarker.longitude]
-      const key = `checkpoint-${checkpointMarker.id}`
+      const key = checkpointMarker.key
       currentKeys.push(key)
 
       const accuracyCircleKey = `${key}-accuracyCircle`
@@ -172,8 +199,11 @@ export default class Map extends Vue {
       const existingMapObject = this.mapObjects[key]
       if (!existingMapObject) {
         // First time this checkpoint is rendered
+        const icon = checkpointMarker.submitted
+          ? (checkpointMarker.isStation ? iconPersonSubmitted : iconCheckpointSubmitted)
+          : (checkpointMarker.isStation ? iconPerson : iconCheckpoint)
         const mapMarker = L.marker(latLong, {
-          icon: checkpointMarker.submitted ? iconCheckpointSubmitted : iconCheckpoint,
+          icon,
           zIndexOffset: 500
         })
         mapMarker.addTo(this.mapRef)
