@@ -100,6 +100,10 @@ export class UserPositionMarker extends Marker {
 export class CheckpointMarker extends Marker {
   id: string = '' // Assumed to be unique
   submitted: boolean = false
+
+type ViewportBounds = {
+  topLeft: Coord | null
+  bottomRight: Coord | null
 }
 
 @Component({
@@ -110,6 +114,7 @@ export default class Map extends Vue {
   private mapObjects: Record<string, any> = {};
   private mapRef: any;
   private panLockControl: any;
+  private showWorldControl: any;
   private isUserPanning = false
   private currentPosition!: Marker
 
@@ -317,8 +322,26 @@ export default class Map extends Vue {
     this.panToCurrentPosition()
   }
 
-  applyPanLockControlExtension() {
-    L.Control.PanLock = L.Control.extend({
+  onShowWorld() {
+    const bounds = this.markers.reduce((bounds: ViewportBounds, marker: Marker) => {
+      const { topLeft, bottomRight } = bounds
+      if (topLeft === null || (topLeft.latitude < marker.latitude && topLeft.longitude > marker.longitude)) {
+        bounds.topLeft = marker
+      }
+      if (bottomRight === null || (bottomRight.latitude > marker.latitude && bottomRight.longitude < marker.longitude)) {
+        bounds.bottomRight = marker
+      }
+      return bounds
+    }, { topLeft: null, bottomRight: null } as ViewportBounds)
+
+    this.mapRef.fitBounds(L.latLngBounds(
+      L.latLng(bounds.topLeft?.latitude, bounds.topLeft?.longitude),
+      L.latLng(bounds.bottomRight?.latitude, bounds.bottomRight?.longitude)
+    ))
+  }
+
+  createControlExtension(id: string, title: string, iconName: string, onClick: () => void) {
+    return L.Control.extend({
       onAdd: () => {
         // Create container element
         const container = L.DomUtil.create('div')
@@ -327,18 +350,18 @@ export default class Map extends Vue {
 
         // Create button element inside container
         const button = L.DomUtil.create('a', null, container)
-        button.id = 'panLockButton'
+        button.id = id
         button.role = 'button'
-        button.title = 'Re-center map'
-        button.ariaLabel = 'Re-center map'
+        button.title = title
+        button.ariaLabel = title
         button.href = '#'
         button.style.lineHeight = (RECENTER_MAP_ICON_SIZE * 2) + 'px'
-        L.DomEvent.on(button, 'click', this.onRecenterMap)
+        L.DomEvent.on(button, 'click', onClick)
 
         // Create icon element inside button
         const icon = L.DomUtil.create('i', null, button)
         L.DomUtil.addClass(icon, 'fas')
-        L.DomUtil.addClass(icon, 'fa-crosshairs')
+        L.DomUtil.addClass(icon, iconName)
         icon.style.fontSize = (RECENTER_MAP_ICON_SIZE) + 'px'
         dom.i2svg({ node: button, callback: () => { return true } })
 
@@ -348,15 +371,28 @@ export default class Map extends Vue {
         // Nothing
       }
     })
+  }
+
+  applyPanLockControlExtension() {
+    L.Control.PanLock = this.createControlExtension('panLockButton', 'Re-center map', 'fa-crosshairs', this.onRecenterMap)
 
     L.control.panLock = (opts: any) => {
       return new L.Control.PanLock(opts)
     }
   }
 
+  applyShowWorldControlExtension() {
+    L.Control.ShowWorld = this.createControlExtension('showWorldButton', 'Zoom out to show everything', 'fa-globe', this.onShowWorld)
+
+    L.control.showWorld = (opts: any) => {
+      return new L.Control.ShowWorld(opts)
+    }
+  }
+
   initMap() {
     this.applyDeadIconFix()
     this.applyPanLockControlExtension()
+    this.applyShowWorldControlExtension()
 
     this.mapRef = L.map('map-container', { tap: false })
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -368,6 +404,8 @@ export default class Map extends Vue {
     this.mapRef.on('movestart', this.onUserMapPan)
 
     this.panLockControl = L.control.panLock({ position: 'topleft' })
+    this.showWorldControl = L.control.showWorld({ position: 'topleft' })
+    this.showWorldControl.addTo(this.mapRef)
   }
 
   mounted() {
