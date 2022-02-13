@@ -18,7 +18,7 @@ import QuestionForm from '@/components/QuestionForm.vue'
     QuestionForm
   }
 })
-export default class Checkpoint extends Vue {
+export default class CheckpointQuestion extends Vue {
   @Prop() private readonly questionId!: string
   @Prop() private readonly readOnly!: boolean
 

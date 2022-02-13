@@ -57,7 +57,7 @@
         v-if="isCheckpointShown"
         @close="onCloseCheckpoint"
       >
-        <Checkpoint
+        <CheckpointQuestion
           v-if="!selectedCheckpoint.isStation"
           :question-id="selectedCheckpoint.id"
           :read-only="isCheckpointReadOnly"
@@ -93,7 +93,7 @@ import Fullscreen from '@/components/common/Fullscreen.vue'
 import Loader from '@/components/common/Loader.vue'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
 import CheckpointSelector from './map/CheckpointSelector.vue'
-import Checkpoint from './map/Checkpoint.vue'
+import CheckpointQuestion from './map/CheckpointQuestion.vue'
 import CheckpointStation from './map/CheckpointStation.vue'
 import { TicketData } from '@/components/common/Ticket.vue'
 import * as LocationUtils from '@/utils/Location'
@@ -176,7 +176,7 @@ const MAX_BREADCRUMB_COUNT = 5
     NotificationOverlay,
     Fullscreen,
     Button,
-    Checkpoint,
+    CheckpointQuestion,
     CheckpointStation,
     CheckpointSelector,
     Loader
