@@ -7,7 +7,7 @@
     <span class="button-content">
       <span class="label">{{ label }}</span>
       <span class="spinner">
-        <Loader size="small" />
+        <Loader size="small" :white="true" />
       </span>
     </span>
   </button>

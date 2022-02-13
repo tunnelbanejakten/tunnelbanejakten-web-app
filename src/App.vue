@@ -43,6 +43,12 @@
         Karta
       </router-link>
       <router-link
+        to="/tickets"
+        v-if="isTicketsPageEnabled"
+      >
+        Biljetter
+      </router-link>
+      <router-link
         to="/devicetest"
         v-if="isDeviceTestPageEnabled"
       >
@@ -101,6 +107,10 @@ export default class App extends Mixins(ServiceWorkerMixin) {
     return store.state.configuration.views.deviceTest
   }
 
+  get isTicketsPageEnabled() {
+    return store.state.configuration.views.tickets
+  }
+
   get isInfoPageEnabled() {
     return store.state.configuration.views.info
   }
@@ -131,6 +141,7 @@ export default class App extends Mixins(ServiceWorkerMixin) {
             views: {
               answer: confPayload.app.views.answer,
               map: confPayload.app.views.map,
+              tickets: confPayload.app.views.tickets,
               deviceTest: confPayload.app.views.device_test,
               info: confPayload.app.views.info
             },

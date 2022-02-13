@@ -43,6 +43,7 @@ export type Configuration = {
   views: {
     answer: boolean,
     map: boolean,
+    tickets: boolean,
     deviceTest: boolean,
     info: boolean
   },
@@ -95,6 +96,7 @@ const state: State = {
     views: {
       answer: true,
       map: true,
+      tickets: true,
       deviceTest: true,
       info: true
     },

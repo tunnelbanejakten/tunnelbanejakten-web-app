@@ -1,7 +1,7 @@
 <template>
   <Page title="Info">
     <div>
-      <Card :verticalMargin="true" v-html="bodyText" />
+      <Card :verticalMargin="false" v-html="bodyText" />
       <Card :verticalMargin="true">
         <div v-if="isLoading">
           <Loader />

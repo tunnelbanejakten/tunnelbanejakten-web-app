@@ -22,6 +22,14 @@ const routes: Array<RouteConfig> = [
     component: () => import(/* webpackChunkName: "devicetest" */ '../views/DeviceTest.vue')
   },
   {
+    path: '/:authId?/tickets',
+    name: 'Tickets',
+    // route level code-splitting
+    // this generates a separate chunk (map.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import(/* webpackChunkName: "map" */ '../views/Tickets.vue')
+  },
+  {
     path: '/:authId?/map',
     name: 'Map',
     // route level code-splitting

@@ -1,6 +1,6 @@
 <template>
   <div class="loader">
-    <div :class="size">
+    <div :class="wrapperClasses">
       <div class="lds-ring">
         <div />
         <div />
@@ -25,7 +25,12 @@ import { Component, Vue, Prop } from 'vue-property-decorator'
 })
 export default class Loader extends Vue {
   @Prop() private message!: string
+  @Prop() private white!: boolean
   @Prop({ default: 'normal' }) private size!: string
+
+  get wrapperClasses() {
+    return `size-${this.size} color-${this.white ? "white" : "black"}`
+  }
 }
 </script>
 
@@ -41,17 +46,17 @@ export default class Loader extends Vue {
 .message {
   margin-top: 10px;
 }
-.small {
+.size-small {
   transform: scale(0.5) translate(-10px, -10px);
   width: 20px;
   height: 20px;
 }
-.normal {
+.size-normal {
   transform: scale(1) translate(0px, 0px);
   width: 40px;
   height: 40px;
 }
-.large {
+.size-large {
   transform: scale(2) translate(20px, 20px);
   width: 80px;
   height: 80px;
@@ -73,6 +78,9 @@ export default class Loader extends Vue {
   border-radius: 50%;
   animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
   border-color: #000 transparent transparent transparent;
+}
+.color-white .lds-ring div {
+  border-color: #fff transparent transparent transparent;
 }
 .lds-ring div:nth-child(1) {
   animation-delay: -0.45s;
