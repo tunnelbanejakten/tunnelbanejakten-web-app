@@ -28,19 +28,11 @@
           <Loader />
         </div>
         <div v-if="!isLoading && !listError">
-          <div
+          <Ticket
             v-for="ticket in tickets"
-            class="ticket"
-            :key="ticket.station.random_id"
-            :style="{ 'background-color': ticket.colour }"
-          >
-            <p class="station-name">Biljett till kontroll <strong>{{ ticket.station.name }}</strong>:</p>
-            <p class="ticket-word-explanation">När ni kommer till kontrollen ska ni visa den här biljetten på er mobil eller säga detta lösen:</p>
-            <p
-              class="ticket-word"
-              :style="{ 'font-size': (100 / ticket.word.length) + 'vw' }"
-            >{{ ticket.word }}</p>
-          </div>
+            :key="ticket.key"
+            :ticket="ticket"
+          />
           <div v-if="tickets.length === 0">
             <p>Ni har ännu inga biljetter.</p>
             <p>När ni löser startchiffret och när ni varit på bemannade kontroller får ni lösenord som kan bytas mot biljetter.</p>
@@ -66,6 +58,7 @@ import * as AuthUtils from '@/utils/Auth'
 import Loader from '@/components/common/Loader.vue'
 import Message from '@/components/common/Message.vue'
 import Button from '@/components/common/Button.vue'
+import Ticket, { TicketData } from '@/components/common/Ticket.vue'
 
 const apiHost = process.env.VUE_APP_API_HOST
 
@@ -76,7 +69,8 @@ const apiHost = process.env.VUE_APP_API_HOST
     Profile,
     Loader,
     Message,
-    Button
+    Button,
+    Ticket
   }
 })
 export default class Tickets extends Vue {
@@ -90,7 +84,7 @@ export default class Tickets extends Vue {
   private redeemErrorTitle: string = ''
   private redeemErrorMessage: string = ''
   private password: string = ''
-  private tickets: any[] = []
+  private tickets: TicketData[] = []
 
   async mounted() {
     const token = AuthUtils.getTokenCookie()
@@ -103,7 +97,12 @@ export default class Tickets extends Vue {
       this.isLoading = false
       if (ticketsResp.ok) {
         const ticketsPayload = await ticketsResp.json()
-        this.tickets = ticketsPayload
+        this.tickets = ticketsPayload.map((ticket: any) => ({
+            key: ticket.station.random_id,
+            colour: ticket.colour,
+            word: ticket.word,
+            stationName: ticket.station.name
+          }) as TicketData)
       }
     }
   }
@@ -159,31 +158,7 @@ export default class Tickets extends Vue {
 .card::v-deep p:last-child {
   margin-bottom: 0;
 }
-.ticket {
-  margin: 20px 0 0 0;
-  padding: 10px;
-  color: rgba(0, 0, 0, 0.6);
-  text-align: center;
-  border-radius: 5px;
-  border: none;
-  box-shadow: inset 0px 0px 0px 2px rgb(0 0 0 / 20%);
-  box-sizing: border-box;
-}
-.ticket:first-child {
-  margin-top: 0;
-}
-.ticket-word {
-  font-size: 300%;
-  font-weight: bolder;
-  margin: 0;
-  padding: 0.25em 0;
-}
-.ticket-word-explanation {
-  font-size: 80%;
-}
-.station-name {
-  font-size: 125%;
-}
+
 input {
   box-sizing: border-box;
   width: 100%;

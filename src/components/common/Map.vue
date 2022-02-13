@@ -11,6 +11,7 @@ import Button from '@/components/common/Button.vue'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import * as LocationUtils from '@/utils/Location'
+import { TicketData } from './Ticket.vue'
 
 const RECENTER_MAP_ICON_SIZE = 18
 
@@ -122,6 +123,7 @@ export class CheckpointMarker extends Marker {
   id: string = '' // Assumed to be unique
   submitted: boolean = false
   isStation: boolean = false
+  stationTicket?: TicketData
 
   get key(): string {
     return `checkpoint-${this.isStation ? "s" : "q"}-${this.id}`
@@ -206,6 +208,7 @@ export default class Map extends Vue {
           icon,
           zIndexOffset: 500
         })
+        mapMarker.on('click', () => this.onMarkerClicked(checkpointMarker))
         mapMarker.addTo(this.mapRef)
         this.mapObjects[key] = mapMarker
 

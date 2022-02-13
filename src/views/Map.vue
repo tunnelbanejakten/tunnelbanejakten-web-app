@@ -58,10 +58,17 @@
         @close="onCloseCheckpoint"
       >
         <Checkpoint
-          :question-id="selectedCheckpointQuestionId"
+          v-if="!selectedCheckpoint.isStation"
+          :question-id="selectedCheckpoint.id"
           :read-only="isCheckpointReadOnly"
           @submit-success="onCheckpointSuccess"
           @submit-failure="onCheckpointFailure"
+        />
+        <CheckpointStation
+          v-if="selectedCheckpoint.isStation"
+          :pointsReported="selectedCheckpoint.submitted"
+          :locationLabel="selectedCheckpoint.label"
+          :ticket="selectedTicket"
         />
       </Fullscreen>
     </div>
@@ -87,6 +94,8 @@ import Loader from '@/components/common/Loader.vue'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
 import CheckpointSelector from './map/CheckpointSelector.vue'
 import Checkpoint from './map/Checkpoint.vue'
+import CheckpointStation from './map/CheckpointStation.vue'
+import { TicketData } from '@/components/common/Ticket.vue'
 import * as LocationUtils from '@/utils/Location'
 import * as Analytics from '@/utils/Analytics'
 import store from '@/store'
@@ -119,6 +128,8 @@ type ApiMarker = {
   link_form_question_id: number;
   // eslint-disable-next-line camelcase
   link_station_id: number;
+  // eslint-disable-next-line camelcase
+  link_station_ticket: any;
   // eslint-disable-next-line camelcase
   is_response_submitted: boolean;
 };
@@ -166,6 +177,7 @@ const MAX_BREADCRUMB_COUNT = 5
     Fullscreen,
     Button,
     Checkpoint,
+    CheckpointStation,
     CheckpointSelector,
     Loader
   }
@@ -192,7 +204,8 @@ export default class Map extends Vue {
 
   private userPositions: UserPositionMarker[] = []
 
-  private selectedCheckpointQuestionId: string | null = null;
+  private selectedCheckpoint: CheckpointMarker | null = null;
+  private selectedTicket?: TicketData;
 
   updateState(newState: State, newStateMessage: string) {
     this.state = newState
@@ -252,6 +265,9 @@ export default class Map extends Vue {
           this.showCheckpoint(marker, false)
         } else {
           // console.log('User clicked a checkpoint which they have NOT submitted an answer to and which they are currently NOT close to. DO NOTHING.')
+          if (marker.isStation) {
+            this.showCheckpoint(marker, true)
+          }
         }
       } else {
         if (isActiveMarker) {
@@ -271,12 +287,13 @@ export default class Map extends Vue {
     })
 
     this.checkpointView = readOnly ? CheckpointView.SHOW_READONLY : CheckpointView.SHOW
-    this.selectedCheckpointQuestionId = e.key
+    this.selectedCheckpoint = e
+    this.selectedTicket = e.stationTicket
   }
 
   onCloseCheckpoint() {
     this.checkpointView = CheckpointView.NONE
-    this.selectedCheckpointQuestionId = null
+    this.selectedCheckpoint = null
   }
 
   onCloseCheckpointSelector() {
@@ -289,7 +306,7 @@ export default class Map extends Vue {
 
   onCheckpointSuccess() {
     this.checkpointView = CheckpointView.SHOW
-    this.selectedCheckpointQuestionId = null
+    this.selectedCheckpoint = null
   }
 
   onCheckpointFailure(e: any) {
@@ -402,6 +419,7 @@ export default class Map extends Vue {
                 radius,
                 link_form_question_id: questionId,
                 link_station_id: stationId,
+                link_station_ticket: stationTicket,
                 is_response_submitted: isResponseSubmitted
               }: ApiMarker): Marker => {
                 let marker
@@ -410,9 +428,18 @@ export default class Map extends Vue {
                 } else {
                   marker = new CheckpointMarker()
                   marker.id = String(questionId || stationId)
-                  marker.isStation = stationId > 0
+                  const isStation = stationId > 0
+                  marker.isStation = isStation
                   marker.submitted = isResponseSubmitted
                   marker.showAccuracyCircle = store.state.debugSettings.map
+                  if (isStation && stationTicket) {
+                    marker.stationTicket = {
+                      key: stationTicket.station.random_id,
+                      colour: stationTicket.colour,
+                      word: stationTicket.word,
+                      stationName: stationTicket.station.name
+                    }
+                  }
                 }
                 marker.latitude = latitude
                 marker.longitude = longitude
