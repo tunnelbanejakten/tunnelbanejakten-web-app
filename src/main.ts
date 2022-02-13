@@ -17,7 +17,8 @@ import {
   faMapMarkerAlt,
   faCheckCircle,
   faExclamationTriangle,
-  faInfoCircle
+  faInfoCircle,
+  faGlobe
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
@@ -34,6 +35,7 @@ library.add(faMapMarkerAlt)
 library.add(faCheckCircle)
 library.add(faExclamationTriangle)
 library.add(faInfoCircle)
+library.add(faGlobe)
 
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 
