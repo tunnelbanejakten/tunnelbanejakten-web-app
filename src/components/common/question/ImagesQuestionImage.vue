@@ -62,18 +62,11 @@ export default class ImagesQuestionImage extends Vue {
 </script>
 
 <style scoped>
-.wrapper {
-  width: 40vw;
-  height: 40vw;
-  overflow: hidden;
-  margin: 0 10px 10px 0;
-}
 .thumbnail {
   display: block;
-  width: 40vw;
-  height: 40vw;
-  object-fit: contain;
+  object-fit: cover;
   background-color: #eee;
+  border-radius: 10px;
 }
 .mode-uploaded {
   position: relative;

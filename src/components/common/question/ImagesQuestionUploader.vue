@@ -314,24 +314,16 @@ export default class ImagesQuestionImage extends Vue {
 </script>
 
 <style scoped>
-.wrapper {
-  width: 40vw;
-  height: 40vw;
-  overflow: hidden;
-  margin: 0 10px 10px 0;
-}
 .mode-select {
   display: flex;
-  width: 40vw;
-  height: 40vw;
   flex-direction: column;
   justify-content: space-evenly;
   align-items: center;
+  background-color: #eee;
+  border-radius: 10px;
 }
 .mode-uploading {
   display: flex;
-  width: 40vw;
-  height: 40vw;
   justify-content: center;
   align-items: center;
 }

@@ -218,9 +218,39 @@ export default class ImageQuestion extends Vue {
 <style scoped>
 .images-container {
   display: flex;
-  justify-content: flex-start;
-  flex-direction: row;
+  flex-direction: column;
+  align-items: center;
   flex-wrap: wrap;
+}
+.images-container::v-deep .thumbnail,
+.images-container::v-deep .wrapper,
+.images-container::v-deep .mode-uploaded,
+.images-container::v-deep .mode-uploading,
+.images-container::v-deep .mode-select {
+  width: 60vw;
+  height: 60vw;
+}
+.images-container::v-deep .wrapper {
+  overflow: hidden;
+  margin: 0 10px 10px 0;
+}
+@media (min-width: 375px) {
+  .images-container {
+    display: flex;
+    justify-content: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .images-container::v-deep .thumbnail,
+  .images-container::v-deep .wrapper,
+  .images-container::v-deep .mode-uploaded,
+  .images-container::v-deep .mode-uploading,
+  .images-container::v-deep .mode-select {
+    width: 39vw;
+    height: 39vw;
+    max-width: 300px;
+    max-height: 300px;
+  }
 }
 .file-count-status {
   font-size: 90%;
