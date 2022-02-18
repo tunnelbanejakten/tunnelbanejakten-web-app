@@ -141,7 +141,11 @@ export default class ImageQuestion extends Vue {
   }
 
   onChange() {
-    this.emitChangeEventAfterRender = true
+    // For some reason, we need to delay this event. Otherwise the most recent
+    // character will not be saved. Maybe the other delayed event is causing issues?
+    setTimeout(() => {
+      this.$emit('change')
+    }, 0);
   }
 
   onImageUploaded(imageData: ImageData) {
