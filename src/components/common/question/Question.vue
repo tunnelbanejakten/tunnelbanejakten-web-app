@@ -28,6 +28,7 @@
       />
 
       <component
+        @change="onChange"
         :is="currentComponent()"
         :question="question"
         :question-id="questionId"
@@ -58,15 +59,17 @@
           :name="trackedAnswersFieldName"
           :value="trackedAnswersCurrentValue"
         >
-        <Button
-          @click="onSubmitAnswer"
-          :pending="isSubmitting"
-          label="Spara"
-          type="primary"
-        />
-        <p class="time-status">
-          Kom ihåg Spara-knappen när ni ändrat något.
-        </p>
+        <div v-if="!isAutoSaveEnabled">
+          <Button
+            @click="onSubmitAnswer"
+            :pending="isSubmitting"
+            label="Spara"
+            type="primary"
+          />
+          <p class="time-status">
+            Kom ihåg Spara-knappen när ni ändrat något.
+          </p>
+        </div>
       </div>
       <div v-if="isTimeLimitExceeded && !readOnly">
         <p class="time-status">
@@ -81,10 +84,12 @@
 import { Component, Vue, Prop, Emit, Watch } from 'vue-property-decorator'
 import { QuestionDto } from './model'
 import Button from '@/components/common/Button.vue'
+import Loader from '@/components/common/Loader.vue'
 import OptionsQuestion from '@/components/common/question/OptionsQuestion.vue'
 import TextQuestion from '@/components/common/question/TextQuestion.vue'
 import ImagesQuestion from '@/components/common/question/ImagesQuestion.vue'
 import NumberQuestion from '@/components/common/question/NumberQuestion.vue'
+import store from '@/store'
 
 @Component({
   components: {
@@ -92,7 +97,8 @@ import NumberQuestion from '@/components/common/question/NumberQuestion.vue'
     OptionsQuestion,
     TextQuestion,
     ImagesQuestion,
-    NumberQuestion
+    NumberQuestion,
+    Loader
   }
 })
 export default class Question extends Vue {
@@ -116,6 +122,15 @@ export default class Question extends Vue {
   @Watch('question')
   onQuestionUpdated() {
     this.init()
+  }
+
+  @Emit('change')
+  onChange() {
+    return true
+  }
+
+  get isAutoSaveEnabled(): boolean {
+    return store.state.autoSave
   }
 
   init() {

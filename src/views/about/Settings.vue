@@ -13,6 +13,12 @@
           v-model="debugConsole"
         >Visa loggfönster</label>
     </div>
+    <div class="option">
+      <label><input
+          type="checkbox"
+          v-model="autoSave"
+        >Spara automatiskt</label>
+    </div>
     <p v-if="groupKey">Om Kundtjänst frågar så är erat grupp-id <code @click="toggleFullGroupIdShown">{{ groupId }}</code>.</p>
   </div>
 </template>
@@ -47,6 +53,14 @@ export default class Settings extends Vue {
 
   get debugConsole() {
     return store.state.debugSettings.console
+  }
+
+  get autoSave() {
+    return store.state.autoSave
+  }
+
+  set autoSave(value: boolean) {
+    store.setFormAutoSave(value)
   }
 
   set debugMap(value: boolean) {

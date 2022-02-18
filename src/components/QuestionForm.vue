@@ -12,6 +12,7 @@
     <div v-if="!isQuestionLoading && !!loadedQuestion">
       <form ref="form">
         <Question
+          @change="onAnswerChange"
           :question="loadedQuestion"
           :question-id="questionId"
           :read-only="readOnly"
@@ -20,6 +21,14 @@
           @user-submits-answer="submitAnswer"
         />
       </form>
+      <div v-if="isAutoSaveEnabled">
+        <span v-if="isDirty && !isSubmitting">
+          Sparar snart...
+        </span>
+        <span v-if="isSubmitting">
+          Sparar nu...
+        </span>
+      </div>
     </div>
   </div>
 </template>
@@ -33,6 +42,8 @@ import { QuestionDto } from './common/question/model'
 import * as AuthUtils from '@/utils/Auth'
 import * as Analytics from '@/utils/Analytics'
 import * as Api from '@/utils/Api'
+import { QueuedRequestEvent, QueuedRequestFailedEvent, QueuedRequestSucceededEvent } from '@/utils/Api'
+import store from '@/store'
 
 const apiHost = process.env.VUE_APP_API_HOST
 
@@ -55,12 +66,8 @@ export default class QuestionForm extends Vue {
 
   private message = ''
   private messageType = MessageType.FAILURE
-
-  get submitUrl() {
-    const token = AuthUtils.getTokenCookie()
-
-    return `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}/answer?token=${token}`
-  }
+  private isDirty = false
+  private submitRequestKey: string = ''
 
   async created() {
     if (this.question) {
@@ -68,6 +75,59 @@ export default class QuestionForm extends Vue {
     } else {
       await this.fetchQuestion()
     }
+    if (this.isAutoSaveEnabled) {
+      Api.addQueueListeners({
+        onStart: this.onQueuedSubmitStart,
+        onSuccess: this.onQueuedSubmitSuccess,
+        onFailure: this.onQueuedSubmitFailure,
+      })
+    }
+  }
+
+  beforeDestroy() {
+    if (this.isAutoSaveEnabled) {
+      Api.removeQueueListeners({
+        onStart: this.onQueuedSubmitStart,
+        onSuccess: this.onQueuedSubmitSuccess,
+        onFailure: this.onQueuedSubmitFailure,
+      })
+    }
+  }
+
+  onAnswerChange(e: any) {
+    this.isDirty = true
+    if (this.isAutoSaveEnabled) {
+      this.queueSubmitAnswer()
+    }
+  }
+
+  onQueuedSubmitStart(event: QueuedRequestEvent) {
+    if (event.key !== this.submitRequestKey) return // The event concerns another question
+    this.isSubmitting = true
+  }
+
+  onQueuedSubmitSuccess(event: QueuedRequestSucceededEvent) {
+    if (event.key !== this.submitRequestKey) return // The event concerns another question
+    this.isSubmitting = false
+
+    const responsePayload = event.response.payload
+    this.isDirty = false
+    this.onSubmitSuccess({ ...responsePayload, id: this.questionId })
+  }
+
+  onQueuedSubmitFailure(event: QueuedRequestFailedEvent) {
+    if (event.key !== this.submitRequestKey) return // The event concerns another question
+    this.isSubmitting = false
+
+    if (event.error instanceof Api.ApiError) {
+      this.onSubmitFailure(new Error('Kunde inte spara svar'))
+    } else {
+      this.onSubmitFailure(event.error)
+    }
+  }
+
+  get isAutoSaveEnabled(): boolean {
+    return store.state.autoSave
   }
 
   async fetchQuestion() {
@@ -75,7 +135,6 @@ export default class QuestionForm extends Vue {
       this.isQuestionLoading = true
 
       const resp = await Api.call({
-
         endpoint: `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}`
       })
       const payload = resp.payload
@@ -123,21 +182,35 @@ export default class QuestionForm extends Vue {
     this.isSubmitting = false
   }
 
+  getApiRequest(): Api.Request {
+    const formEl = this.$refs.form
+    if (!formEl) {
+      throw new Error('No form')
+    }
+    const payload = new FormData(formEl as HTMLFormElement)
+    return {
+      endpoint: `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}/answer`,
+      method: 'POST',
+      payload
+    } as Api.Request
+  }
+
+  async queueSubmitAnswer() {
+    const request = this.getApiRequest()
+    this.message = ''
+    this.messageType = MessageType.INFO
+    this.submitRequestKey = Api.queue(request)
+  }
+
   async submitAnswer() {
     this.isSubmitting = true
+    this.message = ''
+    this.messageType = MessageType.INFO
     try {
-      const formEl = this.$refs.form
-      if (formEl) {
-        const payload = new FormData(formEl as HTMLFormElement)
-        const resp = await Api.call({
-          endpoint: `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}/answer`,
-          method: 'POST',
-          payload
-        })
-        const responsePayload = resp.payload
-        this.isDirty = false
-        this.onSubmitSuccess({ ...responsePayload, id: this.questionId })
-      }
+      const resp = await Api.call(this.getApiRequest())
+      const responsePayload = resp.payload
+      this.isDirty = false
+      this.onSubmitSuccess({ ...responsePayload, id: this.questionId })
     } catch (e) {
       if (e instanceof Api.ApiError) {
         this.onSubmitFailure(new Error('Kunde inte spara svar'))
@@ -155,8 +228,10 @@ export default class QuestionForm extends Vue {
       message: `Submitted answer to question ${this.questionId}.`
     })
 
-    this.message = 'Ditt svar sparades'
-    this.messageType = MessageType.SUCCESS
+    if (!this.isAutoSaveEnabled) {
+      this.message = 'Ditt svar sparades'
+      this.messageType = MessageType.SUCCESS
+    }
 
     return updatedQuestionData
   }

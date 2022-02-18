@@ -13,6 +13,7 @@
           :value="opt"
           :checked="fieldValues.includes(opt)"
           :name="fieldName"
+          @change="onChange"
         >
         {{ opt }}
       </label>
@@ -21,7 +22,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from 'vue-property-decorator'
+import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import Page from '@/components/layout/Page.vue'
 import Wrapper from './Question.vue'
 import { QuestionDto } from './model'
@@ -57,6 +58,11 @@ export default class OptionsQuestion extends Vue {
       this.question.response.current_value
       ? this.question.response.current_value
       : []
+  }
+
+  @Emit('change')
+  onChange() {
+    return true
   }
 }
 </script>

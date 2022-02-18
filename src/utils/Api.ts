@@ -1,6 +1,30 @@
 import * as AuthUtils from '@/utils/Auth'
 import * as Analytics from '@/utils/Analytics'
+import mitt from 'mitt'
 
+type Events = {
+    start: QueuedRequestEvent
+    succeeded: QueuedRequestSucceededEvent
+    failed: QueuedRequestFailedEvent
+}
+
+export type QueuedRequestEvent = {
+    key: string
+}
+
+export type QueuedRequestSucceededEvent = QueuedRequestEvent & {
+    response: Response
+}
+
+export type QueuedRequestFailedEvent = QueuedRequestEvent & {
+    error: Error
+}
+
+export type QueueListeners = {
+    onStart?: (event: QueuedRequestEvent) => void
+    onSuccess?: (event: QueuedRequestSucceededEvent) => void
+    onFailure?: (event: QueuedRequestFailedEvent) => void
+}
 
 export type Request = {
     endpoint: string
@@ -25,6 +49,14 @@ export class ApiError extends Error {
 export class NotSignedInError extends Error {
 }
 
+const emitter = mitt<Events>()
+
+let timer = 0
+
+const DEBOUNCE_TIMEOUT = 2000
+
+const queuedRequests = new Map<string, Request>()
+
 const withTokenQueryParam = (endpoint: string) => {
     const token = AuthUtils.getTokenCookie()
     if (!token) {
@@ -48,6 +80,63 @@ const getBodyProps = (body: any): { body?: any, contentType: string } => {
         return {
             contentType: ''
         }
+    }
+}
+
+export const queue = (request: Request): string => {
+    const key = `${request.method}__${request.endpoint}`
+
+    queuedRequests.set(key, request)
+
+    if (timer) {
+        clearTimeout(timer)
+    }
+    timer = setTimeout(processQueue, DEBOUNCE_TIMEOUT);
+
+    return key
+}
+
+export const addQueueListeners = (listeners: QueueListeners) => {
+    if (listeners.onStart) {
+        emitter.on('start', listeners.onStart)
+    }
+    if (listeners.onFailure) {
+        emitter.on('failed', listeners.onFailure)
+    }
+    if (listeners.onSuccess) {
+        emitter.on('succeeded', listeners.onSuccess)
+    }
+}
+
+export const removeQueueListeners = (listeners: QueueListeners) => {
+    if (listeners.onStart) {
+        emitter.off('start', listeners.onStart)
+    }
+    if (listeners.onFailure) {
+        emitter.off('failed', listeners.onFailure)
+    }
+    if (listeners.onSuccess) {
+        emitter.off('succeeded', listeners.onSuccess)
+    }
+}
+
+const processQueue = async () => {
+    const entries = queuedRequests.entries()
+    for (const [key, request] of entries) {
+        emitter.emit('start', { key } as QueuedRequestEvent)
+        try {
+            const response = await call(request)
+            emitter.emit('succeeded', {
+                key,
+                response
+            } as QueuedRequestSucceededEvent)
+        } catch (e: any) {
+            emitter.emit('failed', {
+                key,
+                error: e
+            } as QueuedRequestFailedEvent)
+        }
+        queuedRequests.delete(key)
     }
 }
 
