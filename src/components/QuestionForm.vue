@@ -32,6 +32,7 @@ import Loader from '@/components/common/Loader.vue'
 import { QuestionDto } from './common/question/model'
 import * as AuthUtils from '@/utils/Auth'
 import * as Analytics from '@/utils/Analytics'
+import * as Api from '@/utils/Api'
 
 const apiHost = process.env.VUE_APP_API_HOST
 
@@ -61,12 +62,6 @@ export default class QuestionForm extends Vue {
     return `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}/answer?token=${token}`
   }
 
-  get viewEventUrl() {
-    const token = AuthUtils.getTokenCookie()
-
-    return `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}/view-events?token=${token}`
-  }
-
   async created() {
     if (this.question) {
       this.loadedQuestion = this.question
@@ -79,34 +74,33 @@ export default class QuestionForm extends Vue {
     try {
       this.isQuestionLoading = true
 
-      const token = AuthUtils.getTokenCookie()
+      const resp = await Api.call({
 
-      const resp = await fetch(
-        `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}?token=${token}`
-      )
-      if (resp.ok) {
-        const payload = await resp.json()
-        this.loadedQuestion = payload
+        endpoint: `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}`
+      })
+      const payload = resp.payload
+      this.loadedQuestion = payload
 
-        Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'fetched', 'question', {
-          message: `Fetched question ${this.questionId}.`
-        })
-      } else {
+      Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'fetched', 'question', {
+        message: `Fetched question ${this.questionId}.`
+      })
+    } catch (e: any) {
+      if (e instanceof Api.ApiError) {
         Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'fetch', {
           message: `Could not fetch question ${this.questionId}.`,
-          status: `Http response ${resp.status}.`
+          status: `Http response ${e.status}.`
         })
 
         this.message = 'Oj då, appen kan inte läsa in kontrollen.'
         this.messageType = MessageType.FAILURE
-      }
-    } catch (e) {
-      Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'fetch', {
-        message: `Could not fetch question ${this.questionId}. Reason: ${e.message}.`
-      })
+      } else {
+        Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'fetch', {
+          message: `Could not fetch question ${this.questionId}. Reason: ${e.message}.`
+        })
 
-      this.message = 'Något gick fel. ' + e.message
-      this.messageType = MessageType.FAILURE
+        this.message = 'Något gick fel. ' + e.message
+        this.messageType = MessageType.FAILURE
+      }
     }
     this.isQuestionLoading = false
   }
@@ -114,19 +108,17 @@ export default class QuestionForm extends Vue {
   async postViewEvent() {
     this.isSubmitting = true
     try {
-      const resp = await fetch(
-        this.viewEventUrl,
-        {
-          method: 'POST'
-        }
-      )
-      if (resp.ok) {
-        this.onPostViewEventSuccess()
-      } else {
-        this.onPostViewEventFailure(new Error('Kunde inte visa fråga'))
-      }
+      await Api.call({
+        endpoint: `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}/view-events`,
+        method: 'POST'
+      })
+      this.onPostViewEventSuccess()
     } catch (e) {
-      this.onPostViewEventFailure(e)
+      if (e instanceof Api.ApiError) {
+        this.onPostViewEventFailure(new Error('Kunde inte visa fråga'))
+      } else {
+        this.onPostViewEventFailure(e)
+      }
     }
     this.isSubmitting = false
   }

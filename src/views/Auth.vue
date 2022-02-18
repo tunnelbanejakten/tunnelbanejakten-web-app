@@ -9,6 +9,7 @@
 import { Component, Vue } from 'vue-property-decorator'
 import Page from '@/components/layout/Page.vue'
 import * as AuthUtils from '@/utils/Auth'
+import * as Api from '@/utils/Api'
 import * as Analytics from '@/utils/Analytics'
 
 const apiHost = process.env.VUE_APP_API_HOST
@@ -70,19 +71,14 @@ export default class Auth extends Vue {
         this.setToken(payload.token)
         this.tokenStatus = GetTokenStatus.SUCCESS
 
-        const token = AuthUtils.getTokenCookie()
-        if (token) {
-          const profileResp = await fetch(
-            `${apiHost}/wp-json/tuja/v1/profile?token=${token}`
-          )
-          if (profileResp.ok) {
-            const profilePayload = await profileResp.json()
-            Analytics.setUserProperties({
-              group_key: profilePayload.key,
-              group_name: profilePayload.name
-            })
-          }
-        }
+        const profileResp = await Api.call({
+          endpoint: `${apiHost}/wp-json/tuja/v1/profile`
+        })
+        const profilePayload = profileResp.payload
+        Analytics.setUserProperties({
+          group_key: profilePayload.key,
+          group_name: profilePayload.name
+        })
 
         if (this.nextRoute) {
           await this.$router.push({ path: this.nextRoute })
