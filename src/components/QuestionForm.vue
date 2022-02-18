@@ -129,22 +129,21 @@ export default class QuestionForm extends Vue {
       const formEl = this.$refs.form
       if (formEl) {
         const payload = new FormData(formEl as HTMLFormElement)
-        const resp = await fetch(
-          this.submitUrl,
-          {
-            method: 'POST',
-            body: payload
-          }
-        )
-        if (resp.ok) {
-          const payload = await resp.json()
-          this.onSubmitSuccess({ ...payload, id: this.questionId })
-        } else {
-          this.onSubmitFailure(new Error('Kunde inte spara svar'))
-        }
+        const resp = await Api.call({
+          endpoint: `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}/answer`,
+          method: 'POST',
+          payload
+        })
+        const responsePayload = resp.payload
+        this.isDirty = false
+        this.onSubmitSuccess({ ...responsePayload, id: this.questionId })
       }
     } catch (e) {
-      this.onSubmitFailure(e)
+      if (e instanceof Api.ApiError) {
+        this.onSubmitFailure(new Error('Kunde inte spara svar'))
+      } else {
+        this.onSubmitFailure(e)
+      }
     }
     this.isSubmitting = false
   }

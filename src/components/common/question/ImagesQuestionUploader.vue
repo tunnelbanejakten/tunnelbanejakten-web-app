@@ -68,6 +68,7 @@ import Button from '@/components/common/Button.vue'
 import Loader from '@/components/common/Loader.vue'
 import Camera from '@/components/common/Camera.vue'
 import * as AuthUtils from '@/utils/Auth'
+import * as Api from '@/utils/Api'
 
 const apiHost = process.env.VUE_APP_API_HOST
 
@@ -159,35 +160,34 @@ export default class ImagesQuestionImage extends Vue {
         size: blob.size,
         message: `Started to upload image to question ${this.questionId}. Base64-encoded length: ${imageUrl.length}. Blob length: ${blob.size}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`
       })
-      const resp = await fetch(
-        `${apiHost}/wp-admin/admin-ajax.php`,
-        {
-          method: 'POST',
-          body: fd
-        }
-      )
-      if (resp.ok) {
-        const payload = await resp.json()
-        Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'completed', 'image upload', {
-          size: blob.size,
-          message: `Uploaded image ${payload.image} as answer to question ${this.questionId}. Thumbnail: ${payload.thumbnail_url}. Base64-encoded length: ${imageUrl.length}. Blob length: ${blob.size}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`
-        })
-        this.onImageUploaded({
-          imageId: payload.image,
-          thumbnailUrl: payload.thumbnail_url
-        })
-      } else {
-        this.onUploadFailed(`Kunde inte spara bilden. Teknisk info: ${resp.status}.`, 'image upload', {
+      const resp = await Api.call({
+        endpoint: `${apiHost}/wp-admin/admin-ajax.php`,
+        method: 'POST',
+        payload: fd,
+        unauthenticated: true
+      })
+      const payload = resp.payload
+      Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'completed', 'image upload', {
+        size: blob.size,
+        message: `Uploaded image ${payload.image} as answer to question ${this.questionId}. Thumbnail: ${payload.thumbnail_url}. Base64-encoded length: ${imageUrl.length}. Blob length: ${blob.size}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`
+      })
+      this.onImageUploaded({
+        imageId: payload.image,
+        thumbnailUrl: payload.thumbnail_url
+      })
+    } catch (e) {
+      if (e instanceof Api.ApiError) {
+        this.onUploadFailed(`Kunde inte spara bilden. Teknisk info: ${e.status}.`, 'image upload', {
           size: blob.size,
           message: `Failed to upload image to question ${this.questionId}. Base64-encoded length: ${imageUrl.length}. Blob length: ${blob.size}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`,
-          status: `Http response ${resp.status}.`
+          status: `Http response ${e.status}.`
+        })
+      } else {
+        this.onUploadFailed('Kunde inte ladda upp bilden', 'image upload', {
+          size: blob.size,
+          message: `Failed to upload image to question ${this.questionId}. Message: ${e.message}. Base64-encoded length: ${imageUrl.length}. Blob length: ${blob.size}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`
         })
       }
-    } catch (e) {
-      this.onUploadFailed('Kunde inte ladda upp bilden', 'image upload', {
-        size: blob.size,
-        message: `Failed to upload image to question ${this.questionId}. Message: ${e.message}. Base64-encoded length: ${imageUrl.length}. Blob length: ${blob.size}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`
-      })
     }
   }
 

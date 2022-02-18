@@ -33,23 +33,45 @@ const withTokenQueryParam = (endpoint: string) => {
     return `${endpoint}?token=${token}`
 }
 
+const getBodyProps = (body: any): { body?: any, contentType: string } => {
+    if (body instanceof FormData) {
+        return {
+            body,
+            contentType: ''
+        }
+    } else if (!!body) {
+        return {
+            body: JSON.stringify(body),
+            contentType: 'application/json'
+        }
+    } else {
+        return {
+            contentType: ''
+        }
+    }
+}
+
 export const call = async (request: Request): Promise<Response> => {
     try {
         const authenticated = !request.unauthenticated
         const url = authenticated
             ? withTokenQueryParam(request.endpoint)
             : request.endpoint
+        const { body, contentType } = getBodyProps(request.payload)
+        const headers = new Headers()
+        const fetchConfig: RequestInit = {
+            method: request.method ?? 'GET',
+            headers
+        }
+        if (body) {
+            fetchConfig.body = body
+        }
+        if (contentType) {
+            headers.set('Content-Type', contentType)
+        }
         const resp = await fetch(
             url,
-            {
-                method: request.method ?? 'GET',
-                ...(request.payload ? {
-                    body: JSON.stringify(request.payload),
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                } : {})
-            }
+            fetchConfig
         )
         if (resp.ok) {
             return {
