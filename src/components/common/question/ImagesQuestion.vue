@@ -264,8 +264,9 @@ input {
   box-sizing: border-box;
   width: 100%;
   margin: 15px 0px 5px 0px;
-  padding: 5px;
+  padding: 10px;
   border: 1px solid #bbb;
+  border-radius: 5px;
 
   font: 16px/1.4 "Open Sans", Tahoma, Verdana, Segoe, sans-serif;
 }

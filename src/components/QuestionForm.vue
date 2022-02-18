@@ -21,13 +21,16 @@
           @user-submits-answer="submitAnswer"
         />
       </form>
-      <div v-if="isAutoSaveEnabled">
-        <span v-if="isDirty && !isSubmitting">
+      <div
+        v-if="isAutoSaveEnabled"
+        class="auto-save-status"
+      >
+        <p v-if="isDirty && !isSubmitting">
           Sparar snart...
-        </span>
-        <span v-if="isSubmitting">
+        </p>
+        <p v-if="isSubmitting">
           Sparar nu...
-        </span>
+        </p>
       </div>
     </div>
   </div>
@@ -274,5 +277,10 @@ export default class QuestionForm extends Vue {
 }
 </script>
 
-<style>
+<style scoped>
+.auto-save-status p {
+  font-size: 90%;
+  font-style: italic;
+  margin: 10px 0 0 0;
+}
 </style>

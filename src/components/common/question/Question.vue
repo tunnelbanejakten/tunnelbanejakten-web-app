@@ -27,6 +27,13 @@
         v-html="text"
       />
 
+      <p
+        class="text-hint"
+        v-if="!!textHint"
+      >
+        {{ textHint }}
+      </p>
+
       <component
         @change="onChange"
         :is="currentComponent()"
@@ -36,12 +43,6 @@
         :optimistic-lock-value="optimisticLockCurrentValue"
       />
 
-      <p
-        class="text-hint"
-        v-if="!!textHint"
-      >
-        {{ textHint }}
-      </p>
       <div v-if="!isTimeLimitExceeded && !readOnly">
         <p
           class="time-status"
@@ -262,5 +263,8 @@ div.text >>> img {
 p.text-hint {
   font-size: 90%;
   font-style: italic;
+}
+div.text >>> p {
+  margin: 0 0 10px 0;
 }
 </style>
