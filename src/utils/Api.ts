@@ -6,6 +6,7 @@ export type Request = {
     endpoint: string
     method?: string
     payload?: any
+    unauthenticated?: boolean
 }
 
 
@@ -24,15 +25,22 @@ export class ApiError extends Error {
 export class NotSignedInError extends Error {
 }
 
+const withTokenQueryParam = (endpoint: string) => {
+    const token = AuthUtils.getTokenCookie()
+    if (!token) {
+        throw new NotSignedInError()
+    }
+    return `${endpoint}?token=${token}`
+}
+
 export const call = async (request: Request): Promise<Response> => {
     try {
-        const token = AuthUtils.getTokenCookie()
-        if (!token) {
-            throw new NotSignedInError()
-        }
-
+        const authenticated = !request.unauthenticated
+        const url = authenticated
+            ? withTokenQueryParam(request.endpoint)
+            : request.endpoint
         const resp = await fetch(
-            `${request.endpoint}?token=${token}`,
+            url,
             {
                 method: request.method ?? 'GET',
                 ...(request.payload ? {

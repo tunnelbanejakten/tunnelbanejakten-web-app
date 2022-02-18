@@ -81,9 +81,12 @@ export default class Connectity extends Vue {
   async onStartTest() {
     this.backendStatus = BackendStatus.CHECKING
     try {
-      const resp = await fetch(`${apiHost}/wp-json/tuja/v1/ping`)
-      const pingPayload = await resp.json()
-      if (resp.ok && pingPayload.status === 'ok') {
+      const resp = await Api.call({
+        endpoint: `${apiHost}/wp-json/tuja/v1/ping`,
+        unauthenticated: true
+      })
+      const pingPayload = resp.payload
+      if (pingPayload.status === 'ok') {
         try {
           const profileResp = await Api.call({
             endpoint: `${apiHost}/wp-json/tuja/v1/profile`
@@ -103,6 +106,9 @@ export default class Connectity extends Vue {
         this.backendStatus = BackendStatus.INVALID_RESPONSE
       }
     } catch (e) {
+      if (e instanceof Api.ApiError) {
+        this.backendStatus = BackendStatus.INVALID_RESPONSE
+      }
       this.backendStatus = BackendStatus.FAILED
     }
   }
