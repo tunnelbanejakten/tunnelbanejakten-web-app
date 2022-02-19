@@ -7,6 +7,7 @@ const VALUE_FALSE = 'false'
 
 const LOCALSETTING_DEBUG_MAP = 'debug-map'
 const LOCALSETTING_DEBUG_CONSOLE = 'debug-console'
+const LOCALSETTING_FORM_AUTO_SAVE = 'form-auto-save'
 
 export enum Status {
   PENDING,
@@ -62,6 +63,7 @@ type State = {
   configuration: Configuration
   eventLog: EventLog
   debugSettings: Debug
+  autoSave: boolean
 }
 
 type EventLog = {
@@ -114,7 +116,8 @@ const state: State = {
   debugSettings: {
     map: LocalSettings.get(LOCALSETTING_DEBUG_MAP) === VALUE_TRUE,
     console: LocalSettings.get(LOCALSETTING_DEBUG_CONSOLE) === VALUE_TRUE
-  }
+  },
+  autoSave: LocalSettings.get(LOCALSETTING_FORM_AUTO_SAVE) === VALUE_TRUE
 }
 
 const store = {
@@ -157,6 +160,10 @@ const store = {
   setDebugConsole(value: boolean) {
     this.state.debugSettings.console = value
     LocalSettings.set(LOCALSETTING_DEBUG_CONSOLE, value ? VALUE_TRUE : VALUE_FALSE)
+  },
+  setFormAutoSave(value: boolean) {
+    this.state.autoSave = value
+    LocalSettings.set(LOCALSETTING_FORM_AUTO_SAVE, value ? VALUE_TRUE : VALUE_FALSE)
   }
 }
 

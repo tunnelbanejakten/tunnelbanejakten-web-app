@@ -78,7 +78,6 @@
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator'
 import Page from '@/components/layout/Page.vue'
-import * as AuthUtils from '@/utils/Auth'
 import MapComponent, {
   Coord,
   Marker,
@@ -98,6 +97,7 @@ import CheckpointStation from './map/CheckpointStation.vue'
 import { TicketData } from '@/components/common/Ticket.vue'
 import * as LocationUtils from '@/utils/Location'
 import * as Analytics from '@/utils/Analytics'
+import * as Api from '@/utils/Api'
 import store from '@/store'
 
 const apiHost = process.env.VUE_APP_API_HOST
@@ -398,85 +398,83 @@ export default class Map extends Vue {
   }
 
   async loadMarkers() {
-    const token = AuthUtils.getTokenCookie()
-    if (token) {
-      this.updateState(State.LOADING_MARKERS, 'Hämtar karta.')
-      try {
-        const resp = await fetch(
-          `${apiHost}/wp-json/tuja/v1/map/markers?token=${token}`
-        )
+    this.updateState(State.LOADING_MARKERS, 'Hämtar karta.')
+    try {
+      const resp = await Api.call({
+        endpoint: `${apiHost}/wp-json/tuja/v1/map/markers`
+      })
+      if (resp.status === 200) {
+        const markers = resp.payload
 
-        if (resp.status === 200) {
-          const markers = await resp.json()
-
-          if (markers.length > 0) {
-            this.markers = markers.map(
-              ({
-                type,
-                latitude,
-                longitude,
-                name,
-                radius,
-                link_form_question_id: questionId,
-                link_station_id: stationId,
-                link_station_ticket: stationTicket,
-                is_response_submitted: isResponseSubmitted
-              }: ApiMarker): Marker => {
-                let marker
-                if (type === 'START') {
-                  marker = new StartPositionMarker()
-                } else {
-                  marker = new CheckpointMarker()
-                  marker.id = String(questionId || stationId)
-                  const isStation = stationId > 0
-                  marker.isStation = isStation
-                  marker.submitted = isResponseSubmitted
-                  marker.showAccuracyCircle = store.state.debugSettings.map
-                  if (isStation && stationTicket) {
-                    marker.stationTicket = {
-                      key: stationTicket.station.random_id,
-                      colour: stationTicket.colour,
-                      word: stationTicket.word,
-                      stationName: stationTicket.station.name
-                    }
+        if (markers.length > 0) {
+          this.markers = markers.map(
+            ({
+              type,
+              latitude,
+              longitude,
+              name,
+              radius,
+              link_form_question_id: questionId,
+              link_station_id: stationId,
+              link_station_ticket: stationTicket,
+              is_response_submitted: isResponseSubmitted
+            }: ApiMarker): Marker => {
+              let marker
+              if (type === 'START') {
+                marker = new StartPositionMarker()
+              } else {
+                marker = new CheckpointMarker()
+                marker.id = String(questionId || stationId)
+                const isStation = stationId > 0
+                marker.isStation = isStation
+                marker.submitted = isResponseSubmitted
+                marker.showAccuracyCircle = store.state.debugSettings.map
+                if (isStation && stationTicket) {
+                  marker.stationTicket = {
+                    key: stationTicket.station.random_id,
+                    colour: stationTicket.colour,
+                    word: stationTicket.word,
+                    stationName: stationTicket.station.name
                   }
                 }
-                marker.latitude = latitude
-                marker.longitude = longitude
-                marker.meterAccuracy = radius
-                marker.label = String(name)
-                return marker
               }
-            )
-            Analytics.logEvent(
-              Analytics.AnalyticsEventType.MAP,
-              'load',
-              'markers',
-              {
-                count: this.markers.length
-              }
-            )
-            this.updateState(State.MARKERS_LOADED, 'Vi har hämtat kartmarkörerna.')
-            return true
-          } else {
-            this.updateState(
-              State.ERROR,
-              'Det finns inga kontroller att visa på kartan.'
-            )
-          }
-        } else if (resp.status === 204) {
+              marker.latitude = latitude
+              marker.longitude = longitude
+              marker.meterAccuracy = radius
+              marker.label = String(name)
+              return marker
+            }
+          )
+          Analytics.logEvent(
+            Analytics.AnalyticsEventType.MAP,
+            'load',
+            'markers',
+            {
+              count: this.markers.length
+            }
+          )
+          this.updateState(State.MARKERS_LOADED, 'Vi har hämtat kartmarkörerna.')
+          return true
+        } else {
           this.updateState(
             State.ERROR,
-            'Ert lag har inte blivit tilldelad en karta. Kontakta kundtjänst så löser de detta.'
+            'Det finns inga kontroller att visa på kartan.'
           )
-        } else {
-          this.updateState(State.ERROR, 'Kunde inte läsa in kontroller.')
         }
-      } catch (e) {
+      } else if (resp.status === 204) {
+        this.updateState(
+          State.ERROR,
+          'Ert lag har inte blivit tilldelad en karta. Kontakta kundtjänst så löser de detta.'
+        )
+      } else {
         this.updateState(State.ERROR, 'Kunde inte läsa in kontroller.')
       }
-    } else {
-      this.updateState(State.ERROR, 'Du är inte inloggad.')
+    } catch (e: any) {
+      if (e instanceof Api.NotSignedInError) {
+        this.updateState(State.ERROR, 'Du är inte inloggad.')
+      } else {
+        this.updateState(State.ERROR, 'Kunde inte läsa in kontroller.')
+      }
     }
     return false
   }

@@ -1,7 +1,10 @@
 <template>
   <Page title="Info">
     <div>
-      <Card :verticalMargin="false" v-html="bodyText" />
+      <Card
+        :verticalMargin="false"
+        v-html="bodyText"
+      />
       <Card :verticalMargin="true">
         <div v-if="isLoading">
           <Loader />
@@ -35,9 +38,9 @@ import Card from '@/components/layout/Card.vue'
 import Profile from './about/Profile.vue'
 import Settings from './about/Settings.vue'
 import store from '@/store'
-import * as AuthUtils from '@/utils/Auth'
 import Loader from '@/components/common/Loader.vue'
 import Message from '@/components/common/Message.vue'
+import * as Api from '@/utils/Api'
 
 const apiHost = process.env.VUE_APP_API_HOST
 
@@ -56,7 +59,6 @@ export default class About extends Vue {
     return store.state.configuration.messages.infoPageContent
   }
 
-
   private isLoading: boolean = false
   private groupKey: string | null = null
   private groupName: string | null = null
@@ -67,26 +69,25 @@ export default class About extends Vue {
   private countTeamContact: number | null = null
 
   async mounted() {
-    const token = AuthUtils.getTokenCookie()
-    if (token) {
-      this.isLoading = true
-      this.groupName = null
+    this.isLoading = true
+    this.groupName = null
 
-      const profileResp = await fetch(
-        `${apiHost}/wp-json/tuja/v1/profile?token=${token}`
-      )
-      this.isLoading = false
-      if (profileResp.ok) {
-        const profilePayload = await profileResp.json()
-        this.groupKey = profilePayload.key ?? ''
-        this.groupName = profilePayload.name
-        this.groupPortalLink = profilePayload.portal_link
-        this.categoryName = profilePayload.category_name
-        this.countCompeting = profilePayload.count_competing
-        this.countFollower = profilePayload.count_follower
-        this.countTeamContact = profilePayload.count_team_contact
-      }
+    try {
+      const profileResp = await Api.call({
+        endpoint: `${apiHost}/wp-json/tuja/v1/profile`
+      })
+      const profilePayload = profileResp.payload
+      this.groupKey = profilePayload.key ?? ''
+      this.groupName = profilePayload.name
+      this.groupPortalLink = profilePayload.portal_link
+      this.categoryName = profilePayload.category_name
+      this.countCompeting = profilePayload.count_competing
+      this.countFollower = profilePayload.count_follower
+      this.countTeamContact = profilePayload.count_team_contact
+    } catch (e: any) {
+
     }
+    this.isLoading = false
   }
 }
 </script>

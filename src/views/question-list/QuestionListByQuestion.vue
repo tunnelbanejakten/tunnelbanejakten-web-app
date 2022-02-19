@@ -4,14 +4,15 @@
       v-if="selectedQuestion"
       class="selected-question-group"
     >
+      <Button
+        @click="onDeselect"
+        :pending="isBackPending"
+        label="Tillbaka"
+        type="secondary"
+      />
       <QuestionGroupForm
         :question-group="selectedQuestionGroup"
         @submit-success="onSubmitSuccess"
-      />
-      <Button
-        @click="onDeselect()"
-        label="Tillbaka"
-        type="secondary"
       />
     </div>
     <div v-if="!selectedQuestion">
@@ -45,6 +46,7 @@ import Button from '@/components/common/Button.vue'
 import Card from '@/components/layout/Card.vue'
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import QuestionGroupForm from '@/components/QuestionGroupForm.vue'
+import * as Api from '@/utils/Api'
 
 @Component({
   components: {
@@ -57,6 +59,7 @@ export default class QuestionListByQuestion extends Vue {
   @Prop() private questionGroups!: QuestionGroupDto[]
 
   private selectedQuestion: QuestionDto | null = null
+  private isBackPending: boolean = false
 
   get questions() {
     const questions = (this.questionGroups || []).map(({ questions }) => questions).reduce((all, some) => all.concat(some), [])
@@ -64,7 +67,7 @@ export default class QuestionListByQuestion extends Vue {
   }
 
   get selectedQuestionGroup() {
-    const questionGroup = this.questionGroups.find(qg => qg.questions.some(q => q === this.selectedQuestion))
+    const questionGroup = this.questionGroups.find(qg => qg.questions.some(q => q.id === this.selectedQuestion?.id))
     return {
       ...questionGroup,
       questions: [this.selectedQuestion]
@@ -79,7 +82,10 @@ export default class QuestionListByQuestion extends Vue {
     this.selectedQuestion = question
   }
 
-  onDeselect() {
+  async onDeselect() {
+    this.isBackPending = true
+    await Api.processQueue()
+    this.isBackPending = false
     this.selectedQuestion = null
   }
 

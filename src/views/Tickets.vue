@@ -54,7 +54,7 @@ import Page from '@/components/layout/Page.vue'
 import Card from '@/components/layout/Card.vue'
 import Profile from './about/Profile.vue'
 import store from '@/store'
-import * as AuthUtils from '@/utils/Auth'
+import * as Api from '@/utils/Api'
 import Loader from '@/components/common/Loader.vue'
 import Message from '@/components/common/Message.vue'
 import Button from '@/components/common/Button.vue'
@@ -87,47 +87,39 @@ export default class Tickets extends Vue {
   private tickets: TicketData[] = []
 
   async mounted() {
-    const token = AuthUtils.getTokenCookie()
-    if (token) {
-      this.isLoading = true
-
-      const ticketsResp = await fetch(
-        `${apiHost}/wp-json/tuja/v1/tickets?token=${token}`
-      )
-      this.isLoading = false
-      if (ticketsResp.ok) {
-        const ticketsPayload = await ticketsResp.json()
-        this.tickets = ticketsPayload.map((ticket: any) => ({
-            key: ticket.station.random_id,
-            colour: ticket.colour,
-            word: ticket.word,
-            stationName: ticket.station.name
-          }) as TicketData)
-      }
+    this.isLoading = true
+    try {
+      const ticketsResp = await Api.call({
+        endpoint: `${apiHost}/wp-json/tuja/v1/tickets`
+      })
+      const ticketsPayload = await ticketsResp.payload
+      this.tickets = ticketsPayload.map((ticket: any) => ({
+        key: ticket.station.random_id,
+        colour: ticket.colour,
+        word: ticket.word,
+        stationName: ticket.station.name
+      }) as TicketData)
+    } catch (e: any) {
     }
+    this.isLoading = false
   }
 
   async onSubmitPassword() {
+    this.isSubmitting = true
+    this.redeemErrorTitle = ''
+    this.redeemErrorMessage = ''
 
-    const token = AuthUtils.getTokenCookie()
-    if (token) {
-      this.isSubmitting = true
-      this.redeemErrorTitle = ''
-      this.redeemErrorMessage = ''
-
-      const resp = await fetch(`${apiHost}/wp-json/tuja/v1/tickets/request?token=${token}`, {
+    try {
+      const resp = await Api.call({
+        endpoint: `${apiHost}/wp-json/tuja/v1/tickets/request`,
         method: 'POST',
-        body: JSON.stringify({ password: this.password }),
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        payload: { password: this.password },
       })
-      this.isSubmitting = false
-      if (resp.ok) {
-        const respBody = await resp.json()
-        this.tickets = respBody.all_tickets
-      } else {
-        switch (resp.status) {
+      const respBody = resp.payload
+      this.tickets = respBody.all_tickets
+    } catch (e: any) {
+      if (e instanceof Api.ApiError) {
+        switch (e.status) {
           case 400:
             this.redeemErrorTitle = 'Du missade något'
             this.redeemErrorMessage = 'Du knappade inte in ett lösenord.'
@@ -145,8 +137,12 @@ export default class Tickets extends Vue {
             this.redeemErrorMessage = 'Kontakta kundtjänst om felet återkommer.'
             break;
         }
+      } else {
+        this.redeemErrorTitle = 'Ett oväntat fel uppstod'
+        this.redeemErrorMessage = 'Kontakta kundtjänst om felet återkommer.'
       }
     }
+    this.isSubmitting = false
   }
 }
 </script>

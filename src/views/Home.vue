@@ -34,8 +34,8 @@ import QuestionForm from '@/components/QuestionForm.vue'
 import QuestionListFlat from '@/views/question-list/QuestionListFlat.vue'
 import QuestionListByGroup from '@/views/question-list/QuestionListByGroup.vue'
 import QuestionListByQuestion from '@/views/question-list/QuestionListByQuestion.vue'
-import * as AuthUtils from '@/utils/Auth'
 import * as Analytics from '@/utils/Analytics'
+import * as Api from '@/utils/Api'
 import { QuestionDto, QuestionGroupDto } from '@/components/common/question/model'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
 import store, { QuestionGrouping } from '@/store'
@@ -61,38 +61,35 @@ export default class Home extends Vue {
   private messageType = MessageType.FAILURE
 
   async mounted() {
-    const token = AuthUtils.getTokenCookie()
-    if (token) {
-      this.isLoadingQuestions = true
-      this.message = ''
-      try {
-        const resp = await fetch(
-          `${apiHost}/wp-json/tuja/v1/questions?token=${token}`
-        )
-        const payload = await resp.json()
-        this.questionGroups = []
-        payload.forEach((formView: any) => {
-          formView.question_groups.forEach((questionGroupView: any) => {
-            if (questionGroupView.questions && questionGroupView.questions.length) {
-              this.questionGroups.push(questionGroupView)
-            }
-          })
+    this.isLoadingQuestions = true
+    this.message = ''
+    try {
+      const resp = await Api.call({
+        endpoint: `${apiHost}/wp-json/tuja/v1/questions`
+      })
+      const payload = resp.payload
+      this.questionGroups = []
+      payload.forEach((formView: any) => {
+        formView.question_groups.forEach((questionGroupView: any) => {
+          if (questionGroupView.questions && questionGroupView.questions.length) {
+            this.questionGroups.push(questionGroupView)
+          }
         })
+      })
 
-        if (!this.questionGroups.length) {
-          this.message = 'Det finns inga uppgifter att besvara just nu.'
-          this.messageType = MessageType.INFO
-        }
-      } catch (e: any) {
-        Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'fetch', {
-          message: `Could not fetch questions. Reason: ${e.message}.`
-        })
-
-        this.message = e.message
-        this.messageType = MessageType.FAILURE
+      if (!this.questionGroups.length) {
+        this.message = 'Det finns inga uppgifter att besvara just nu.'
+        this.messageType = MessageType.INFO
       }
-      this.isLoadingQuestions = false
+    } catch (e: any) {
+      Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'fetch', {
+        message: `Could not fetch questions. Reason: ${e.message}.`
+      })
+
+      this.message = e.message
+      this.messageType = MessageType.FAILURE
     }
+    this.isLoadingQuestions = false
   }
 
   get questionGrouping() {

@@ -55,8 +55,12 @@ export default class QuestionGroupForm extends Vue {
 </script>
 
 <style scoped>
+div.name {
+  font-size: 110%;
+}
 div.question-group-header {
   border-bottom: 5px solid #ddd;
+  margin-bottom: 15px;
 }
 div.question-group-header div.name,
 div.question-group-header div.description::v-deep p {

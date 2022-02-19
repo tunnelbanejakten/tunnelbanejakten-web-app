@@ -42,13 +42,15 @@
         :disabled="readOnly"
         :value="commentFieldValue"
         :name="commentFieldName"
+        @change="onChange"
+        @keypress="onChange"
       >
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from 'vue-property-decorator'
+import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import Page from '@/components/layout/Page.vue'
 import Wrapper from './Question.vue'
 import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
@@ -88,7 +90,7 @@ export default class ImageQuestion extends Vue {
   private statusHeader = ''
   private statusMessage = ''
   private statusType: MessageType = MessageType.FAILURE
-
+  private emitChangeEventAfterRender: boolean = false
   private imageList: ImageData[] = []
 
   created() {
@@ -138,9 +140,29 @@ export default class ImageQuestion extends Vue {
     }
   }
 
+  onChange() {
+    // For some reason, we need to delay this event. Otherwise the most recent
+    // character will not be saved. Maybe the other delayed event is causing issues?
+    setTimeout(() => {
+      this.$emit('change')
+    }, 0);
+  }
+
   onImageUploaded(imageData: ImageData) {
     this.imageList.push(imageData)
     this.statusMessage = ''
+
+    // We need to delay the "change" event because we need to wait for the new hidden input
+    // field to be added to the DOM (the input field contains the file id of the new image)
+    this.emitChangeEventAfterRender = true
+  }
+
+  // Invoked by Vue after DOM has been updated
+  updated() {
+    if (this.emitChangeEventAfterRender) {
+      this.emitChangeEventAfterRender = false
+      this.$emit('change')
+    }
   }
 
   onImageUploadStarted() {
@@ -158,6 +180,10 @@ export default class ImageQuestion extends Vue {
       this.imageList.splice(index, 1)
     }
     this.statusMessage = ''
+
+    // We need to delay the "change" event because we need to wait for the new hidden input
+    // field to be added to the DOM (the input field contains the file id of the new image)
+    this.emitChangeEventAfterRender = true
   }
 
   plural(number: number, zero: string, one: string, other: string) {
@@ -196,9 +222,39 @@ export default class ImageQuestion extends Vue {
 <style scoped>
 .images-container {
   display: flex;
-  justify-content: flex-start;
-  flex-direction: row;
+  flex-direction: column;
+  align-items: center;
   flex-wrap: wrap;
+}
+.images-container::v-deep .thumbnail,
+.images-container::v-deep .wrapper,
+.images-container::v-deep .mode-uploaded,
+.images-container::v-deep .mode-uploading,
+.images-container::v-deep .mode-select {
+  width: 60vw;
+  height: 60vw;
+}
+.images-container::v-deep .wrapper {
+  overflow: hidden;
+  margin: 0 10px 10px 0;
+}
+@media (min-width: 375px) {
+  .images-container {
+    display: flex;
+    justify-content: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .images-container::v-deep .thumbnail,
+  .images-container::v-deep .wrapper,
+  .images-container::v-deep .mode-uploaded,
+  .images-container::v-deep .mode-uploading,
+  .images-container::v-deep .mode-select {
+    width: 39vw;
+    height: 39vw;
+    max-width: 300px;
+    max-height: 300px;
+  }
 }
 .file-count-status {
   font-size: 90%;
@@ -208,8 +264,9 @@ input {
   box-sizing: border-box;
   width: 100%;
   margin: 15px 0px 5px 0px;
-  padding: 5px;
+  padding: 10px;
   border: 1px solid #bbb;
+  border-radius: 5px;
 
   font: 16px/1.4 "Open Sans", Tahoma, Verdana, Segoe, sans-serif;
 }

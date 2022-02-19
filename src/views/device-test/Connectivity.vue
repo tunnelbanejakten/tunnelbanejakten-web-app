@@ -19,7 +19,7 @@
 import store, { Status } from '@/store'
 import { Component, Vue, Watch } from 'vue-property-decorator'
 import Button from '@/components/common/Button.vue'
-import * as AuthUtils from '@/utils/Auth'
+import * as Api from '@/utils/Api'
 
 enum BackendStatus {
   UNKNOWN,
@@ -81,27 +81,34 @@ export default class Connectity extends Vue {
   async onStartTest() {
     this.backendStatus = BackendStatus.CHECKING
     try {
-      const resp = await fetch(`${apiHost}/wp-json/tuja/v1/ping`)
-      const pingPayload = await resp.json()
-      if (resp.ok && pingPayload.status === 'ok') {
-        const token = AuthUtils.getTokenCookie()
-        if (token) {
-          const profileResp = await fetch(
-            `${apiHost}/wp-json/tuja/v1/profile?token=${token}`
-          )
-          if (profileResp.ok) {
-            this.profilePayload = await profileResp.json()
-            this.backendStatus = BackendStatus.CONNECTED_AUTHENTICATED
-          } else {
+      const resp = await Api.call({
+        endpoint: `${apiHost}/wp-json/tuja/v1/ping`,
+        unauthenticated: true
+      })
+      const pingPayload = resp.payload
+      if (pingPayload.status === 'ok') {
+        try {
+          const profileResp = await Api.call({
+            endpoint: `${apiHost}/wp-json/tuja/v1/profile`
+          })
+          this.profilePayload = profileResp.payload
+          this.backendStatus = BackendStatus.CONNECTED_AUTHENTICATED
+        } catch (e: any) {
+          if (e instanceof Api.NotSignedInError) {
+            this.backendStatus = BackendStatus.CONNECTED
+          } else if (e instanceof Api.ApiError) {
             this.backendStatus = BackendStatus.INVALID_RESPONSE
+          } else {
+            this.backendStatus = BackendStatus.FAILED
           }
-        } else {
-          this.backendStatus = BackendStatus.CONNECTED
         }
       } else {
         this.backendStatus = BackendStatus.INVALID_RESPONSE
       }
     } catch (e) {
+      if (e instanceof Api.ApiError) {
+        this.backendStatus = BackendStatus.INVALID_RESPONSE
+      }
       this.backendStatus = BackendStatus.FAILED
     }
   }
