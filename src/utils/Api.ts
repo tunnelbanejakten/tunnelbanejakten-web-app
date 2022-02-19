@@ -120,7 +120,7 @@ export const removeQueueListeners = (listeners: QueueListeners) => {
     }
 }
 
-const processQueue = async () => {
+export const processQueue = async () => {
     const entries = queuedRequests.entries()
     for (const [key, request] of entries) {
         emitter.emit('start', { key } as QueuedRequestEvent)
