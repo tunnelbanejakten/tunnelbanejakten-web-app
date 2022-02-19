@@ -7,14 +7,14 @@
     <span class="button-content">
       <span class="label">{{ label }}</span>
       <span class="spinner">
-        <Loader size="small" :white="true" />
+        <Loader size="small" :white="isPrimary" />
       </span>
     </span>
   </button>
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
+import { Component, Vue, Prop } from 'vue-property-decorator'
 import Loader from '@/components/common/Loader.vue'
 
 export enum Type {
@@ -39,9 +39,15 @@ export default class Button extends Vue {
   @Prop({ default: Size.NORMAL }) readonly size!: Size
   @Prop({ default: false }) readonly wide!: boolean
 
-  @Emit('click')
   onClick() {
-    return true
+    if (!this.pending) {
+      this.$emit('click')
+      return true
+    }
+  }
+
+  get isPrimary(): boolean {
+    return this.type === Type.PRIMARY
   }
 
   get buttonClass(): string {
