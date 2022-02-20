@@ -50,7 +50,7 @@
         >
           Det är {{ timeLeftHumanReadable }} kvar.
         </p>
-        <div v-if="!isAutoSaveEnabled">
+        <div v-if="!isAutoSaveEnabled" class="save-button-wrapper">
           <Button
             @click="onSubmitAnswer"
             :pending="isSubmitting"
@@ -267,5 +267,8 @@ p.text-hint {
 }
 div.text >>> p {
   margin: 0 0 10px 0;
+}
+.save-button-wrapper {
+  margin-top: 10px;
 }
 </style>
