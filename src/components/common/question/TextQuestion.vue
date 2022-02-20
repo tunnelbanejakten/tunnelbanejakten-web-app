@@ -4,10 +4,7 @@
       type="text"
       :readonly="readOnly"
       :disabled="readOnly"
-      :value="fieldValue"
-      :name="fieldName"
-      @change="onChange"
-      @keypress="onChange"
+      v-model="fieldValue"
     >
   </div>
 </template>
@@ -16,7 +13,7 @@
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import Page from '@/components/layout/Page.vue'
 import Wrapper from './Question.vue'
-import { QuestionDto } from './model'
+import { FormUpdate, QuestionDto } from './model'
 
 @Component({
   components: {
@@ -27,6 +24,8 @@ import { QuestionDto } from './model'
 export default class TextQuestion extends Vue {
   @Prop() private question!: QuestionDto;
   @Prop() private readOnly!: boolean;
+
+  private fieldValue: string = ''
 
   get optionType() {
     return this.question.config?.is_single_select ? 'radio' : 'checkbox'
@@ -40,13 +39,23 @@ export default class TextQuestion extends Vue {
     return this.question.response.field_name
   }
 
-  get fieldValue() {
-    return this.question && this.question.response && this.question.response.current_value ? this.question.response.current_value[0] : ''
+  created() {
+    this.fieldValue = this.question &&
+      this.question.response &&
+      this.question.response.current_value
+      ? this.question.response.current_value[0]
+      : ''
+    this.$watch('fieldValue', this.onChange)
   }
 
   @Emit('change')
   onChange() {
-    return true
+    return {
+      updatedFields: [{
+        key: this.fieldName,
+        value: this.fieldValue
+      }]
+    } as FormUpdate
   }
 }
 </script>

@@ -50,16 +50,6 @@
         >
           Det är {{ timeLeftHumanReadable }} kvar.
         </p>
-        <input
-          type="hidden"
-          :name="optimisticLockFieldName"
-          :value="optimisticLockCurrentValue"
-        >
-        <input
-          type="hidden"
-          :name="trackedAnswersFieldName"
-          :value="trackedAnswersCurrentValue"
-        >
         <div v-if="!isAutoSaveEnabled">
           <Button
             @click="onSubmitAnswer"
@@ -83,7 +73,7 @@
 
 <script lang="ts">
 import { Component, Vue, Prop, Emit, Watch } from 'vue-property-decorator'
-import { QuestionDto } from './model'
+import { FormUpdate, FormUpdateField, QuestionDto } from './model'
 import Button from '@/components/common/Button.vue'
 import Loader from '@/components/common/Loader.vue'
 import OptionsQuestion from '@/components/common/question/OptionsQuestion.vue'
@@ -126,8 +116,19 @@ export default class Question extends Vue {
   }
 
   @Emit('change')
-  onChange() {
-    return true
+  onChange(e: FormUpdate) {
+    return {
+      updatedFields: e.updatedFields.concat([
+        {
+          key: this.optimisticLockFieldName,
+          value: this.optimisticLockCurrentValue
+        },
+        {
+          key: this.trackedAnswersFieldName,
+          value: this.trackedAnswersCurrentValue
+        }
+      ] as FormUpdateField[])
+    } as FormUpdate
   }
 
   get isAutoSaveEnabled(): boolean {
