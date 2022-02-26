@@ -398,7 +398,7 @@ export default class Map extends Vue {
   }
 
   async loadMarkers() {
-    this.updateState(State.LOADING_MARKERS, 'Hämtar karta.')
+    this.updateState(State.LOADING_MARKERS, 'Hämtar karta')
     try {
       const resp = await Api.call({
         endpoint: `${apiHost}/wp-json/tuja/v1/map/markers`
