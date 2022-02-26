@@ -96,9 +96,12 @@ export default class ImageQuestion extends Vue {
       const thumbnails = this.currentResponse.thumbnails || []
       this.imageList = images.map((imageId: string, index: number) => ({ imageId, thumbnailUrl: thumbnails[index] }))
       this.commentFieldValue = this.currentResponse.comment
-      this.$watch('imageList', this.onChange)
-      this.$watch('commentFieldValue', this.onChange)
+    } else {
+      this.imageList = []
+      this.commentFieldValue = ''
     }
+    this.$watch('imageList', this.onChange)
+    this.$watch('commentFieldValue', this.onChange)
   }
 
   get fieldName() {
