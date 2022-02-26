@@ -10,17 +10,15 @@
       />
     </div>
     <div v-if="!isQuestionLoading && !!loadedQuestion">
-      <form ref="form">
-        <Question
-          @change="onAnswerChange"
-          :question="loadedQuestion"
-          :question-id="questionId"
-          :read-only="readOnly"
-          :is-submitting="isSubmitting"
-          @user-accepts-time-limit="postViewEvent"
-          @user-submits-answer="submitAnswer"
-        />
-      </form>
+      <Question
+        @change="onAnswerChange"
+        :question="loadedQuestion"
+        :question-id="questionId"
+        :read-only="readOnly"
+        :is-submitting="isSubmitting"
+        @user-accepts-time-limit="postViewEvent"
+        @user-submits-answer="submitAnswer"
+      />
       <div
         v-if="isAutoSaveEnabled"
         class="auto-save-status"
@@ -41,7 +39,7 @@ import { Component, Vue, Emit, Prop } from 'vue-property-decorator'
 import Question from '@/components/common/question/Question.vue'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
 import Loader from '@/components/common/Loader.vue'
-import { QuestionDto } from './common/question/model'
+import { FormUpdate, FormUpdateField, QuestionDto } from './common/question/model'
 import * as Analytics from '@/utils/Analytics'
 import * as Api from '@/utils/Api'
 import { QueuedRequestEvent, QueuedRequestFailedEvent, QueuedRequestSucceededEvent } from '@/utils/Api'
@@ -63,6 +61,7 @@ export default class QuestionForm extends Vue {
 
   private loadedQuestion!: QuestionDto;
   private isQuestionLoading = false
+  private latestFormUpdate!: FormUpdate;
 
   private isSubmitting = false
 
@@ -96,7 +95,8 @@ export default class QuestionForm extends Vue {
     }
   }
 
-  onAnswerChange(e: any) {
+  onAnswerChange(e: FormUpdate) {
+    this.latestFormUpdate = e
     this.isDirty = true
     if (this.isAutoSaveEnabled) {
       this.queueSubmitAnswer()
@@ -184,17 +184,18 @@ export default class QuestionForm extends Vue {
     this.isSubmitting = false
   }
 
-  getApiRequest(): Api.Request {
-    const formEl = this.$refs.form
-    if (!formEl) {
-      throw new Error('No form')
+  getApiRequest(): Api.ApiRequest {
+    const payload = new FormData()
+    if (this.latestFormUpdate) {
+      this.latestFormUpdate.updatedFields.forEach(({ key, value }: FormUpdateField) => {
+        payload.append(key, value)
+      })
     }
-    const payload = new FormData(formEl as HTMLFormElement)
     return {
       endpoint: `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}/answer`,
       method: 'POST',
       payload
-    } as Api.Request
+    } as Api.ApiRequest
   }
 
   async queueSubmitAnswer() {

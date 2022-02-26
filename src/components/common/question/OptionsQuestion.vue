@@ -7,13 +7,20 @@
     >
       <label>
         <input
-          :type="optionType"
+          v-if="isSingleSelect"
+          type="radio"
           :readonly="readOnly"
           :disabled="readOnly"
           :value="opt"
-          :checked="fieldValues.includes(opt)"
-          :name="fieldName"
-          @change="onChange"
+          v-model="fieldValue"
+        >
+        <input
+          v-if="!isSingleSelect"
+          type="checkbox"
+          :readonly="readOnly"
+          :disabled="readOnly"
+          :value="opt"
+          v-model="fieldValues"
         >
         {{ opt }}
       </label>
@@ -25,7 +32,7 @@
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import Page from '@/components/layout/Page.vue'
 import Wrapper from './Question.vue'
-import { QuestionDto } from './model'
+import { FormUpdate, QuestionDto } from './model'
 
 @Component({
   components: {
@@ -37,9 +44,9 @@ export default class OptionsQuestion extends Vue {
   @Prop() private question!: QuestionDto;
   @Prop() private readOnly!: boolean;
 
-  get optionType() {
-    return this.question.config?.is_single_select ? 'radio' : 'checkbox'
-  }
+  private isSingleSelect: boolean = false
+  private fieldValue: string = ''
+  private fieldValues: string[] = []
 
   get possibleAnswers() {
     return this.question.config?.possible_answers || []
@@ -48,21 +55,44 @@ export default class OptionsQuestion extends Vue {
   get fieldName() {
     return (
       this.question.response.field_name +
-      (!this.question.config?.is_single_select ? '[]' : '')
+      (!this.isSingleSelect ? '[]' : '')
     )
   }
 
-  get fieldValues() {
-    return this.question &&
+  created() {
+    const inputValue = this.question &&
       this.question.response &&
       this.question.response.current_value
       ? this.question.response.current_value
       : []
+    const singleSelect = this.question.config?.is_single_select
+    if (singleSelect) {
+      this.fieldValue = inputValue[0]
+      this.$watch('fieldValue', this.onChangeRadio)
+    } else {
+      this.fieldValues = inputValue
+      this.$watch('fieldValues', this.onChangeCheckbox)
+    }
+    this.isSingleSelect = singleSelect
+  }
+
+  createFormUpdateObject(values: string[]): FormUpdate {
+    return {
+      updatedFields: values.map((value: string) => ({
+        key: this.fieldName,
+        value
+      }))
+    } as FormUpdate
   }
 
   @Emit('change')
-  onChange() {
-    return true
+  onChangeRadio() {
+    return this.createFormUpdateObject([this.fieldValue])
+  }
+
+  @Emit('change')
+  onChangeCheckbox() {
+    return this.createFormUpdateObject(this.fieldValues)
   }
 }
 </script>

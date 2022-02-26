@@ -31,3 +31,13 @@ export type QuestionGroupDto = {
     name: string;
     questions: QuestionDto[];
 }
+
+
+export type FormUpdateField = {
+    key: string
+    value: string
+}
+
+export type FormUpdate = {
+    updatedFields: FormUpdateField[]
+}

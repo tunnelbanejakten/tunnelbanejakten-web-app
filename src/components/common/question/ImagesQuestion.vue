@@ -40,10 +40,7 @@
         type="text"
         :readonly="readOnly"
         :disabled="readOnly"
-        :value="commentFieldValue"
-        :name="commentFieldName"
-        @change="onChange"
-        @keypress="onChange"
+        v-model="commentFieldValue"
       >
     </div>
   </div>
@@ -58,7 +55,7 @@ import Fullscreen from '@/components/common/Fullscreen.vue'
 import Button from '@/components/common/Button.vue'
 import Camera from '@/components/common/Camera.vue'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
-import { QuestionDto } from './model'
+import { FormUpdate, QuestionDto } from './model'
 import ImagesQuestionImage from './ImagesQuestionImage.vue'
 import ImagesQuestionUploader from './ImagesQuestionUploader.vue'
 import store from '@/store'
@@ -90,15 +87,21 @@ export default class ImageQuestion extends Vue {
   private statusHeader = ''
   private statusMessage = ''
   private statusType: MessageType = MessageType.FAILURE
-  private emitChangeEventAfterRender: boolean = false
   private imageList: ImageData[] = []
+  private commentFieldValue: string = ''
 
   created() {
     if (this.currentResponse) {
       const images = this.currentResponse.images || []
       const thumbnails = this.currentResponse.thumbnails || []
       this.imageList = images.map((imageId: string, index: number) => ({ imageId, thumbnailUrl: thumbnails[index] }))
+      this.commentFieldValue = this.currentResponse.comment
+    } else {
+      this.imageList = []
+      this.commentFieldValue = ''
     }
+    this.$watch('imageList', this.onChange)
+    this.$watch('commentFieldValue', this.onChange)
   }
 
   get fieldName() {
@@ -107,10 +110,6 @@ export default class ImageQuestion extends Vue {
 
   get commentFieldName() {
     return this.question.response.field_name + '[comment]'
-  }
-
-  get commentFieldValue() {
-    return this.question?.response.current_value?.comment
   }
 
   get currentResponse() {
@@ -140,29 +139,22 @@ export default class ImageQuestion extends Vue {
     }
   }
 
+  @Emit('change')
   onChange() {
-    // For some reason, we need to delay this event. Otherwise the most recent
-    // character will not be saved. Maybe the other delayed event is causing issues?
-    setTimeout(() => {
-      this.$emit('change')
-    }, 0);
+    return {
+      updatedFields: [{
+        key: this.commentFieldName,
+        value: this.commentFieldValue
+      }].concat(this.imageList.map(({ imageId }) => ({
+        key: this.fieldName,
+        value: imageId
+      })))
+    } as FormUpdate
   }
 
   onImageUploaded(imageData: ImageData) {
     this.imageList.push(imageData)
     this.statusMessage = ''
-
-    // We need to delay the "change" event because we need to wait for the new hidden input
-    // field to be added to the DOM (the input field contains the file id of the new image)
-    this.emitChangeEventAfterRender = true
-  }
-
-  // Invoked by Vue after DOM has been updated
-  updated() {
-    if (this.emitChangeEventAfterRender) {
-      this.emitChangeEventAfterRender = false
-      this.$emit('change')
-    }
   }
 
   onImageUploadStarted() {
@@ -180,10 +172,6 @@ export default class ImageQuestion extends Vue {
       this.imageList.splice(index, 1)
     }
     this.statusMessage = ''
-
-    // We need to delay the "change" event because we need to wait for the new hidden input
-    // field to be added to the DOM (the input field contains the file id of the new image)
-    this.emitChangeEventAfterRender = true
   }
 
   plural(number: number, zero: string, one: string, other: string) {
