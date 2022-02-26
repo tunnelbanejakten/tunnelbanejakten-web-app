@@ -8,7 +8,7 @@
     <p class="ticket-word-explanation">När ni kommer till kontrollen ska ni visa den här biljetten på er mobil eller säga detta lösen:</p>
     <p
       class="ticket-word"
-      :style="{ 'font-size': (100 / ticket.word.length) + 'vw' }"
+      :style="{ 'font-size': (this.wordFontSize) + 'vw' }"
     >{{ ticket.word }}</p>
   </div>
 
@@ -29,7 +29,11 @@ export type TicketData = {
   }
 })
 export default class Ticket extends Vue {
-  @Prop() private ticket!: Ticket
+  @Prop() private ticket!: TicketData
+
+  get wordFontSize(): number {
+    return Math.min(25, 100 / this.ticket.word.length)
+  }
 }
 </script>
 
