@@ -56,7 +56,7 @@ let timer = 0
 
 const DEBOUNCE_TIMEOUT = 2000
 
-const queuedRequests = new Map<string, Request>()
+const queuedRequests = new Map<string, ApiRequest>()
 
 const withTokenQueryParam = (endpoint: string) => {
     const token = AuthUtils.getTokenCookie()
