@@ -54,6 +54,28 @@
         />
       </Fullscreen>
       <Fullscreen
+        v-if="isCheckpointPreviewShown"
+        @close="onCloseCheckpoint"
+      >
+        <div
+          class="preview-container"
+          v-if="!selectedCheckpoint.isStation"
+        >
+          <Message
+            header="Du är för långt bort"
+            headerIcon="map-marker-alt"
+            message="För att se den här uppgiften måste ni tar er till denna plats."
+            type="info"
+          />
+        </div>
+        <CheckpointStation
+          v-if="selectedCheckpoint.isStation"
+          :pointsReported="selectedCheckpoint.submitted"
+          :locationLabel="selectedCheckpoint.label"
+          :ticket="selectedTicket"
+        />
+      </Fullscreen>
+      <Fullscreen
         v-if="isCheckpointShown"
         @close="onCloseCheckpoint"
       >
@@ -115,6 +137,7 @@ enum CheckpointView {
   NONE,
   SELECT,
   SHOW,
+  SHOW_PREVIEW,
   SHOW_READONLY
 }
 
@@ -229,6 +252,10 @@ export default class Map extends Vue {
     return this.checkpointView === CheckpointView.SHOW_READONLY
   }
 
+  get isCheckpointPreviewShown() {
+    return this.checkpointView === CheckpointView.SHOW_PREVIEW
+  }
+
   get curPos() {
     return this.userPositions.length ? { ...this.userPositions[this.userPositions.length - 1] } : null
   }
@@ -267,6 +294,8 @@ export default class Map extends Vue {
           // console.log('User clicked a checkpoint which they have NOT submitted an answer to and which they are currently NOT close to. DO NOTHING.')
           if (marker.isStation) {
             this.showCheckpoint(marker, true)
+          } else {
+            this.showCheckpointPreview(marker)
           }
         }
       } else {
@@ -287,6 +316,16 @@ export default class Map extends Vue {
     })
 
     this.checkpointView = readOnly ? CheckpointView.SHOW_READONLY : CheckpointView.SHOW
+    this.selectedCheckpoint = e
+    this.selectedTicket = e.stationTicket
+  }
+
+  async showCheckpointPreview(e: CheckpointMarker) {
+    Analytics.logEvent(Analytics.AnalyticsEventType.MAP, 'preview', 'checkpoint', {
+      message: e.label
+    })
+
+    this.checkpointView = CheckpointView.SHOW_PREVIEW
     this.selectedCheckpoint = e
     this.selectedTicket = e.stationTicket
   }
@@ -650,6 +689,21 @@ export default class Map extends Vue {
   align-content: center;
   justify-content: flex-end;
 }
+
+.preview-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  flex-direction: column;
+  align-content: center;
+  justify-content: center;
+
+}
+
+.preview-container >>> div.message-container {
+  margin: 10px;
+}
+
 .no-map {
   display: flex;
   height: 100%;
