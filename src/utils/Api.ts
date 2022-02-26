@@ -13,7 +13,7 @@ export type QueuedRequestEvent = {
 }
 
 export type QueuedRequestSucceededEvent = QueuedRequestEvent & {
-    response: Response
+    response: ApiResponse
 }
 
 export type QueuedRequestFailedEvent = QueuedRequestEvent & {
@@ -26,7 +26,7 @@ export type QueueListeners = {
     onFailure?: (event: QueuedRequestFailedEvent) => void
 }
 
-export type Request = {
+export type ApiRequest = {
     endpoint: string
     method?: string
     payload?: any
@@ -34,7 +34,7 @@ export type Request = {
 }
 
 
-export type Response = {
+export type ApiResponse = {
     payload?: any
     status: number
 }
@@ -46,6 +46,7 @@ export class ApiError extends Error {
         this.status = statusCode
     }
 }
+
 export class NotSignedInError extends Error {
 }
 
@@ -83,7 +84,7 @@ const getBodyProps = (body: any): { body?: any, contentType: string } => {
     }
 }
 
-export const queue = (request: Request): string => {
+export const queue = (request: ApiRequest): string => {
     const key = `${request.method}__${request.endpoint}`
 
     queuedRequests.set(key, request)
@@ -140,7 +141,15 @@ export const processQueue = async () => {
     }
 }
 
-export const call = async (request: Request): Promise<Response> => {
+const readPayloadText = async (response: Response): Promise<string> => {
+    try {
+        return response.text()
+    } catch (e: any) {
+        return ''
+    }
+}
+
+export const call = async (request: ApiRequest): Promise<ApiResponse> => {
     try {
         const authenticated = !request.unauthenticated
         const url = authenticated
@@ -163,10 +172,12 @@ export const call = async (request: Request): Promise<Response> => {
             fetchConfig
         )
         if (resp.ok) {
+            const payloadText = await readPayloadText(resp)
+            const payload = !!payloadText ? JSON.parse(payloadText) : null
             return {
                 status: resp.status,
-                payload: await resp.json()
-            } as Response
+                payload
+            } as ApiResponse
         } else {
             throw new ApiError('Non-ok http response.', resp.status)
         }

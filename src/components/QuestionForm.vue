@@ -184,7 +184,7 @@ export default class QuestionForm extends Vue {
     this.isSubmitting = false
   }
 
-  getApiRequest(): Api.Request {
+  getApiRequest(): Api.ApiRequest {
     const payload = new FormData()
     if (this.latestFormUpdate) {
       this.latestFormUpdate.updatedFields.forEach(({ key, value }: FormUpdateField) => {
@@ -195,7 +195,7 @@ export default class QuestionForm extends Vue {
       endpoint: `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}/answer`,
       method: 'POST',
       payload
-    } as Api.Request
+    } as Api.ApiRequest
   }
 
   async queueSubmitAnswer() {
