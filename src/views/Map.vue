@@ -425,10 +425,19 @@ export default class Map extends Vue {
   }
 
   get checkpoints(): Marker[] {
+    const markers = store.state.configuration.positioning.showUnavailableStations
+      ? this.markers
+      : this.markers.filter((m: Marker) => {
+        if (m instanceof CheckpointMarker) {
+          return !m.isStation || m.submitted || m.stationTicket
+        } else {
+          return true
+        }
+      })
     if (this.currentPosition.meterAccuracy !== -1 && this.isAccurateEnough(this.currentPosition.meterAccuracy)) {
-      return this.markers.concat(this.userPositions)
+      return markers.concat(this.userPositions)
     } else {
-      return [...this.markers]
+      return [...markers]
     }
   }
 
@@ -697,7 +706,6 @@ export default class Map extends Vue {
   flex-direction: column;
   align-content: center;
   justify-content: center;
-
 }
 
 .preview-container >>> div.message-container {

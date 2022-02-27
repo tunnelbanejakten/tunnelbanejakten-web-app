@@ -29,7 +29,8 @@ export enum QuestionGrouping {
 
 export type Configuration = {
   positioning: {
-    highAccuracyThreshold: number,
+    showUnavailableStations: boolean
+    highAccuracyThreshold: number
     highAccuracyTimeout: number
   },
   uploads: {
@@ -42,10 +43,10 @@ export type Configuration = {
     infoPageContent: string
   },
   views: {
-    answer: boolean,
-    map: boolean,
-    tickets: boolean,
-    deviceTest: boolean,
+    answer: boolean
+    map: boolean
+    tickets: boolean
+    deviceTest: boolean
     info: boolean
   },
   answer: {
@@ -67,7 +68,7 @@ type State = {
 }
 
 type EventLog = {
-  events: Analytics.AppEvent[],
+  events: Analytics.AppEvent[]
   cursorPosition: number
 }
 
@@ -83,6 +84,7 @@ const state: State = {
   },
   configuration: {
     positioning: {
+      showUnavailableStations: false,
       highAccuracyThreshold: 100,
       highAccuracyTimeout: 30
     },

@@ -83,9 +83,19 @@ const iconPersonSubmitted = L.icon({
 
 // Icon for START:
 //   https://www.mappity.org/marker_icons/home/
-//   Purple icon colour: #000000
+//   Black icon colour: #000000
 const iconStart = L.icon({
   iconUrl: require('../../assets/map-markers/home-highres.png'),
+  iconSize: [48, 48],
+  iconAnchor: [24, 24],
+  popupAnchor: [0, -34]
+})
+
+// Icon for BLOCKED:
+//   https://www.mappity.org/marker_icons/home/
+//   Red icon colour: #944747
+const iconBlocked = L.icon({
+  iconUrl: require('../../assets/map-markers/ban-highres.png'),
   iconSize: [48, 48],
   iconAnchor: [24, 24],
   popupAnchor: [0, -34]
@@ -203,7 +213,7 @@ export default class Map extends Vue {
         // First time this checkpoint is rendered
         const icon = checkpointMarker.submitted
           ? (checkpointMarker.isStation ? iconPersonSubmitted : iconCheckpointSubmitted)
-          : (checkpointMarker.isStation ? iconPerson : iconCheckpoint)
+          : (checkpointMarker.isStation ? (checkpointMarker.stationTicket ? iconPerson : iconBlocked) : iconCheckpoint)
         const mapMarker = L.marker(latLong, {
           icon,
           zIndexOffset: 500
