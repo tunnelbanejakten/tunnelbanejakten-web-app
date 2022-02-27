@@ -3,6 +3,7 @@
     <QuestionForm
       :question-id="questionId"
       :read-only="readOnly"
+      :fullScreen="true"
       @submit-success="onSubmitSuccess"
       @submit-failure="onSubmitFailure"
     />
