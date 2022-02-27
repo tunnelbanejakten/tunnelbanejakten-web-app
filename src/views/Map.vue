@@ -117,6 +117,7 @@ import CheckpointSelector from './map/CheckpointSelector.vue'
 import CheckpointQuestion from './map/CheckpointQuestion.vue'
 import CheckpointStation from './map/CheckpointStation.vue'
 import { TicketData } from '@/components/common/Ticket.vue'
+import { QuestionDto } from '@/components/common/question/model'
 import * as LocationUtils from '@/utils/Location'
 import * as Analytics from '@/utils/Analytics'
 import * as Api from '@/utils/Api'
@@ -343,8 +344,20 @@ export default class Map extends Vue {
     this.openCheckpointView()
   }
 
-  onCheckpointSuccess() {
+  setCheckpointSubmitted(checkpointId: string) {
+    this.markers.forEach((m: Marker) => {
+      if (m instanceof CheckpointMarker) {
+        if (!m.isStation && m.id === checkpointId) {
+          m.submitted = true
+        }
+      }
+    })
+    this.markers = [...this.markers]
+  }
+
+  onCheckpointSuccess(updatedQuestionData: QuestionDto) {
     this.checkpointView = CheckpointView.SHOW
+    this.setCheckpointSubmitted(String(updatedQuestionData.id))
     this.selectedCheckpoint = null
   }
 

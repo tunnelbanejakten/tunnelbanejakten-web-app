@@ -136,7 +136,7 @@ export class CheckpointMarker extends Marker {
   stationTicket?: TicketData
 
   get key(): string {
-    return `checkpoint-${this.isStation ? "s" : "q"}-${this.id}`
+    return `checkpoint-${this.isStation ? "s" : "q"}-${this.submitted ? "todo" : "done"}-${this.id}`
   }
 }
 
@@ -174,7 +174,6 @@ export default class Map extends Vue {
 
   @Watch('markers')
   updateMarkers(newMarkers: Marker[]) {
-
     const startPositionMarker = newMarkers.find(m => m instanceof StartPositionMarker) as StartPositionMarker
     this.updateStartPositionMarker(startPositionMarker)
 
