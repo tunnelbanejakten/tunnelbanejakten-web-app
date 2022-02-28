@@ -3,6 +3,7 @@
     <QuestionForm
       :question-id="questionId"
       :read-only="readOnly"
+      :fullScreen="true"
       @submit-success="onSubmitSuccess"
       @submit-failure="onSubmitFailure"
     />
@@ -12,6 +13,7 @@
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import QuestionForm from '@/components/QuestionForm.vue'
+import { QuestionDto } from '@/components/common/question/model'
 
 @Component({
   components: {
@@ -23,8 +25,8 @@ export default class CheckpointQuestion extends Vue {
   @Prop() private readonly readOnly!: boolean
 
   @Emit('submit-success')
-  onSubmitSuccess() {
-    return true
+  onSubmitSuccess(updatedQuestionData: QuestionDto) {
+    return updatedQuestionData
   }
 
   @Emit('submit-failure')

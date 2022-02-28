@@ -1,7 +1,10 @@
 <template>
   <Page title="Svara">
-    <div v-if="isLoadingQuestions">
-      <Loader />
+    <div
+      class="no-questions"
+      v-if="isLoadingQuestions"
+    >
+      <Loader message="Hämtar frågor" />
     </div>
     <div v-if="!isLoadingQuestions">
       <div class="map-link-wrapper">
@@ -118,6 +121,14 @@ export default class Home extends Vue {
 </script>
 
 <style scoped>
+.no-questions {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+}
+
 div.map-link-wrapper {
   font-size: 90%;
   font-style: italic;

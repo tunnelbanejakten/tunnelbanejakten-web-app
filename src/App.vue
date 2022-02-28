@@ -124,6 +124,7 @@ export default class App extends Mixins(ServiceWorkerMixin) {
       const confPayload = await confResp.payload
       const conf: Configuration = {
         positioning: {
+          showUnavailableStations: confPayload.app.positioning.show_unavailable_stations,
           highAccuracyThreshold: confPayload.app.positioning.high_accuracy_threshold,
           highAccuracyTimeout: confPayload.app.positioning.high_accuracy_timeout
         },

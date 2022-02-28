@@ -54,6 +54,28 @@
         />
       </Fullscreen>
       <Fullscreen
+        v-if="isCheckpointPreviewShown"
+        @close="onCloseCheckpoint"
+      >
+        <div
+          class="preview-container"
+          v-if="!selectedCheckpoint.isStation"
+        >
+          <Message
+            header="Du är för långt bort"
+            headerIcon="map-marker-alt"
+            message="För att se den här uppgiften måste ni tar er till denna plats."
+            type="info"
+          />
+        </div>
+        <CheckpointStation
+          v-if="selectedCheckpoint.isStation"
+          :pointsReported="selectedCheckpoint.submitted"
+          :locationLabel="selectedCheckpoint.label"
+          :ticket="selectedTicket"
+        />
+      </Fullscreen>
+      <Fullscreen
         v-if="isCheckpointShown"
         @close="onCloseCheckpoint"
       >
@@ -95,6 +117,7 @@ import CheckpointSelector from './map/CheckpointSelector.vue'
 import CheckpointQuestion from './map/CheckpointQuestion.vue'
 import CheckpointStation from './map/CheckpointStation.vue'
 import { TicketData } from '@/components/common/Ticket.vue'
+import { QuestionDto } from '@/components/common/question/model'
 import * as LocationUtils from '@/utils/Location'
 import * as Analytics from '@/utils/Analytics'
 import * as Api from '@/utils/Api'
@@ -115,6 +138,7 @@ enum CheckpointView {
   NONE,
   SELECT,
   SHOW,
+  SHOW_PREVIEW,
   SHOW_READONLY
 }
 
@@ -229,6 +253,10 @@ export default class Map extends Vue {
     return this.checkpointView === CheckpointView.SHOW_READONLY
   }
 
+  get isCheckpointPreviewShown() {
+    return this.checkpointView === CheckpointView.SHOW_PREVIEW
+  }
+
   get curPos() {
     return this.userPositions.length ? { ...this.userPositions[this.userPositions.length - 1] } : null
   }
@@ -267,6 +295,8 @@ export default class Map extends Vue {
           // console.log('User clicked a checkpoint which they have NOT submitted an answer to and which they are currently NOT close to. DO NOTHING.')
           if (marker.isStation) {
             this.showCheckpoint(marker, true)
+          } else {
+            this.showCheckpointPreview(marker)
           }
         }
       } else {
@@ -291,6 +321,16 @@ export default class Map extends Vue {
     this.selectedTicket = e.stationTicket
   }
 
+  async showCheckpointPreview(e: CheckpointMarker) {
+    Analytics.logEvent(Analytics.AnalyticsEventType.MAP, 'preview', 'checkpoint', {
+      message: e.label
+    })
+
+    this.checkpointView = CheckpointView.SHOW_PREVIEW
+    this.selectedCheckpoint = e
+    this.selectedTicket = e.stationTicket
+  }
+
   onCloseCheckpoint() {
     this.checkpointView = CheckpointView.NONE
     this.selectedCheckpoint = null
@@ -304,8 +344,20 @@ export default class Map extends Vue {
     this.openCheckpointView()
   }
 
-  onCheckpointSuccess() {
+  setCheckpointSubmitted(checkpointId: string) {
+    this.markers.forEach((m: Marker) => {
+      if (m instanceof CheckpointMarker) {
+        if (!m.isStation && m.id === checkpointId) {
+          m.submitted = true
+        }
+      }
+    })
+    this.markers = [...this.markers]
+  }
+
+  onCheckpointSuccess(updatedQuestionData: QuestionDto) {
     this.checkpointView = CheckpointView.SHOW
+    this.setCheckpointSubmitted(String(updatedQuestionData.id))
     this.selectedCheckpoint = null
   }
 
@@ -386,10 +438,19 @@ export default class Map extends Vue {
   }
 
   get checkpoints(): Marker[] {
+    const markers = store.state.configuration.positioning.showUnavailableStations
+      ? this.markers
+      : this.markers.filter((m: Marker) => {
+        if (m instanceof CheckpointMarker) {
+          return !m.isStation || m.submitted || m.stationTicket
+        } else {
+          return true
+        }
+      })
     if (this.currentPosition.meterAccuracy !== -1 && this.isAccurateEnough(this.currentPosition.meterAccuracy)) {
-      return this.markers.concat(this.userPositions)
+      return markers.concat(this.userPositions)
     } else {
-      return [...this.markers]
+      return [...markers]
     }
   }
 
@@ -398,7 +459,7 @@ export default class Map extends Vue {
   }
 
   async loadMarkers() {
-    this.updateState(State.LOADING_MARKERS, 'Hämtar karta.')
+    this.updateState(State.LOADING_MARKERS, 'Hämtar karta')
     try {
       const resp = await Api.call({
         endpoint: `${apiHost}/wp-json/tuja/v1/map/markers`
@@ -650,6 +711,20 @@ export default class Map extends Vue {
   align-content: center;
   justify-content: flex-end;
 }
+
+.preview-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  flex-direction: column;
+  align-content: center;
+  justify-content: center;
+}
+
+.preview-container >>> div.message-container {
+  margin: 10px;
+}
+
 .no-map {
   display: flex;
   height: 100%;

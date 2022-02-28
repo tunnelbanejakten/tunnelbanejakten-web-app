@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div :class="wrapperClasses">
     <div v-if="isQuestionLoading">
-      <Loader />
+      <Loader message="Läser in uppgift" />
     </div>
     <div v-if="!!message">
       <Message
@@ -58,6 +58,7 @@ export default class QuestionForm extends Vue {
   @Prop() private question!: QuestionDto | null;
   @Prop() private questionId!: string;
   @Prop() private readOnly!: boolean;
+  @Prop() private fullScreen!: boolean;
 
   private loadedQuestion!: QuestionDto;
   private isQuestionLoading = false
@@ -130,6 +131,10 @@ export default class QuestionForm extends Vue {
 
   get isAutoSaveEnabled(): boolean {
     return store.state.autoSave
+  }
+
+  get wrapperClasses(): string {
+    return `question-form-${this.fullScreen ? 'fullscreen' : 'compact'} question-form-${this.isQuestionLoading ? 'loading' : 'loaded'}`
   }
 
   async fetchQuestion() {
@@ -278,6 +283,18 @@ export default class QuestionForm extends Vue {
 </script>
 
 <style scoped>
+.question-form-fullscreen.question-form-loading {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+}
+
+.question-form-fullscreen.question-form-loaded {
+  margin: 10px;
+}
+
 .auto-save-status p {
   font-size: 90%;
   font-style: italic;
