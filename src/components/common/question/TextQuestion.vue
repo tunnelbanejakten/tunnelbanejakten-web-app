@@ -13,7 +13,7 @@
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import Page from '@/components/layout/Page.vue'
 import Wrapper from './Question.vue'
-import { FormUpdate, QuestionDto } from './model'
+import { FormUpdate, QuestionResponseDto } from './model'
 
 @Component({
   components: {
@@ -22,28 +22,28 @@ import { FormUpdate, QuestionDto } from './model'
   }
 })
 export default class TextQuestion extends Vue {
-  @Prop() private question!: QuestionDto;
+  @Prop() private questionResponse!: QuestionResponseDto;
+  @Prop() private questionConfig!: any;
   @Prop() private readOnly!: boolean;
 
   private fieldValue: string = ''
 
   get optionType() {
-    return this.question.config?.is_single_select ? 'radio' : 'checkbox'
+    return this.questionConfig?.is_single_select ? 'radio' : 'checkbox'
   }
 
   get possibleAnswers() {
-    return this.question.config?.possible_answers || []
+    return this.questionConfig?.possible_answers || []
   }
 
   get fieldName() {
-    return this.question.response.field_name
+    return this.questionResponse.field_name
   }
 
   created() {
-    this.fieldValue = this.question &&
-      this.question.response &&
-      this.question.response.current_value
-      ? this.question.response.current_value[0]
+    this.fieldValue = this.questionResponse &&
+      this.questionResponse.current_value
+      ? this.questionResponse.current_value[0]
       : ''
     this.$watch('fieldValue', this.onChange)
   }

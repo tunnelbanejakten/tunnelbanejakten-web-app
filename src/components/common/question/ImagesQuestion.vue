@@ -49,7 +49,7 @@ import Fullscreen from '@/components/common/Fullscreen.vue'
 import Button from '@/components/common/Button.vue'
 import Camera from '@/components/common/Camera.vue'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
-import { FormUpdate, QuestionDto } from './model'
+import { FormUpdate, QuestionResponseDto } from './model'
 import ImagesQuestionImage from './ImagesQuestionImage.vue'
 import ImagesQuestionUploader from './ImagesQuestionUploader.vue'
 import store from '@/store'
@@ -74,9 +74,9 @@ export type ImageData = {
   }
 })
 export default class ImageQuestion extends Vue {
-  @Prop() private question!: QuestionDto;
+  @Prop() private questionResponse!: QuestionResponseDto;
+  @Prop() private questionConfig!: any;
   @Prop() private questionId!: string;
-  @Prop() private optimisticLockValue!: string;
   @Prop() private readOnly!: boolean;
 
   private statusHeader = ''
@@ -100,15 +100,15 @@ export default class ImageQuestion extends Vue {
   }
 
   get fieldName() {
-    return this.question.response.field_name + '[images][]'
+    return this.questionResponse.field_name + '[images][]'
   }
 
   get commentFieldName() {
-    return this.question.response.field_name + '[comment]'
+    return this.questionResponse.field_name + '[comment]'
   }
 
   get currentResponse() {
-    return this.question?.response.current_value
+    return this.questionResponse?.current_value
   }
 
   get isAdditionalImageAllowed() {
@@ -116,7 +116,7 @@ export default class ImageQuestion extends Vue {
   }
 
   get maxImageCount(): number {
-    return this.question.config?.max_files_count
+    return this.questionConfig?.max_files_count
   }
 
   // The upper limit for uploads is MAX_FILE_SIZE, unless the question explicitly specifies a lower value.
@@ -126,7 +126,7 @@ export default class ImageQuestion extends Vue {
     // Upper bound for file size (if not overridden by individual question):
     const overallMaxFileSize = configuredMaxFileSize ? configuredMaxFileSize * 1e6 : defaultMaxFileSize
 
-    const questionSpecificLimit = this.question.config?.max_file_size
+    const questionSpecificLimit = this.questionConfig?.max_file_size
     if (questionSpecificLimit) {
       return Math.min(questionSpecificLimit, overallMaxFileSize)
     } else {

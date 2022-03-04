@@ -10,15 +10,65 @@
       />
     </div>
     <div v-if="!isQuestionLoading && !!loadedQuestion">
-      <Question
-        @change="onAnswerChange"
-        :question="loadedQuestion"
-        :question-id="questionId"
-        :read-only="readOnly"
-        :is-submitting="isSubmitting"
-        @user-accepts-time-limit="postViewEvent"
-        @user-submits-answer="submitAnswer"
-      />
+      <div
+        class="question"
+        v-if="!isQuestionAvailable"
+      >
+        <p>
+          Det här är en tidsbegränsad uppgift.
+        </p>
+        <p>
+          Ni har {{ timeLimitHumanReadable }} på er från att uppgiften visas.
+        </p>
+        <div class="buttons">
+          <Button
+            label="Visa uppgift"
+            :pending="isPostingViewEvent"
+            @click="postViewEvent"
+          />
+        </div>
+      </div>
+      <div
+        class="question"
+        v-if="isQuestionAvailable"
+      >
+        <Question
+          @change="onAnswerChange"
+          :question-config="loadedQuestion.config"
+          :question-response="loadedQuestion.response"
+          :question-type="loadedQuestion.type"
+          :question-id="questionId"
+          :read-only="isAnswerLocked"
+        />
+
+        <div v-if="!isTimeLimitExceeded && !readOnly">
+          <p
+            class="time-status"
+            v-if="isTimedQuestion"
+          >
+            Det är {{ timeLeftHumanReadable }} kvar.
+          </p>
+          <div
+            v-if="!isAutoSaveEnabled"
+            class="save-button-wrapper"
+          >
+            <Button
+              @click="submitAnswer"
+              :pending="isSubmitting"
+              label="Spara"
+              type="primary"
+            />
+            <p class="time-status">
+              Kom ihåg Spara-knappen när ni ändrat något.
+            </p>
+          </div>
+        </div>
+        <div v-if="isTimeLimitExceeded && !readOnly">
+          <p class="time-status">
+            Tiden har gått ut. Ni kan inte längre ändra.
+          </p>
+        </div>
+      </div>
       <div
         v-if="isAutoSaveEnabled"
         class="auto-save-status"
@@ -39,6 +89,7 @@ import { Component, Vue, Emit, Prop } from 'vue-property-decorator'
 import Question from '@/components/common/question/Question.vue'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
 import Loader from '@/components/common/Loader.vue'
+import Button from '@/components/common/Button.vue'
 import { FormUpdate, FormUpdateField, QuestionDto } from './common/question/model'
 import * as Analytics from '@/utils/Analytics'
 import * as Api from '@/utils/Api'
@@ -49,6 +100,7 @@ const apiHost = process.env.VUE_APP_API_HOST
 
 @Component({
   components: {
+    Button,
     Question,
     Message,
     Loader
@@ -60,11 +112,15 @@ export default class QuestionForm extends Vue {
   @Prop() private readOnly!: boolean;
   @Prop() private fullScreen!: boolean;
 
-  private loadedQuestion!: QuestionDto;
+  private _loadedQuestion!: QuestionDto;
   private isQuestionLoading = false
   private latestFormUpdate!: FormUpdate;
 
   private isSubmitting = false
+  private isPostingViewEvent = false
+  private timeLeft = 0
+  private endTime = 0
+  private countdownTimer = 0
 
   private message = ''
   private messageType = MessageType.FAILURE
@@ -94,14 +150,54 @@ export default class QuestionForm extends Vue {
         onFailure: this.onQueuedSubmitFailure,
       })
     }
+    this.stopCountdownTimer()
+  }
+
+  stopCountdownTimer() {
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer)
+      this.countdownTimer = 0
+    }
   }
 
   onAnswerChange(e: FormUpdate) {
-    this.latestFormUpdate = e
+    this.latestFormUpdate = {
+      updatedFields: e.updatedFields.concat([
+        {
+          key: this.optimisticLockFieldName,
+          value: this.optimisticLockCurrentValue
+        },
+        {
+          key: this.trackedAnswersFieldName,
+          value: this.trackedAnswersCurrentValue
+        }
+      ] as FormUpdateField[])
+    } as FormUpdate
+
     this.isDirty = true
     if (this.isAutoSaveEnabled) {
       this.queueSubmitAnswer()
     }
+  }
+
+  get optimisticLockCurrentValue() {
+    return this.loadedQuestion ? this.loadedQuestion.optimistic_lock.current_value : -1
+  }
+
+  get optimisticLockFieldName() {
+    return this.loadedQuestion
+      ? this.loadedQuestion.optimistic_lock.field_name
+      : 'untitled'
+  }
+
+  get trackedAnswersCurrentValue() {
+    return this.loadedQuestion ? this.loadedQuestion.tracked_answers.current_value : -1
+  }
+
+  get trackedAnswersFieldName() {
+    return this.loadedQuestion
+      ? this.loadedQuestion.tracked_answers.field_name
+      : 'untitled'
   }
 
   onQueuedSubmitStart(event: QueuedRequestEvent) {
@@ -129,6 +225,94 @@ export default class QuestionForm extends Vue {
     }
   }
 
+  onTimeLeftUpdates(secondsLeft: number) {
+    this.loadedQuestion.limit_time_remaining = secondsLeft
+    if (this.question) {
+      this.question.limit_time_remaining = secondsLeft
+    }
+  }
+
+  get isViewEventRequired() {
+    return this.loadedQuestion.view_event?.is_required || false
+  }
+
+  get isViewEventFound() {
+    return this.loadedQuestion.view_event?.is_found || false
+  }
+
+  get isQuestionAvailable() {
+    return !this.isViewEventRequired || this.isViewEventFound
+  }
+
+  get isTimeLimitExceeded() {
+    return this.isTimedQuestion && (this.timeLeft <= 0 || (this.loadedQuestion.limit_time_remaining || 0) <= 0)
+  }
+
+  get isAnswerLocked() {
+    return this.readOnly || (this.isTimedQuestion && this.isTimeLimitExceeded)
+  }
+
+  get isTimedQuestion() {
+    return this.isViewEventRequired
+  }
+
+  updateTimeLeft() {
+    const timeLeft = Math.round((this.endTime - Date.now()) / 1000)
+    this.timeLeft = timeLeft
+    this.loadedQuestion.limit_time_remaining = timeLeft
+
+    this.onTimeLeftUpdates(timeLeft)
+  }
+
+  set loadedQuestion(question: QuestionDto) {
+    this._loadedQuestion = question
+
+    if (this.isTimedQuestion) {
+      this.endTime = Date.now() + (this._loadedQuestion.limit_time_remaining || 0) * 1000
+      this.updateTimeLeft()
+      if (this.timeLeft > 0) {
+        this.stopCountdownTimer()
+        this.countdownTimer = setInterval(() => {
+          this.updateTimeLeft()
+          if (this.timeLeft <= 0) {
+            this.stopCountdownTimer()
+          }
+        }, 1000)
+      }
+    }
+  }
+
+  get loadedQuestion() {
+    return this._loadedQuestion
+  }
+
+  fuzzyTime(seconds: number, roundMinutes: boolean) {
+    const min = Math.floor(seconds / 60)
+    const sec = seconds % 60
+    if (min === 0) {
+      return `${seconds} sekunder`
+    } else {
+      if (min < 3 || !roundMinutes) {
+        return sec ? `${min} minuter och ${sec} sekunder` : `${min} minuter`
+      } else {
+        const roundedMin = Math.round(seconds / 60)
+        return `ungefär ${roundedMin} minuter`
+      }
+    }
+  }
+
+  get timeLimit() {
+    return this.isViewEventRequired && this.loadedQuestion.limit_time_max > 0 ? this.loadedQuestion.limit_time_max : 0
+  }
+
+  get timeLimitHumanReadable() {
+    return this.fuzzyTime(this.timeLimit, false)
+  }
+
+  get timeLeftHumanReadable() {
+    return this.fuzzyTime(this.timeLeft, true)
+  }
+
   get isAutoSaveEnabled(): boolean {
     return store.state.autoSave
   }
@@ -150,6 +334,7 @@ export default class QuestionForm extends Vue {
       Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'fetched', 'question', {
         message: `Fetched question ${this.questionId}.`
       })
+      this.$emit('question-fetched', { ...payload, id: this.questionId })
     } catch (e: any) {
       if (e instanceof Api.ApiError) {
         Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'fetch', {
@@ -172,7 +357,7 @@ export default class QuestionForm extends Vue {
   }
 
   async postViewEvent() {
-    this.isSubmitting = true
+    this.isPostingViewEvent = true
     try {
       await Api.call({
         endpoint: `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}/view-events`,
@@ -186,7 +371,7 @@ export default class QuestionForm extends Vue {
         this.onPostViewEventFailure(e)
       }
     }
-    this.isSubmitting = false
+    this.isPostingViewEvent = false
   }
 
   getApiRequest(): Api.ApiRequest {
@@ -256,6 +441,7 @@ export default class QuestionForm extends Vue {
     return error
   }
 
+  @Emit('post-view-event-success')
   async onPostViewEventSuccess() {
     Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'posted', 'view event', {
       message: `Posted view event for question ${this.questionId}.`
@@ -266,7 +452,7 @@ export default class QuestionForm extends Vue {
 
     await this.fetchQuestion()
 
-    return true
+    return this.questionId
   }
 
   onPostViewEventFailure(error: any) {
@@ -299,5 +485,15 @@ export default class QuestionForm extends Vue {
   font-size: 90%;
   font-style: italic;
   margin: 10px 0 0 0;
+}
+
+p.time-status {
+  font-size: 90%;
+  font-style: italic;
+  margin: 10px 0 0 0;
+}
+
+.save-button-wrapper {
+  margin-top: 10px;
 }
 </style>

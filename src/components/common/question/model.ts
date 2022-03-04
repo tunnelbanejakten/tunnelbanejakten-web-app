@@ -1,12 +1,15 @@
 /* eslint-disable camelcase */
+
+export type QuestionResponseDto = {
+    field_name: string;
+    current_value: any;
+}
+
 export type QuestionDto = {
     id: number;
     type: string;
     is_read_only: boolean;
-    response: {
-        field_name: string;
-        current_value: any;
-    },
+    response: QuestionResponseDto,
     optimistic_lock: {
         field_name: string;
         current_value: string;

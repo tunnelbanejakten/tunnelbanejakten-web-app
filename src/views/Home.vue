@@ -23,7 +23,6 @@
       <component
         :is="currentComponent"
         :question-groups="questionGroups"
-        @submit-success="onSubmitSuccess"
       />
     </div>
   </Page>
@@ -107,15 +106,6 @@ export default class Home extends Vue {
     } else {
       return 'QuestionListFlat'
     }
-  }
-
-  onSubmitSuccess(updatedQuestionData: QuestionDto) {
-    this.questionGroups.forEach(questionGroup => {
-      const index = questionGroup.questions.findIndex(q => q.id === updatedQuestionData.id)
-      if (index !== -1) {
-        questionGroup.questions.splice(index, 1, updatedQuestionData)
-      }
-    })
   }
 }
 </script>
