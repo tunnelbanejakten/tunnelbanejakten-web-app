@@ -11,20 +11,14 @@
         v-for="data in imageList"
         :key="data.imageId"
         :image-data="data"
-        :question-id="questionId"
-        :field-name="fieldName"
         :read-only="readOnly"
         @image-removed="onImageRemoved"
       />
 
       <ImagesQuestionUploader
         v-if="isAdditionalImageAllowed"
-        :question-id="questionId"
-        :field-name="fieldName"
-        @image-uploaded="onImageUploaded"
-        @upload-started="onImageUploadStarted"
-        @upload-failed="onImageUploadFailed"
-        :optimistic-lock-value="optimisticLockValue"
+        @image-captured="onImageCaptured"
+        @image-error="onImageUploadFailed"
         :max-file-size="maxFileSize"
       />
     </div>
@@ -63,6 +57,7 @@ import store from '@/store'
 export type ImageData = {
   imageId: string
   thumbnailUrl: string
+  dataUrl?: string
 }
 
 @Component({
@@ -152,12 +147,12 @@ export default class ImageQuestion extends Vue {
     } as FormUpdate
   }
 
-  onImageUploaded(imageData: ImageData) {
-    this.imageList.push(imageData)
-    this.statusMessage = ''
-  }
-
-  onImageUploadStarted() {
+  onImageCaptured(dataUrl: string) {
+    this.imageList.push({
+      imageId: dataUrl,
+      thumbnailUrl: dataUrl,
+      dataUrl: dataUrl
+    })
     this.statusMessage = ''
   }
 
