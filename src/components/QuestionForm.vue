@@ -238,16 +238,16 @@ export default class QuestionForm extends Vue {
   }
 
   get isTimeLimitExceeded() {
-    return this.isTimedQuestion && this.timeLeft <= 0
+    return this.isTimedQuestion && this.isQuestionAvailable && this.timeLeft <= 0
+  }
+
+  get isTimeLimitWithMarginExceeded() {
+    const durationErrorMargin = this.question?.time_limit?.duration_error_margin || 0
+    return this.isTimedQuestion && this.timeLeft + durationErrorMargin <= 0
   }
 
   get isAnswerLocked() {
-    if (this.readOnly) {
-      return true
-    }
-    const durationErrorMargin = this.question?.time_limit?.duration_error_margin || 0
-    const isTimeLimitWithMarginExceeded = this.timeLeft + durationErrorMargin <= 0
-    return this.isTimedQuestion && isTimeLimitWithMarginExceeded
+    return this.readOnly || this.isTimeLimitWithMarginExceeded
   }
 
   get isTimedQuestion() {
@@ -262,7 +262,7 @@ export default class QuestionForm extends Vue {
 
   onCountdownTick() {
     this.updateTimeLeft()
-    if (this.timeLeft <= 0) {
+    if (this.isTimeLimitWithMarginExceeded) {
       this.stopCountdownTimer()
     }
   }
