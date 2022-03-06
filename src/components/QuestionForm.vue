@@ -157,6 +157,8 @@ export default class QuestionForm extends Vue {
     if (this.countdownTimer) {
       clearInterval(this.countdownTimer)
       this.countdownTimer = 0
+      const durationErrorMargin = this.question?.time_limit?.duration_error_margin || 0
+      this.timeLeft = -durationErrorMargin
     }
   }
 
