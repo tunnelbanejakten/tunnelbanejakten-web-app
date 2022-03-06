@@ -48,39 +48,40 @@
           >
             Det är {{ timeLeftHumanReadable }} kvar.
           </p>
-          <div
-            v-if="!isAutoSaveEnabled"
-            class="save-button-wrapper"
-          >
-            <Button
-              @click="submitAnswer"
-              :pending="isSubmitting"
-              label="Spara"
-              type="primary"
-            />
-            <p class="time-status">
-              Kom ihåg Spara-knappen när ni ändrat något.
-            </p>
-          </div>
         </div>
-        <div v-if="isTimeLimitExceeded && !readOnly">
+        <div
+          v-if="!isAutoSaveEnabled && !isAnswerLocked"
+          class="save-button-wrapper"
+        >
+          <Button
+            @click="submitAnswer"
+            :pending="isSubmitting"
+            label="Spara"
+            type="primary"
+          />
           <p class="time-status">
-            Tiden har gått ut. Ni kan inte längre ändra.
+            Kom ihåg Spara-knappen när ni ändrat något.
           </p>
         </div>
       </div>
-      <div
-        v-if="isAutoSaveEnabled"
-        class="auto-save-status"
-      >
-        <p v-if="isDirty && !isSubmitting">
-          Sparar snart...
-        </p>
-        <p v-if="isSubmitting">
-          Sparar nu...
+      <div v-if="isTimeLimitExceeded && !readOnly">
+        <p class="time-status">
+          Tiden har gått ut. Ni kan inte längre ändra.
         </p>
       </div>
     </div>
+    <div
+      v-if="isAutoSaveEnabled"
+      class="auto-save-status"
+    >
+      <p v-if="isDirty && !isSubmitting">
+        Sparar snart...
+      </p>
+      <p v-if="isSubmitting">
+        Sparar nu...
+      </p>
+    </div>
+  </div>
   </div>
 </template>
 
@@ -241,7 +242,12 @@ export default class QuestionForm extends Vue {
   }
 
   get isAnswerLocked() {
-    return this.readOnly || (this.isTimedQuestion && this.isTimeLimitExceeded)
+    if (this.readOnly) {
+      return true
+    }
+    const durationErrorMargin = this.question?.time_limit?.duration_error_margin || 0
+    const isTimeLimitWithMarginExceeded = this.timeLeft + durationErrorMargin <= 0
+    return this.isTimedQuestion && isTimeLimitWithMarginExceeded
   }
 
   get isTimedQuestion() {
