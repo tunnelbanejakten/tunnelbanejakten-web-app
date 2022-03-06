@@ -119,7 +119,6 @@ export default class QuestionForm extends Vue {
   private isSubmitting = false
   private isPostingViewEvent = false
   private timeLeft = 0
-  private endTime = 0
   private countdownTimer = 0
 
   private message = ''
@@ -225,13 +224,6 @@ export default class QuestionForm extends Vue {
     }
   }
 
-  onTimeLeftUpdates(secondsLeft: number) {
-    this.loadedQuestion.limit_time_remaining = secondsLeft
-    if (this.question) {
-      this.question.limit_time_remaining = secondsLeft
-    }
-  }
-
   get isViewEventRequired() {
     return this.loadedQuestion.view_event?.is_required || false
   }
@@ -245,7 +237,7 @@ export default class QuestionForm extends Vue {
   }
 
   get isTimeLimitExceeded() {
-    return this.isTimedQuestion && (this.timeLeft <= 0 || (this.loadedQuestion.limit_time_remaining || 0) <= 0)
+    return this.isTimedQuestion && this.timeLeft <= 0
   }
 
   get isAnswerLocked() {
@@ -257,27 +249,26 @@ export default class QuestionForm extends Vue {
   }
 
   updateTimeLeft() {
-    const timeLeft = Math.round((this.endTime - Date.now()) / 1000)
-    this.timeLeft = timeLeft
-    this.loadedQuestion.limit_time_remaining = timeLeft
+    const timeEndsMs = Api.serverMsTimeToDeviceTime((this.loadedQuestion.time_limit?.ends_at || 0) * 1000)
+    const timeLeftMs = timeEndsMs - Date.now()
+    this.timeLeft = Math.round(timeLeftMs / 1000)
+  }
 
-    this.onTimeLeftUpdates(timeLeft)
+  onCountdownTick() {
+    this.updateTimeLeft()
+    if (this.timeLeft <= 0) {
+      this.stopCountdownTimer()
+    }
   }
 
   set loadedQuestion(question: QuestionDto) {
     this._loadedQuestion = question
 
     if (this.isTimedQuestion) {
-      this.endTime = Date.now() + (this._loadedQuestion.limit_time_remaining || 0) * 1000
       this.updateTimeLeft()
       if (this.timeLeft > 0) {
         this.stopCountdownTimer()
-        this.countdownTimer = setInterval(() => {
-          this.updateTimeLeft()
-          if (this.timeLeft <= 0) {
-            this.stopCountdownTimer()
-          }
-        }, 1000)
+        this.countdownTimer = setInterval(this.onCountdownTick, 1000)
       }
     }
   }
@@ -286,7 +277,7 @@ export default class QuestionForm extends Vue {
     return this._loadedQuestion
   }
 
-  fuzzyTime(seconds: number, roundMinutes: boolean) {
+  fuzzyTime(seconds: number, roundMinutes: boolean): string {
     const min = Math.floor(seconds / 60)
     const sec = seconds % 60
     if (min === 0) {
@@ -301,15 +292,15 @@ export default class QuestionForm extends Vue {
     }
   }
 
-  get timeLimit() {
-    return this.isViewEventRequired && this.loadedQuestion.limit_time_max > 0 ? this.loadedQuestion.limit_time_max : 0
+  get timeLimit(): number {
+    return this.loadedQuestion.time_limit?.duration || 0
   }
 
-  get timeLimitHumanReadable() {
+  get timeLimitHumanReadable(): string {
     return this.fuzzyTime(this.timeLimit, false)
   }
 
-  get timeLeftHumanReadable() {
+  get timeLeftHumanReadable(): string {
     return this.fuzzyTime(this.timeLeft, true)
   }
 
