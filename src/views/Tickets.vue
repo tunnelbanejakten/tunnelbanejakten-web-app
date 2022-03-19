@@ -92,6 +92,15 @@ export default class Tickets extends Vue {
   private tickets: TicketData[] = []
   private redeemSuccessMessage: string = ''
 
+  mapTicketsResponse(ticketsPayload: any[]): TicketData[] {
+    return ticketsPayload.map((ticket: any) => ({
+      key: ticket.station.random_id,
+      colour: ticket.colour,
+      word: ticket.word,
+      stationName: ticket.station.name
+    }) as TicketData)
+  }
+
   async mounted() {
     this.isLoading = true
     try {
@@ -99,12 +108,7 @@ export default class Tickets extends Vue {
         endpoint: `${apiHost}/wp-json/tuja/v1/tickets`
       })
       const ticketsPayload = await ticketsResp.payload
-      this.tickets = ticketsPayload.map((ticket: any) => ({
-        key: ticket.station.random_id,
-        colour: ticket.colour,
-        word: ticket.word,
-        stationName: ticket.station.name
-      }) as TicketData)
+      this.tickets = this.mapTicketsResponse(ticketsPayload)
     } catch (e: any) {
     }
     this.isLoading = false
@@ -131,7 +135,7 @@ export default class Tickets extends Vue {
         this.redeemErrorTitle = 'Inga nya biljetter'
         this.redeemErrorMessage = 'Detta bör betyda att ni redan fått alla biljetter som går att få. Kontakta kundtjänst om något verkar galet.'
       }
-      this.tickets = respBody.all_tickets
+      this.tickets = this.mapTicketsResponse(respBody.all_tickets)
       this.password = ''
     } catch (e: any) {
       if (e instanceof Api.ApiError) {
