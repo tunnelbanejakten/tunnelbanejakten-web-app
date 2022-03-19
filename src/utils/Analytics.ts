@@ -31,37 +31,21 @@ export type AppEvent = {
 
 let isAnalyticsInitialized = false
 
-let lastTokenCookieValue: string | null = null
+let lastTokenGroupKeyValue: string | null = null
 
 const initAmplitude = () => {
   amplitude.getInstance().init(APIKEY)
   isAnalyticsInitialized = true
 }
 
-// Credits: https://stackoverflow.com/a/38552302
-function parseJwt(token: string) {
-  var base64Url = token.split('.')[1];
-  var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  var jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-  }).join(''));
-
-  return JSON.parse(jsonPayload);
-};
-
 const updateUserId = () => {
-  const token = Auth.getTokenCookie()
-  if (token !== lastTokenCookieValue) {
-    if (token) {
-      const parsedToken = parseJwt(token)
-      if (parsedToken.group_key) {
-        amplitude.getInstance().setUserId(parsedToken.group_key);
-      }
-    } else {
-      amplitude.getInstance().setUserId(null);
-    }
-    lastTokenCookieValue = token
+  const groupKey = Auth.getGroupKey()
+  if (groupKey) {
+    amplitude.getInstance().setUserId(groupKey);
+  } else {
+    amplitude.getInstance().setUserId(null);
   }
+  lastTokenGroupKeyValue = groupKey
 }
 
 export type UserProperties = {
