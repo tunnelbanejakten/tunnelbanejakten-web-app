@@ -11,6 +11,10 @@
           <td>{{ categoryName }}</td>
         </tr>
         <tr>
+          <td>Inloggningskod:</td>
+          <td><code>{{ groupKey }}</code></td>
+        </tr>
+        <tr>
           <td>Antal tävlande:</td>
           <td>{{ countCompeting }} st</td>
         </tr>
@@ -44,6 +48,7 @@ import { Component, Vue, Prop } from 'vue-property-decorator'
   }
 })
 export default class Profile extends Vue {
+  @Prop({ default: '' }) private readonly groupKey!: string
   @Prop({ default: '' }) private readonly groupName!: string
   @Prop({ default: '' }) private readonly categoryName!: string
   @Prop({ default: '' }) private readonly countCompeting!: string
