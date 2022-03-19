@@ -356,9 +356,7 @@ export default class Map extends Vue {
   }
 
   onCheckpointSuccess(updatedQuestionData: QuestionDto) {
-    this.checkpointView = CheckpointView.SHOW
     this.setCheckpointSubmitted(String(updatedQuestionData.id))
-    this.selectedCheckpoint = null
   }
 
   onCheckpointFailure(e: any) {

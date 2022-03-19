@@ -85,7 +85,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Emit, Prop } from 'vue-property-decorator'
+import { Component, Vue, Emit, Prop, Watch } from 'vue-property-decorator'
 import Question from '@/components/common/question/Question.vue'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
 import Loader from '@/components/common/Loader.vue'
@@ -112,7 +112,9 @@ export default class QuestionForm extends Vue {
   @Prop() private readOnly!: boolean;
   @Prop() private fullScreen!: boolean;
 
-  private _loadedQuestion!: QuestionDto;
+  private loadedQuestion: QuestionDto = {
+
+  } as QuestionDto;
   private isQuestionLoading = false
   private latestFormUpdate!: FormUpdate;
 
@@ -156,8 +158,6 @@ export default class QuestionForm extends Vue {
     if (this.countdownTimer) {
       clearInterval(this.countdownTimer)
       this.countdownTimer = 0
-      const durationErrorMargin = this.question?.time_limit?.duration_error_margin || 0
-      this.timeLeft = -durationErrorMargin
     }
   }
 
@@ -181,22 +181,26 @@ export default class QuestionForm extends Vue {
     }
   }
 
+  isQuestionLoaded() {
+    return this.loadedQuestion && this.loadedQuestion.type
+  }
+
   get optimisticLockCurrentValue() {
-    return this.loadedQuestion ? this.loadedQuestion.optimistic_lock.current_value : -1
+    return this.isQuestionLoaded() ? this.loadedQuestion.optimistic_lock.current_value : -1
   }
 
   get optimisticLockFieldName() {
-    return this.loadedQuestion
+    return this.isQuestionLoaded()
       ? this.loadedQuestion.optimistic_lock.field_name
       : 'untitled'
   }
 
   get trackedAnswersCurrentValue() {
-    return this.loadedQuestion ? this.loadedQuestion.tracked_answers.current_value : -1
+    return this.isQuestionLoaded() ? this.loadedQuestion.tracked_answers.current_value : -1
   }
 
   get trackedAnswersFieldName() {
-    return this.loadedQuestion
+    return this.isQuestionLoaded()
       ? this.loadedQuestion.tracked_answers.field_name
       : 'untitled'
   }
@@ -268,9 +272,8 @@ export default class QuestionForm extends Vue {
     }
   }
 
-  set loadedQuestion(question: QuestionDto) {
-    this._loadedQuestion = question
-
+  @Watch('loadedQuestion')
+  onLoadedQuestionUpdated(question: QuestionDto) {
     if (this.isTimedQuestion) {
       this.updateTimeLeft()
       if (this.timeLeft > 0) {
@@ -278,10 +281,6 @@ export default class QuestionForm extends Vue {
         this.countdownTimer = setInterval(this.onCountdownTick, 1000)
       }
     }
-  }
-
-  get loadedQuestion() {
-    return this._loadedQuestion
   }
 
   fuzzyTime(seconds: number, roundMinutes: boolean): string {
@@ -327,7 +326,7 @@ export default class QuestionForm extends Vue {
         endpoint: `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}`
       })
       const payload = resp.payload
-      this.loadedQuestion = payload
+      this.loadedQuestion = { ...payload }
 
       Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'fetched', 'question', {
         message: `Fetched question ${this.questionId}.`
