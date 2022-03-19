@@ -1,86 +1,37 @@
 <template>
   <div>
     <div
-      class="question"
-      v-if="!isQuestionAvailable"
+      class="text"
+      v-html="text"
+    />
+
+    <p
+      class="text-hint"
+      v-if="!!textHint"
     >
-      <p>
-        Det här är en tidsbegränsad uppgift.
-      </p>
-      <p>
-        Ni har {{ timeLimitHumanReadable }} på er från att uppgiften visas.
-      </p>
-      <div class="buttons">
-        <Button
-          label="Visa uppgift"
-          :pending="isSubmitting"
-          @click="onUserAccept"
-        />
-      </div>
-    </div>
-    <div
-      class="question"
-      v-if="isQuestionAvailable"
-    >
-      <div
-        class="text"
-        v-html="text"
-      />
+      {{ textHint }}
+    </p>
 
-      <p
-        class="text-hint"
-        v-if="!!textHint"
-      >
-        {{ textHint }}
-      </p>
-
-      <component
-        @change="onChange"
-        :is="currentComponent()"
-        :question="question"
-        :question-id="questionId"
-        :read-only="readOnly || isTimeLimitExceeded"
-        :optimistic-lock-value="optimisticLockCurrentValue"
-      />
-
-      <div v-if="!isTimeLimitExceeded && !readOnly">
-        <p
-          class="time-status"
-          v-if="isTimedQuestion"
-        >
-          Det är {{ timeLeftHumanReadable }} kvar.
-        </p>
-        <div v-if="!isAutoSaveEnabled" class="save-button-wrapper">
-          <Button
-            @click="onSubmitAnswer"
-            :pending="isSubmitting"
-            label="Spara"
-            type="primary"
-          />
-          <p class="time-status">
-            Kom ihåg Spara-knappen när ni ändrat något.
-          </p>
-        </div>
-      </div>
-      <div v-if="isTimeLimitExceeded && !readOnly">
-        <p class="time-status">
-          Tiden har gått ut. Ni kan inte längre ändra ert svar.
-        </p>
-      </div>
-    </div>
+    <component
+      @change="onChange"
+      :is="currentComponent()"
+      :question-config="questionConfig"
+      :question-response="questionResponse"
+      :question-id="questionId"
+      :read-only="readOnly"
+    />
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Emit, Watch } from 'vue-property-decorator'
-import { FormUpdate, FormUpdateField, QuestionDto } from './model'
+import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
+import { FormUpdate, QuestionResponseDto } from './model'
 import Button from '@/components/common/Button.vue'
 import Loader from '@/components/common/Loader.vue'
 import OptionsQuestion from '@/components/common/question/OptionsQuestion.vue'
 import TextQuestion from '@/components/common/question/TextQuestion.vue'
 import ImagesQuestion from '@/components/common/question/ImagesQuestion.vue'
 import NumberQuestion from '@/components/common/question/NumberQuestion.vue'
-import store from '@/store'
 
 @Component({
   components: {
@@ -93,171 +44,32 @@ import store from '@/store'
   }
 })
 export default class Question extends Vue {
-  @Prop() private question!: QuestionDto;
+  @Prop() private questionResponse!: QuestionResponseDto;
+  @Prop() private questionConfig!: any;
+  @Prop() private questionType!: string;
   @Prop() private questionId!: string;
-  @Prop() private isSubmitting!: boolean;
   @Prop() private readOnly!: boolean;
 
-  private countdownTimer = 0
-  private timeLeft = 0
-  private endTime = 0
-
   currentComponent() {
-    return this.question?.type
-  }
-
-  updateTimeLeft() {
-    this.timeLeft = Math.round((this.endTime - Date.now()) / 1000)
-  }
-
-  @Watch('question')
-  onQuestionUpdated() {
-    this.init()
+    return this.questionType
   }
 
   @Emit('change')
   onChange(e: FormUpdate) {
-    return {
-      updatedFields: e.updatedFields.concat([
-        {
-          key: this.optimisticLockFieldName,
-          value: this.optimisticLockCurrentValue
-        },
-        {
-          key: this.trackedAnswersFieldName,
-          value: this.trackedAnswersCurrentValue
-        }
-      ] as FormUpdateField[])
-    } as FormUpdate
-  }
-
-  get isAutoSaveEnabled(): boolean {
-    return store.state.autoSave
-  }
-
-  init() {
-    if (this.isTimedQuestion) {
-      this.endTime = Date.now() + (this.question.limit_time_remaining || 0) * 1000
-      this.updateTimeLeft()
-      if (this.timeLeft > 0) {
-        this.countdownTimer = setInterval(() => {
-          this.updateTimeLeft()
-          if (this.timeLeft <= 0) {
-            this.stopCountdownTimer()
-          }
-        }, 1000)
-      }
-    }
-  }
-
-  mounted() {
-    this.init()
-  }
-
-  beforeDestroy() {
-    this.stopCountdownTimer()
-  }
-
-  stopCountdownTimer() {
-    if (this.countdownTimer) {
-      clearInterval(this.countdownTimer)
-      this.countdownTimer = 0
-    }
-  }
-
-  get isViewEventRequired() {
-    return this.question.view_event?.is_required || false
-  }
-
-  get isViewEventFound() {
-    return this.question.view_event?.is_found || false
-  }
-
-  get isTimedQuestion() {
-    return this.isViewEventRequired
-  }
-
-  get isTimeLimitExceeded() {
-    return this.isTimedQuestion && (this.timeLeft <= 0 || (this.question.limit_time_remaining || 0) <= 0)
-  }
-
-  get isQuestionAvailable() {
-    return !this.isViewEventRequired || this.isViewEventFound
-  }
-
-  get timeLimit() {
-    return this.isViewEventRequired && this.question.limit_time_max > 0 ? this.question.limit_time_max : 0
-  }
-
-  fuzzyTime(seconds: number, roundMinutes: boolean) {
-    const min = Math.floor(seconds / 60)
-    const sec = seconds % 60
-    if (min === 0) {
-      return `${seconds} sekunder`
-    } else {
-      if (min < 3 || !roundMinutes) {
-        return sec ? `${min} minuter och ${sec} sekunder` : `${min} minuter`
-      } else {
-        const roundedMin = Math.round(seconds / 60)
-        return `ungefär ${roundedMin} minuter`
-      }
-    }
-  }
-
-  get timeLimitHumanReadable() {
-    return this.fuzzyTime(this.timeLimit, false)
-  }
-
-  get timeLeftHumanReadable() {
-    return this.fuzzyTime(this.timeLeft, true)
+    return e
   }
 
   get text() {
-    return this.question.config?.text
+    return this.questionConfig?.text
   }
 
   get textHint() {
-    return this.question.config?.text_hint
-  }
-
-  get optimisticLockCurrentValue() {
-    return this.question ? this.question.optimistic_lock.current_value : -1
-  }
-
-  get optimisticLockFieldName() {
-    return this.question
-      ? this.question.optimistic_lock.field_name
-      : 'untitled'
-  }
-
-  get trackedAnswersCurrentValue() {
-    return this.question ? this.question.tracked_answers.current_value : -1
-  }
-
-  get trackedAnswersFieldName() {
-    return this.question
-      ? this.question.tracked_answers.field_name
-      : 'untitled'
-  }
-
-  @Emit('user-accepts-time-limit')
-  onUserAccept() {
-    return true
-  }
-
-  @Emit('user-submits-answer')
-  onSubmitAnswer() {
-    return true
+    return this.questionConfig?.text_hint
   }
 }
 </script>
 
 <style scoped>
-p.time-status {
-  font-size: 90%;
-  font-style: italic;
-  margin: 10px 0 0 0;
-}
 div.text >>> img {
   width: 100%;
 }
@@ -267,8 +79,5 @@ p.text-hint {
 }
 div.text >>> p {
   margin: 0 0 10px 0;
-}
-.save-button-wrapper {
-  margin-top: 10px;
 }
 </style>

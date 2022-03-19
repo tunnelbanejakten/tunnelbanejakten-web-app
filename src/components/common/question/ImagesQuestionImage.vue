@@ -18,14 +18,6 @@
           type="secondary"
         />
       </div>
-
-      <div class="input-wrapper">
-        <input
-          type="hidden"
-          :value="imageData.imageId"
-          :name="fieldName"
-        >
-      </div>
     </div>
   </div>
 </template>
@@ -33,24 +25,15 @@
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import { ImageData } from './ImagesQuestion.vue'
-import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
-import Fullscreen from '@/components/common/Fullscreen.vue'
 import IconButton from '@/components/common/IconButton.vue'
-import Loader from '@/components/common/Loader.vue'
-import Camera from '@/components/common/Camera.vue'
 
 @Component({
   components: {
-    IconButton,
-    Loader,
-    Camera,
-    Fullscreen,
-    ConfirmationOverlay
+    IconButton
   }
 })
 export default class ImagesQuestionImage extends Vue {
   @Prop() private imageData!: ImageData
-  @Prop() private fieldName!: string
   @Prop() private readOnly!: boolean
 
   @Emit('image-removed')

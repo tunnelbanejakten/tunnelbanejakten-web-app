@@ -82,9 +82,6 @@ const apiHost = process.env.VUE_APP_API_HOST
   }
 })
 export default class ImagesQuestionImage extends Vue {
-  @Prop() private questionId!: string
-  @Prop() private fieldName!: string
-  @Prop() private optimisticLockValue!: string
   @Prop() private maxFileSize!: number
   private isUploading = false
   private imageDataUrl = '';
@@ -112,83 +109,44 @@ export default class ImagesQuestionImage extends Vue {
   }
 
   async uploadImageFromDataUrl(imageUrl: string) {
-    let blob = null
+    let dataUrl = null
     for (const resizeFactor of [1.0, 0.5, 0.25]) {
       let resizedDataUrl = ''
       try {
         resizedDataUrl = await this.resizeImage(imageUrl, resizeFactor)
       } catch (error: any) {
-        this.onUploadFailed('Kunde inte förminska bilden.', 'image downscaling', {
+        this.onImageError('Kunde inte förminska bilden.', 'image downscaling', {
           message: `Failed to resize image. Factor: ${resizeFactor}. Base64-encoded length: ${imageUrl.length}. Error: ${error.message}.`
         })
         return
       }
       const tempBlob = this.dataURItoBlob(resizedDataUrl)
       if (!tempBlob) {
-        this.onUploadFailed('Kunde inte läsa in bilden.', 'image downscaling', {
+        this.onImageError('Kunde inte läsa in bilden.', 'image downscaling', {
           message: `Failed to convert data URI to blob. Base64-encoded length: ${imageUrl.length}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`
         })
         return
       }
 
       if (tempBlob.size < this.maxFileSize) {
-        blob = tempBlob
+        dataUrl = resizedDataUrl
         break
       }
     }
 
-    if (!blob) {
-      this.onUploadFailed('Kunde inte spara bilden trots flera försök.', 'image upload', {
+    if (!dataUrl) {
+      this.onImageError('Kunde inte spara bilden trots flera försök.', 'image upload', {
         message: `Failed to convert data URI to blob. Base64-encoded length: ${imageUrl.length}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`
       })
       return
     }
 
-    var fd = new FormData(document.createElement('form'))
-    fd.append('action', 'tuja_upload_images')
-    const token = AuthUtils.getTokenCookie()
-    if (token) {
-      fd.append('token', token)
-    }
-    fd.append('question', this.questionId)
-    fd.append('lock', this.optimisticLockValue)
-    fd.append('file', blob, 'image.jpg')
+    this.onImageCaptured(dataUrl)
+  }
 
-    this.onUploadStarted()
-    try {
-      Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'started', 'image upload', {
-        size: blob.size,
-        message: `Started to upload image to question ${this.questionId}. Base64-encoded length: ${imageUrl.length}. Blob length: ${blob.size}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`
-      })
-      const resp = await Api.call({
-        endpoint: `${apiHost}/wp-admin/admin-ajax.php`,
-        method: 'POST',
-        payload: fd,
-        unauthenticated: true
-      })
-      const payload = resp.payload
-      Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'completed', 'image upload', {
-        size: blob.size,
-        message: `Uploaded image ${payload.image} as answer to question ${this.questionId}. Thumbnail: ${payload.thumbnail_url}. Base64-encoded length: ${imageUrl.length}. Blob length: ${blob.size}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`
-      })
-      this.onImageUploaded({
-        imageId: payload.image,
-        thumbnailUrl: payload.thumbnail_url
-      })
-    } catch (e) {
-      if (e instanceof Api.ApiError) {
-        this.onUploadFailed(`Kunde inte spara bilden. Teknisk info: ${e.status}.`, 'image upload', {
-          size: blob.size,
-          message: `Failed to upload image to question ${this.questionId}. Base64-encoded length: ${imageUrl.length}. Blob length: ${blob.size}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`,
-          status: `Http response ${e.status}.`
-        })
-      } else {
-        this.onUploadFailed('Kunde inte ladda upp bilden', 'image upload', {
-          size: blob.size,
-          message: `Failed to upload image to question ${this.questionId}. Message: ${e.message}. Base64-encoded length: ${imageUrl.length}. Blob length: ${blob.size}. Start of base64-encoded content: ${imageUrl.substring(0, 30)}`
-        })
-      }
-    }
+  @Emit('image-captured')
+  onImageCaptured(dataUrl: string) {
+    return dataUrl
   }
 
   // Credits: https://www.therogerlab.com/sandbox/pages/how-to-resize-an-image-using-javascript
@@ -216,7 +174,7 @@ export default class ImagesQuestionImage extends Vue {
           if (targetCtx) {
             targetCtx.drawImage(event.target, 0, 0, targetCanvas.width, targetCanvas.height)
 
-            const newDataUrl = targetCtx?.canvas.toDataURL('image/png', 1)
+            const newDataUrl = targetCtx?.canvas.toDataURL('image/jpeg', 1.0)
             console.log(`🏞 Got a data URL. Length: ${newDataUrl.length}.`)
             Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'downscaled', 'image upload', {
               message: `Length of resized base64-encoded image: ${newDataUrl.length}.`
@@ -254,7 +212,7 @@ export default class ImagesQuestionImage extends Vue {
           if (result) {
             this.uploadImageFromDataUrl(result as string)
           } else {
-            this.onUploadFailed('Kunde inte öppna bilden.', 'image upload', {
+            this.onImageError('Kunde inte öppna bilden.', 'image upload', {
               message: 'Reader loaded by no data'
             })
           }
@@ -290,24 +248,13 @@ export default class ImagesQuestionImage extends Vue {
     await this.uploadImageFromDataUrl(this.imageDataUrl)
   }
 
-  @Emit('image-uploaded')
-  onImageUploaded(imageData: ImageData) {
-    this.isUploading = false
-    return imageData
-  }
-
-  @Emit('upload-failed')
-  onUploadFailed(userErrorMessage: string, analyticsEventObject: string, analyticsProps: any) {
+  @Emit('image-error')
+  onImageError(userErrorMessage: string, analyticsEventObject: string, analyticsProps: any) {
     this.isUploading = false
 
     Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', analyticsEventObject, analyticsProps)
 
     return new Error(userErrorMessage)
-  }
-
-  @Emit('upload-started')
-  onUploadStarted() {
-    this.isUploading = true
   }
 }
 

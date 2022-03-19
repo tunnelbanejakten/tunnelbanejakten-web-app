@@ -32,7 +32,7 @@
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import Page from '@/components/layout/Page.vue'
 import Wrapper from './Question.vue'
-import { FormUpdate, QuestionDto } from './model'
+import { FormUpdate, QuestionResponseDto } from './model'
 
 @Component({
   components: {
@@ -41,7 +41,8 @@ import { FormUpdate, QuestionDto } from './model'
   }
 })
 export default class OptionsQuestion extends Vue {
-  @Prop() private question!: QuestionDto;
+  @Prop() private questionResponse!: QuestionResponseDto;
+  @Prop() private questionConfig!: any;
   @Prop() private readOnly!: boolean;
 
   private isSingleSelect: boolean = false
@@ -49,23 +50,22 @@ export default class OptionsQuestion extends Vue {
   private fieldValues: string[] = []
 
   get possibleAnswers() {
-    return this.question.config?.possible_answers || []
+    return this.questionConfig?.possible_answers || []
   }
 
   get fieldName() {
     return (
-      this.question.response.field_name +
+      this.questionResponse.field_name +
       (!this.isSingleSelect ? '[]' : '')
     )
   }
 
   created() {
-    const inputValue = this.question &&
-      this.question.response &&
-      this.question.response.current_value
-      ? this.question.response.current_value
+    const inputValue = this.questionResponse &&
+      this.questionResponse.current_value
+      ? this.questionResponse.current_value
       : []
-    const singleSelect = this.question.config?.is_single_select
+    const singleSelect = this.questionConfig?.is_single_select
     if (singleSelect) {
       this.fieldValue = inputValue[0]
       this.$watch('fieldValue', this.onChangeRadio)

@@ -1,12 +1,23 @@
 /* eslint-disable camelcase */
+
+export type QuestionResponseDto = {
+    field_name: string;
+    current_value: any;
+}
+
+export type TimeLimitDto = {
+    current_time: number
+    duration: number
+    duration_error_margin: number
+    ends_at: number
+    started_at: number
+}
+
 export type QuestionDto = {
     id: number;
     type: string;
     is_read_only: boolean;
-    response: {
-        field_name: string;
-        current_value: any;
-    },
+    response: QuestionResponseDto,
     optimistic_lock: {
         field_name: string;
         current_value: string;
@@ -19,9 +30,8 @@ export type QuestionDto = {
         is_required: boolean;
         is_found: boolean;
     },
-    limit_time_max: number;
-    limit_time_remaining?: number;
     config: any;
+    time_limit?: TimeLimitDto
 }
 
 export type QuestionGroupDto = {

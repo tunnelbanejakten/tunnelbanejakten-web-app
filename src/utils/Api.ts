@@ -54,6 +54,8 @@ const emitter = mitt<Events>()
 
 let timer = 0
 
+let clientServerMsClockSkew = 0 // Positive number means that the device's click is this number of milliseconds _ahead_ of the server's clock.
+
 const DEBOUNCE_TIMEOUT = 2000
 
 const queuedRequests = new Map<string, ApiRequest>()
@@ -149,6 +151,20 @@ const readPayloadText = async (response: Response): Promise<string> => {
     }
 }
 
+// Translates a server timestamp, expressed in UTC milliseconds, into the corresponding timestamp according to 
+// the user device's clock. It tries to take the clock skew and latency between client and server into account.
+export const serverMsTimeToDeviceTime = (serverTimestamp: number) => serverTimestamp + clientServerMsClockSkew
+
+const updateClockSkew = (clientStartTime: number, clientEndTime: number, resp: Response) => {
+    const serverStartTime = parseInt(resp.headers.get('Tuja-Timing-Request-Start') || '0', 10)
+    const serverEndTime = parseInt(resp.headers.get('Tuja-Timing-Request-End') || '0', 10)
+    if (serverStartTime && serverEndTime) {
+        const clientMidTime = clientStartTime + ((clientEndTime - clientStartTime) / 2)
+        const serverMidTime = serverStartTime + ((serverEndTime - serverStartTime) / 2)
+        clientServerMsClockSkew = clientMidTime - serverMidTime
+    }
+}
+
 export const call = async (request: ApiRequest): Promise<ApiResponse> => {
     try {
         const authenticated = !request.unauthenticated
@@ -159,6 +175,7 @@ export const call = async (request: ApiRequest): Promise<ApiResponse> => {
         const headers = new Headers()
         const fetchConfig: RequestInit = {
             method: request.method ?? 'GET',
+            mode: 'cors',
             headers
         }
         if (body) {
@@ -167,10 +184,13 @@ export const call = async (request: ApiRequest): Promise<ApiResponse> => {
         if (contentType) {
             headers.set('Content-Type', contentType)
         }
+        const clientStartTime = Date.now()
         const resp = await fetch(
             url,
             fetchConfig
         )
+        const clientEndTime = Date.now()
+        updateClockSkew(clientStartTime, clientEndTime, resp)
         if (resp.ok) {
             const payloadText = await readPayloadText(resp)
             const payload = !!payloadText ? JSON.parse(payloadText) : null
@@ -184,5 +204,4 @@ export const call = async (request: ApiRequest): Promise<ApiResponse> => {
     } catch (e) {
         throw e
     }
-
 }
