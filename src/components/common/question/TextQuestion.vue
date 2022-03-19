@@ -6,6 +6,12 @@
       :disabled="readOnly"
       v-model="fieldValue"
     >
+    <p
+      class="instructions"
+      v-if="isMultiInput"
+    >
+      Skriv mellanslag eller komma mellan varje svar.
+    </p>
   </div>
 </template>
 
@@ -28,8 +34,8 @@ export default class TextQuestion extends Vue {
 
   private fieldValue: string = ''
 
-  get optionType() {
-    return this.questionConfig?.is_single_select ? 'radio' : 'checkbox'
+  get isMultiInput() {
+    return !this.questionConfig?.is_single_answer
   }
 
   get possibleAnswers() {
@@ -43,7 +49,7 @@ export default class TextQuestion extends Vue {
   created() {
     this.fieldValue = this.questionResponse &&
       this.questionResponse.current_value
-      ? this.questionResponse.current_value[0]
+      ? this.questionResponse.current_value.join(' ')
       : ''
     this.$watch('fieldValue', this.onChange)
   }
@@ -70,5 +76,10 @@ input {
   border-radius: 5px;
 
   font: 16px/1.4 "Open Sans", Tahoma, Verdana, Segoe, sans-serif;
+}
+p.instructions {
+  font-size: 90%;
+  font-style: italic;
+  margin: 10px 0 0 0;
 }
 </style>
