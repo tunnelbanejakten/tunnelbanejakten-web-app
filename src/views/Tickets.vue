@@ -117,6 +117,7 @@ export default class Tickets extends Vue {
       })
       const respBody = resp.payload
       this.tickets = respBody.all_tickets
+      this.password = ''
     } catch (e: any) {
       if (e instanceof Api.ApiError) {
         switch (e.status) {
