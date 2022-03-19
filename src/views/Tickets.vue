@@ -17,6 +17,11 @@
           type="primary"
         />
         <Message
+          v-if="redeemSuccessMessage"
+          :message="redeemSuccessMessage"
+          type="success"
+        />
+        <Message
           v-if="redeemErrorTitle"
           :header="redeemErrorTitle"
           :message="redeemErrorMessage"
@@ -85,6 +90,7 @@ export default class Tickets extends Vue {
   private redeemErrorMessage: string = ''
   private password: string = ''
   private tickets: TicketData[] = []
+  private redeemSuccessMessage: string = ''
 
   async mounted() {
     this.isLoading = true
@@ -108,6 +114,7 @@ export default class Tickets extends Vue {
     this.isSubmitting = true
     this.redeemErrorTitle = ''
     this.redeemErrorMessage = ''
+    this.redeemSuccessMessage = ''
 
     try {
       const resp = await Api.call({
@@ -116,6 +123,14 @@ export default class Tickets extends Vue {
         payload: { password: this.password },
       })
       const respBody = resp.payload
+      if (respBody.added_tickets) {
+        this.redeemSuccessMessage = respBody.added_tickets > 1
+          ? `Ni har fått ${respBody.added_tickets} biljetter till.`
+          : `Ni har fått en biljett till.`
+      } else {
+        this.redeemErrorTitle = 'Inga nya biljetter'
+        this.redeemErrorMessage = 'Detta bör betyda att ni redan fått alla biljetter som går att få. Kontakta kundtjänst om något verkar galet.'
+      }
       this.tickets = respBody.all_tickets
       this.password = ''
     } catch (e: any) {
