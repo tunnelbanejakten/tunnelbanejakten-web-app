@@ -11,6 +11,7 @@
         </div>
         <Profile
           v-if="!isLoading && groupKey"
+          :groupKey="groupKey"
           :groupName="groupName"
           :categoryName="categoryName"
           :countCompeting="countCompeting"

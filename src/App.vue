@@ -31,31 +31,31 @@
     </div>
     <div id="nav">
       <router-link
-        to="/"
+        :to="routerPathPrefix() + '/'"
         v-if="isAnswerPageEnabled"
       >
         Svara
       </router-link>
       <router-link
-        to="/map"
+        :to="routerPathPrefix() + '/map'"
         v-if="isMapPageEnabled"
       >
         Karta
       </router-link>
       <router-link
-        to="/tickets"
+        :to="routerPathPrefix() + '/tickets'"
         v-if="isTicketsPageEnabled"
       >
         Biljetter
       </router-link>
       <router-link
-        to="/devicetest"
+        :to="routerPathPrefix() + '/devicetest'"
         v-if="isDeviceTestPageEnabled"
       >
         Mobiltest
       </router-link>
       <router-link
-        to="/about"
+        :to="routerPathPrefix() + '/about'"
         v-if="isInfoPageEnabled"
       >
         Info
@@ -71,6 +71,7 @@ import ServiceWorkerMixin from '@/mixins/ServiceWorkerMixin'
 import Button from '@/components/common/Button.vue'
 import DebugPopup from '@/components/DebugPopup.vue'
 import * as Analytics from '@/utils/Analytics'
+import * as AuthUtils from '@/utils/Auth'
 import * as Api from '@/utils/Api'
 import store, { Configuration, QuestionGrouping } from '@/store'
 
@@ -93,6 +94,14 @@ export default class App extends Mixins(ServiceWorkerMixin) {
 
   onUpdateApp() {
     this.refreshApplication()
+  }
+
+  routerPathPrefix() {
+    const groupKey = AuthUtils.getGroupKey()
+    if (groupKey) {
+      return `/${groupKey}`
+    }
+    return ''
   }
 
   get isAnswerPageEnabled() {

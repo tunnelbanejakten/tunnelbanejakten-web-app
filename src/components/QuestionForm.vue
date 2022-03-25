@@ -223,11 +223,7 @@ export default class QuestionForm extends Vue {
     if (event.key !== this.submitRequestKey) return // The event concerns another question
     this.isSubmitting = false
 
-    if (event.error instanceof Api.ApiError) {
-      this.onSubmitFailure(new Error('Kunde inte spara svar'))
-    } else {
-      this.onSubmitFailure(event.error)
-    }
+    this.onSubmitFailure(event.error)
   }
 
   get isViewEventRequired() {
@@ -402,11 +398,7 @@ export default class QuestionForm extends Vue {
       this.isDirty = false
       this.onSubmitSuccess({ ...responsePayload, id: this.questionId })
     } catch (e) {
-      if (e instanceof Api.ApiError) {
-        this.onSubmitFailure(new Error('Kunde inte spara svar'))
-      } else {
-        this.onSubmitFailure(e)
-      }
+      this.onSubmitFailure(e)
     }
     this.isSubmitting = false
   }
@@ -428,9 +420,16 @@ export default class QuestionForm extends Vue {
 
   @Emit('submit-failure')
   onSubmitFailure(error: any) {
-    Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'submit', {
-      message: `Could not submit answer to question ${this.questionId}. Reason: ${error.message}.`
-    })
+    if (error instanceof Api.ApiError) {
+      Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'submit', {
+        message: `Http error when submitting answer to question ${this.questionId}. Reason: ${error.message}.`,
+        status: `Http response ${error.status}.`
+      })
+    } else {
+      Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'submit', {
+        message: `Could not submit answer to question ${this.questionId}. Reason: ${error.message}.`
+      })
+    }
 
     this.message = 'Något gick fel. ' + error.message
     this.messageType = MessageType.FAILURE
