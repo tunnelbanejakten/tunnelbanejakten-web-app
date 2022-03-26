@@ -82,7 +82,15 @@
       <Message
         :header="message"
         :type="messageType"
-      />
+      >
+        <Button
+          v-if="suggestReloadQuestion"
+          label="Ok, glöm mitt svar"
+          icon="sync-alt"
+          :wide="false"
+          @click="fetchQuestion"
+        />
+      </Message>
     </div>
   </div>
 </template>
@@ -128,6 +136,7 @@ export default class QuestionForm extends Vue {
 
   private message = ''
   private messageType = MessageType.FAILURE
+  private suggestReloadQuestion = false
   private isDirty = false
   private submitRequestKey: string = ''
 
@@ -324,6 +333,8 @@ export default class QuestionForm extends Vue {
   async fetchQuestion() {
     try {
       this.isQuestionLoading = true
+      this.message = ''
+      this.messageType = MessageType.INFO
 
       const resp = await Api.call({
         endpoint: `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}`
@@ -428,19 +439,33 @@ export default class QuestionForm extends Vue {
 
   @Emit('submit-failure')
   onSubmitFailure(error: any) {
+    this.messageType = MessageType.FAILURE
+    this.suggestReloadQuestion = false
+
     if (error instanceof Api.ApiError) {
       Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'submit', {
         message: `Http error when submitting answer to question ${this.questionId}. Reason: ${error.message}.`,
         status: `Http response ${error.status}.`
       })
+      const specificErrorMessage: string =
+        error?.payload[`tuja_formshortcode__response__${this.questionId}`]
+        || error?.payload['__']
+        || ''
+
+      if (specificErrorMessage) {
+        this.message = specificErrorMessage
+      } else {
+        this.message = 'Något gick fel. ' + error.message
+      }
+      if (error.status === 409) {
+        this.suggestReloadQuestion = true
+      }
     } else {
       Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'submit', {
         message: `Could not submit answer to question ${this.questionId}. Reason: ${error.message}.`
       })
+      this.message = 'Något gick fel. ' + error.message
     }
-
-    this.message = 'Något gick fel. ' + error.message
-    this.messageType = MessageType.FAILURE
 
     return error
   }

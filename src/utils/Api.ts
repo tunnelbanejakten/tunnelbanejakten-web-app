@@ -41,9 +41,11 @@ export type ApiResponse = {
 
 export class ApiError extends Error {
     public status: number
-    constructor(message: string, statusCode: number) {
+    public payload?: any
+    constructor(message: string, statusCode: number, payload?: any) {
         super(message)
         this.status = statusCode
+        this.payload = payload
     }
 }
 
@@ -199,7 +201,9 @@ export const call = async (request: ApiRequest): Promise<ApiResponse> => {
                 payload
             } as ApiResponse
         } else {
-            throw new ApiError(`Serverfel ${resp.status}.`, resp.status)
+            const payloadText = await readPayloadText(resp)
+            const payload = !!payloadText ? JSON.parse(payloadText) : null
+            throw new ApiError(`Serverfel ${resp.status}.`, resp.status, payload)
         }
     } catch (e) {
         throw e
