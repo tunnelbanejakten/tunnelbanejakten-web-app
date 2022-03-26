@@ -5,9 +5,21 @@
     :class="buttonClass"
   >
     <span class="button-content">
+      <span
+        v-if="icon"
+        class="icon"
+      >
+        <font-awesome-icon
+          :icon="icon"
+          size="1x"
+        />
+      </span>
       <span class="label">{{ label }}</span>
       <span class="spinner">
-        <Loader size="small" :white="isPrimary" />
+        <Loader
+          size="small"
+          :white="isPrimary"
+        />
       </span>
     </span>
   </button>
@@ -38,6 +50,7 @@ export default class Button extends Vue {
   @Prop({ default: Type.PRIMARY }) readonly type!: Type
   @Prop({ default: Size.NORMAL }) readonly size!: Size
   @Prop({ default: false }) readonly wide!: boolean
+  @Prop() private readonly icon!: string;
 
   onClick() {
     if (!this.pending) {
@@ -121,5 +134,9 @@ button.pending-yes span.spinner {
 
 button.pending-no span.spinner {
   display: none;
+}
+
+button span.icon {
+  margin-right: 10px;
 }
 </style>

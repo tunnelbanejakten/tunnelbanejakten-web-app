@@ -6,6 +6,7 @@ import router from './router'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import {
   faCamera,
+  faImage,
   faSyncAlt,
   faTimes,
   faCrosshairs,
@@ -23,6 +24,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 library.add(faCamera)
+library.add(faImage)
 library.add(faSyncAlt)
 library.add(faTimes)
 library.add(faCrosshairs)

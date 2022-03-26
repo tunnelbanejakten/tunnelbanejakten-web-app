@@ -9,11 +9,13 @@
       </div>
       <Button
         label="Kamera"
+        icon="camera"
         type="primary"
         @click="onStartCamera"
       />
       <Button
         label="Välj bild"
+        icon="image"
         type="primary"
         @click="onStartFileSelector"
       />
