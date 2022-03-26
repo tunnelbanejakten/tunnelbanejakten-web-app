@@ -165,7 +165,7 @@ export default class Camera extends Vue {
       // to keep a consistent interface
       if (!getUserMedia) {
         return Promise.reject(
-          new Error("getUserMedia is not implemented in this browser")
+          new Error("getUserMedia is not implemented in this browser.")
         );
       }
 

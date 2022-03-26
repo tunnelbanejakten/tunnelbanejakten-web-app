@@ -182,7 +182,7 @@ export default class ImagesQuestionImage extends Vue {
             resolve(newDataUrl)
           } else {
             console.log('🏞 No context')
-            reject(new Error('No context'))
+            reject(new Error('No context.'))
           }
         } catch (e: any) {
           console.log('🏞 Something went wrong', e)

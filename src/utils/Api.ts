@@ -199,7 +199,7 @@ export const call = async (request: ApiRequest): Promise<ApiResponse> => {
                 payload
             } as ApiResponse
         } else {
-            throw new ApiError('Non-ok http response.', resp.status)
+            throw new ApiError(`Serverfel ${resp.status}.`, resp.status)
         }
     } catch (e) {
         throw e

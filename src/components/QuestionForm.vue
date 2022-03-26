@@ -3,12 +3,6 @@
     <div v-if="isQuestionLoading">
       <Loader message="Läser in uppgift" />
     </div>
-    <div v-if="!!message">
-      <Message
-        :header="message"
-        :type="messageType"
-      />
-    </div>
     <div v-if="!isQuestionLoading && !!loadedQuestion">
       <div
         class="question"
@@ -57,10 +51,13 @@
             @click="submitAnswer"
             :pending="isSubmitting"
             label="Spara"
-            type="primary"
+            :type="saveButtonType"
           />
-          <p class="time-status">
-            Kom ihåg Spara-knappen när ni ändrat något.
+          <p
+            class="time-status"
+            v-if="isDirty"
+          >
+            Kom ihåg att spara!
           </p>
         </div>
       </div>
@@ -81,6 +78,12 @@
         Sparar nu...
       </p>
     </div>
+    <div v-if="!!message">
+      <Message
+        :header="message"
+        :type="messageType"
+      />
+    </div>
   </div>
 </template>
 
@@ -89,7 +92,7 @@ import { Component, Vue, Emit, Prop, Watch } from 'vue-property-decorator'
 import Question from '@/components/common/question/Question.vue'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
 import Loader from '@/components/common/Loader.vue'
-import Button from '@/components/common/Button.vue'
+import Button, { Type as ButtonType } from '@/components/common/Button.vue'
 import { FormUpdate, FormUpdateField, QuestionDto } from './common/question/model'
 import * as Analytics from '@/utils/Analytics'
 import * as Api from '@/utils/Api'
@@ -255,6 +258,10 @@ export default class QuestionForm extends Vue {
     return this.isViewEventRequired
   }
 
+  get saveButtonType() {
+    return this.isDirty ? ButtonType.PRIMARY : ButtonType.SECONDARY
+  }
+
   updateTimeLeft() {
     const timeEndsMs = Api.serverMsTimeToDeviceTime((this.loadedQuestion.time_limit?.ends_at || 0) * 1000)
     const timeLeftMs = timeEndsMs - Date.now()
@@ -359,7 +366,7 @@ export default class QuestionForm extends Vue {
       this.onPostViewEventSuccess()
     } catch (e) {
       if (e instanceof Api.ApiError) {
-        this.onPostViewEventFailure(new Error('Kunde inte visa fråga'))
+        this.onPostViewEventFailure(new Error('Kunde inte visa fråga.'))
       } else {
         this.onPostViewEventFailure(e)
       }
@@ -373,6 +380,8 @@ export default class QuestionForm extends Vue {
       this.latestFormUpdate.updatedFields.forEach(({ key, value }: FormUpdateField) => {
         payload.append(key, value)
       })
+    } else {
+      throw new Error('Inget verkar ha ändrats.')
     }
     return {
       endpoint: `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}/answer`,
@@ -382,10 +391,14 @@ export default class QuestionForm extends Vue {
   }
 
   async queueSubmitAnswer() {
-    const request = this.getApiRequest()
-    this.message = ''
-    this.messageType = MessageType.INFO
-    this.submitRequestKey = Api.queue(request)
+    try {
+      const request = this.getApiRequest()
+      this.message = ''
+      this.messageType = MessageType.INFO
+      this.submitRequestKey = Api.queue(request)
+    } catch (e) {
+      this.onSubmitFailure(e)
+    }
   }
 
   async submitAnswer() {
@@ -409,11 +422,6 @@ export default class QuestionForm extends Vue {
     Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'submitted', 'answer', {
       message: `Submitted answer to question ${this.questionId}.`
     })
-
-    if (!this.isAutoSaveEnabled) {
-      this.message = 'Ditt svar sparades'
-      this.messageType = MessageType.SUCCESS
-    }
 
     return updatedQuestionData
   }
@@ -491,5 +499,15 @@ p.time-status {
 
 .save-button-wrapper {
   margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  flex-direction: row;
+}
+
+.save-button-wrapper p.time-status {
+  margin-top: 0px;
+  margin-left: 10px;
 }
 </style>
