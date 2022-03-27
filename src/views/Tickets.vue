@@ -97,7 +97,8 @@ export default class Tickets extends Vue {
       key: ticket.station.random_id,
       colour: ticket.colour,
       word: ticket.word,
-      stationName: ticket.station.name
+      stationName: ticket.station.name,
+      isUsed: ticket.is_used
     }) as TicketData)
   }
 

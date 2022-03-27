@@ -155,7 +155,7 @@ type ApiMarker = {
   // eslint-disable-next-line camelcase
   link_station_ticket: any;
   // eslint-disable-next-line camelcase
-  is_response_submitted: boolean;
+  is_done: boolean;
 };
 
 // Credits: https://stackoverflow.com/a/27943
@@ -481,7 +481,7 @@ export default class Map extends Vue {
               link_form_question_id: questionId,
               link_station_id: stationId,
               link_station_ticket: stationTicket,
-              is_response_submitted: isResponseSubmitted
+              is_done: isDone
             }: ApiMarker): Marker => {
               let marker
               if (type === 'START') {
@@ -491,14 +491,17 @@ export default class Map extends Vue {
                 marker.id = String(questionId || stationId)
                 const isStation = stationId > 0
                 marker.isStation = isStation
-                marker.submitted = isResponseSubmitted
+                marker.submitted = isDone
                 marker.showAccuracyCircle = store.state.debugSettings.map
                 if (isStation && stationTicket) {
                   marker.stationTicket = {
                     key: stationTicket.station.random_id,
                     colour: stationTicket.colour,
                     word: stationTicket.word,
-                    stationName: stationTicket.station.name
+                    stationName: stationTicket.station.name,
+                    // Technically, the isUsed flag is not the same as the isDone flag since the isDone flag ALSO captures
+                    // if points has been awarded without the team actually having a ticket. This shouldn't happen, but it might.
+                    isUsed: stationTicket.is_used
                   }
                 }
               }
