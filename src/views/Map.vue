@@ -31,7 +31,7 @@
       v-if="!isLoadingMarkers && !isError"
     >
       <MapComponent
-        :markers="checkpoints"
+        :markers="mapObjects"
         @marker-clicked="onSelectCheckpoint"
       />
       <ConfirmationOverlay
@@ -190,6 +190,18 @@ const IGNORE_LOCATION_UPDATE_TIMEFRAME_MS = 2000
 const IGNORE_LOCATION_UPDATE_DISTANCE_METERS = 1
 // Number of past user locations to render on map:
 const MAX_BREADCRUMB_COUNT = 5
+
+const removeUnavailableStationsFilter = (m: Marker): boolean => {
+  const showUnavailableStations = store.state.configuration.positioning.showUnavailableStations
+  if (showUnavailableStations) {
+    return true
+  }
+  if (m instanceof CheckpointMarker) {
+    return !m.isStation || m.submitted || !!m.stationTicket
+  } else {
+    return true
+  }
+}
 
 @Component({
   components: {
@@ -384,6 +396,7 @@ export default class Map extends Vue {
     const isMarkerActiveBefore = this.activeMarkers.length > 0
     this.activeMarkers = markers
       .filter((marker: Marker) => !(marker instanceof StartPositionMarker))
+      .filter(removeUnavailableStationsFilter)
       .filter((marker: Marker) => {
         const distance = coordinateDistance(
           {
@@ -435,20 +448,12 @@ export default class Map extends Vue {
     this.updateActiveMarkers(newMarkers, this.currentPosition)
   }
 
-  get checkpoints(): Marker[] {
-    const markers = store.state.configuration.positioning.showUnavailableStations
-      ? this.markers
-      : this.markers.filter((m: Marker) => {
-        if (m instanceof CheckpointMarker) {
-          return !m.isStation || m.submitted || m.stationTicket
-        } else {
-          return true
-        }
-      })
+  get mapObjects(): Marker[] {
+    const mapObjects = this.markers.filter(removeUnavailableStationsFilter)
     if (this.currentPosition.meterAccuracy !== -1 && this.isAccurateEnough(this.currentPosition.meterAccuracy)) {
-      return markers.concat(this.userPositions)
+      return mapObjects.concat(this.userPositions)
     } else {
-      return [...markers]
+      return [...mapObjects]
     }
   }
 

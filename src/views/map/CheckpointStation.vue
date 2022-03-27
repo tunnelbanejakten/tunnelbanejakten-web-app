@@ -17,8 +17,8 @@
     />
     <Message
       v-if="!ticket"
-      header="Ingen biljett"
-      message="Ni har ingen biljett till denna kontroll. Ni måste ha en biljett för att få göra stationen."
+      header="Biljett krävs"
+      message="Ni har (ännu) ingen biljett för denna kontroll."
       type="failure"
     />
   </div>
