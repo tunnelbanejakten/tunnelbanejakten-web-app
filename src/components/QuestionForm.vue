@@ -44,7 +44,7 @@
           </p>
         </div>
         <div
-          v-if="!isAutoSaveEnabled && !isAnswerLocked"
+          v-if="!isAnswerLocked"
           class="save-button-wrapper"
         >
           <Button
@@ -54,10 +54,19 @@
             :type="saveButtonType"
           />
           <p
-            class="time-status"
-            v-if="isDirty"
+            v-if="!isAutoSaveEnabled && isDirty"
           >
             Kom ihåg att spara!
+          </p>
+          <p
+            v-if="isAutoSaveEnabled"
+          >
+            <span v-if="isDirty && !isSubmitting">
+              Sparar snart...
+            </span>
+            <span v-if="isSubmitting">
+              Sparar nu...
+            </span>
           </p>
         </div>
       </div>
@@ -66,17 +75,6 @@
           Tiden har gått ut. Ni kan inte längre ändra.
         </p>
       </div>
-    </div>
-    <div
-      v-if="isAutoSaveEnabled"
-      class="auto-save-status"
-    >
-      <p v-if="isDirty && !isSubmitting">
-        Sparar snart...
-      </p>
-      <p v-if="isSubmitting">
-        Sparar nu...
-      </p>
     </div>
     <div v-if="!!message">
       <Message
@@ -515,12 +513,7 @@ export default class QuestionForm extends Vue {
   margin: 10px;
 }
 
-.auto-save-status p {
-  font-size: 90%;
-  font-style: italic;
-  margin: 10px 0 0 0;
-}
-
+.save-button-wrapper p,
 p.time-status {
   font-size: 90%;
   font-style: italic;
@@ -536,7 +529,7 @@ p.time-status {
   flex-direction: row;
 }
 
-.save-button-wrapper p.time-status {
+.save-button-wrapper p {
   margin-top: 0px;
   margin-left: 10px;
 }
