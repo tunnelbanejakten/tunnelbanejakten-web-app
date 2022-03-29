@@ -417,6 +417,11 @@ export default class QuestionForm extends Vue {
     this.message = ''
     this.messageType = MessageType.INFO
     try {
+      if (this.submitRequestKey) {
+        // User wants to save NOW but saving is also scheduled for later.
+        // Remove the queued request and save the current value no matter what.
+        Api.dequeue(this.submitRequestKey)
+      }
       const resp = await Api.call(this.getApiRequest())
       const responsePayload = resp.payload
       this.isDirty = false

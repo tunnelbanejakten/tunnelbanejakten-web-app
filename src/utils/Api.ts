@@ -93,12 +93,26 @@ export const queue = (request: ApiRequest): string => {
 
     queuedRequests.set(key, request)
 
-    if (timer) {
-        clearTimeout(timer)
-    }
+    clearTimer()
+
     timer = setTimeout(processQueue, DEBOUNCE_TIMEOUT);
 
     return key
+}
+
+const clearTimer = () => {
+    if (timer) {
+        clearTimeout(timer)
+        timer = 0
+    }
+}
+
+export const dequeue = (key: string): void => {
+    queuedRequests.delete(key)
+
+    if (queuedRequests.size === 0) {
+        clearTimer()
+    }
 }
 
 export const addQueueListeners = (listeners: QueueListeners) => {
@@ -126,6 +140,7 @@ export const removeQueueListeners = (listeners: QueueListeners) => {
 }
 
 export const processQueue = async () => {
+    clearTimer()
     const entries = queuedRequests.entries()
     for (const [key, request] of entries) {
         emitter.emit('start', { key } as QueuedRequestEvent)
