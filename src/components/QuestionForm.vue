@@ -8,8 +8,15 @@
         class="question"
         v-if="!isQuestionAvailable"
       >
+        <div
+          v-if="name"
+          class="name"
+        >
+          Uppgift {{ name }}:
+        </div>
+
         <p>
-          Det här är en tidsbegränsad uppgift.
+          Tidsbegränsad uppgift.
         </p>
         <p>
           Ni har {{ timeLimitHumanReadable }} på er från att uppgiften visas.
@@ -53,14 +60,10 @@
             label="Spara"
             :type="saveButtonType"
           />
-          <p
-            v-if="!isAutoSaveEnabled && isDirty"
-          >
+          <p v-if="!isAutoSaveEnabled && isDirty">
             Kom ihåg att spara!
           </p>
-          <p
-            v-if="isAutoSaveEnabled"
-          >
+          <p v-if="isAutoSaveEnabled">
             <span v-if="isDirty && !isSubmitting">
               Sparar snart...
             </span>
@@ -267,6 +270,10 @@ export default class QuestionForm extends Vue {
 
   get saveButtonType() {
     return this.isDirty ? ButtonType.PRIMARY : ButtonType.SECONDARY
+  }
+
+  get name() {
+    return this.loadedQuestion?.config?.name
   }
 
   updateTimeLeft() {
@@ -532,5 +539,13 @@ p.time-status {
 .save-button-wrapper p {
   margin-top: 0px;
   margin-left: 10px;
+}
+
+div.name {
+  float: left;
+  box-sizing: border-box;
+  margin: 0px 0.5em 0px 0px;
+  padding: 0px;
+  font-weight: bold;
 }
 </style>

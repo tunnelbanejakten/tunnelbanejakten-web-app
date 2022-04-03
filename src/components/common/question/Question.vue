@@ -1,6 +1,13 @@
 <template>
   <div>
     <div
+      v-if="name"
+      class="name"
+    >
+      Uppgift {{ name }}:
+    </div>
+
+    <div
       class="text"
       v-html="text"
     />
@@ -63,6 +70,10 @@ export default class Question extends Vue {
     return this.questionConfig?.text
   }
 
+  get name() {
+    return this.questionConfig?.name
+  }
+
   get textHint() {
     return this.questionConfig?.text_hint
   }
@@ -79,5 +90,12 @@ p.text-hint {
 }
 div.text >>> p {
   margin: 0 0 10px 0;
+}
+div.name {
+  float: left;
+  box-sizing: border-box;
+  margin: 0px 0.5em 0px 0px;
+  padding: 0px;
+  font-weight: bold;
 }
 </style>
