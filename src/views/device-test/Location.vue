@@ -41,7 +41,7 @@
         v-if="isPositioningDone"
         class="done-container"
       >
-        <Map :markers="[curPos]" />
+        <Map :markers="mapObjects" />
         <ConfirmationOverlay
           v-if="isAccuratePosition"
           question="Befinner du dig i den gröna cirkeln?"
@@ -66,7 +66,7 @@ import { Component, Vue, Watch } from 'vue-property-decorator'
 import Button from '@/components/common/Button.vue'
 import Fullscreen from '@/components/common/Fullscreen.vue'
 import ConfirmationOverlay from '@/components/common/ConfirmationOverlay.vue'
-import Map, { UserPositionMarker } from '@/components/common/Map.vue'
+import Map, { UserPositionMarker, Marker } from '@/components/common/Map.vue'
 import store, { Status } from '@/store'
 import * as Analytics from '@/utils/Analytics'
 import * as LocationUtils from '@/utils/Location'
@@ -173,8 +173,13 @@ export default class Location extends Vue {
     return this.testStatus === Status.FAILURE
   }
 
-  get curPos() {
-    return { ...this.currentPosition }
+  get mapObjects(): Marker[] {
+    const mapObject = new UserPositionMarker()
+    mapObject.meterAccuracy = this.currentPosition.meterAccuracy
+    mapObject.latitude = this.currentPosition.latitude
+    mapObject.longitude = this.currentPosition.longitude
+    mapObject.showAccuracyCircle = true
+    return [mapObject]
   }
 
   beforeDestroy() {
@@ -186,9 +191,10 @@ export default class Location extends Vue {
   @Watch('geolocationStatus')
   onStatusChange(geolocationStatus: string) {
     if (LOGGED_STATUS.includes(geolocationStatus)) {
+    const approxAccuracy = Math.round(this.currentPosition.meterAccuracy / 10) * 10
       const additionalProps =
         geolocationStatus === GeolocationStatus.LOCATION_REQUEST_SUCCEEDED
-          ? { accuracy: this.currentPosition.meterAccuracy }
+          ? { accuracy: approxAccuracy }
           : {}
       Analytics.logEvent(Analytics.AnalyticsEventType.LOCATION, 'set', 'status', {
         status: geolocationStatus,
@@ -224,7 +230,7 @@ export default class Location extends Vue {
       case GeolocationStatus.BROWSER_API_AVAILABLE:
         this.testStatus = Status.PENDING
         this.geolocationMessage =
-        'Vi jobbar på att ta reda på var du befinner dig.'
+          'Vi jobbar på att ta reda på var du befinner dig.'
         this.geolocationStatus = GeolocationStatus.LOCATION_REQUEST_INITIATED
 
         this.watchId = navigator.geolocation.watchPosition(
