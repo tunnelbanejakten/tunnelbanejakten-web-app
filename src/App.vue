@@ -2,7 +2,13 @@
   <div id="app">
     <DebugPopup v-if="isDebugPopupEnabled" />
     <div
-      v-if="isUpdatePending"
+      v-if="!isAppVisible"
+      id="bootstrapping"
+    >
+      <Loader message="Vi måste bara kolla en grej..." />
+    </div>
+    <div
+      v-if="isAppVisible && isUpdatePending"
       class="new-version-container"
     >
       <div>
@@ -14,7 +20,10 @@
       />
       <div><small>Spara dina svar innan du uppdaterar.</small></div>
     </div>
-    <div class="header-image">
+    <div
+      v-if="isAppVisible"
+      class="header-image"
+    >
       <img
         src="https://new.tunnelbanejakten.se/wp-content/uploads/2020/05/Hemsida-Sidhuvud-1-2020-12-sep-Locked.png"
         width="1080"
@@ -29,7 +38,10 @@
         sizes="(max-width: 1080px) 100vw, 1080px"
       >
     </div>
-    <div id="nav">
+    <div
+      v-if="isAppVisible"
+      id="nav"
+    >
       <router-link
         :to="routerPathPrefix() + '/'"
         v-if="isAnswerPageEnabled"
@@ -61,7 +73,7 @@
         Info
       </router-link>
     </div>
-    <router-view />
+    <router-view v-if="isAppVisible" />
   </div>
 </template>
 
@@ -69,6 +81,7 @@
 import { Component, Mixins } from 'vue-property-decorator'
 import ServiceWorkerMixin from '@/mixins/ServiceWorkerMixin'
 import Button from '@/components/common/Button.vue'
+import Loader from '@/components/common/Loader.vue'
 import DebugPopup from '@/components/DebugPopup.vue'
 import * as Analytics from '@/utils/Analytics'
 import * as AuthUtils from '@/utils/Auth'
@@ -82,15 +95,20 @@ const questionGroupingMapper: Record<string, QuestionGrouping> = {
   by_question: QuestionGrouping.BY_QUESTION
 }
 
+const LOAD_CONFIG_TIMEOUT = 2000
+
 @Component({
   name: 'App',
   components: {
     Button,
+    Loader,
     DebugPopup
   }
 })
 export default class App extends Mixins(ServiceWorkerMixin) {
   private confPollTimer = 0
+  private isAppVisible = false
+  private bootstrapTimemoutTimer = 0
 
   onUpdateApp() {
     this.refreshApplication()
@@ -126,6 +144,13 @@ export default class App extends Mixins(ServiceWorkerMixin) {
 
   async fetchConfiguration() {
     try {
+      this.bootstrapTimemoutTimer = setTimeout(() => {
+        this.isAppVisible = true
+        Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'app_configuration', {
+          message: `It took more than ${LOAD_CONFIG_TIMEOUT} ms to load the config`,
+        })
+      }, LOAD_CONFIG_TIMEOUT);
+
       const confResp = await Api.call({
         endpoint: `${apiHost}/wp-json/tuja/v1/configuration`
       })
@@ -170,6 +195,8 @@ export default class App extends Mixins(ServiceWorkerMixin) {
         })
       }
     }
+    clearTimeout(this.bootstrapTimemoutTimer)
+    this.isAppVisible = true
   }
 
   async pollJob() {
@@ -262,5 +289,13 @@ export default class App extends Mixins(ServiceWorkerMixin) {
 .new-version-container small {
   font-size: 80%;
   opacity: 0.4;
+}
+
+#bootstrapping {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
 }
 </style>
