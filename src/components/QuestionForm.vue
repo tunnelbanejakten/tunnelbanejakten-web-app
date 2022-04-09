@@ -79,7 +79,10 @@
         </p>
       </div>
     </div>
-    <div v-if="!!message">
+    <div
+      v-if="!!message"
+      ref="message"
+    >
       <Message
         :header="message"
         :type="messageType"
@@ -503,6 +506,22 @@ export default class QuestionForm extends Vue {
     this.messageType = MessageType.FAILURE
 
     return error
+  }
+
+  @Watch('message')
+  async onMessageChange(newMessage: string) {
+    if (!!newMessage) {
+      await this.$nextTick();
+      const ref = this.$refs.message
+      if (ref) {
+        const messageContainer: HTMLElement = (ref as HTMLElement)
+        messageContainer.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "nearest"
+        })
+      }
+    }
   }
 }
 </script>
