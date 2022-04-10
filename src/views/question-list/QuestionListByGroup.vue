@@ -42,7 +42,7 @@
 </template>
 
 <script lang="ts">
-import { QuestionDto, QuestionGroupDto } from '@/components/common/question/model'
+import { QuestionDto, ExtendedQuestionGroupDto } from '@/components/common/question/model'
 import Button from '@/components/common/Button.vue'
 import Card from '@/components/layout/Card.vue'
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
@@ -57,20 +57,20 @@ import * as Api from '@/utils/Api'
   }
 })
 export default class QuestionListByGroup extends Vue {
-  @Prop() private questionGroups!: QuestionGroupDto[]
+  @Prop() private questionGroups!: ExtendedQuestionGroupDto[]
 
-  private selectedGroup: QuestionGroupDto | null = null
+  private selectedGroup: ExtendedQuestionGroupDto | null = null
   private isBackPending: boolean = false
 
   get groups() {
     return this.questionGroups || []
   }
 
-  getQuestionGroupLabel(questionGroup: QuestionGroupDto, index: number) {
+  getQuestionGroupLabel(questionGroup: ExtendedQuestionGroupDto, index: number) {
     return questionGroup.name || `Block ${index + 1}`
   }
 
-  onSelect(questionGroup: QuestionGroupDto) {
+  onSelect(questionGroup: ExtendedQuestionGroupDto) {
     this.selectedGroup = questionGroup
   }
 
@@ -81,7 +81,7 @@ export default class QuestionListByGroup extends Vue {
     this.selectedGroup = null
   }
 
-  submittedRatio(questionGroup: QuestionGroupDto) {
+  submittedRatio(questionGroup: ExtendedQuestionGroupDto) {
     const answeredQuestions = questionGroup.questions.filter(question => question.response.current_value !== null).length
     const countQuestions = questionGroup.questions.length
     return Math.round(100 * (countQuestions > 0 ? answeredQuestions / countQuestions : 0))

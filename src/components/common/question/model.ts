@@ -16,7 +16,6 @@ export type TimeLimitDto = {
 export type QuestionDto = {
     id: number;
     type: string;
-    is_read_only: boolean;
     response: QuestionResponseDto,
     optimistic_lock: {
         field_name: string;
@@ -42,6 +41,16 @@ export type QuestionGroupDto = {
     questions: QuestionDto[];
 }
 
+export type FormDto = {
+    id: number
+    is_read_only: boolean
+    name: string
+    question_groups: QuestionGroupDto[]
+}
+
+export type ExtendedQuestionGroupDto = QuestionGroupDto & {
+    isReadOnly: boolean
+}
 
 export type FormUpdateField = {
     key: string

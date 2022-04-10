@@ -41,7 +41,7 @@
 </template>
 
 <script lang="ts">
-import { QuestionDto, QuestionGroupDto } from '@/components/common/question/model'
+import { QuestionDto, ExtendedQuestionGroupDto } from '@/components/common/question/model'
 import Button from '@/components/common/Button.vue'
 import Card from '@/components/layout/Card.vue'
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
@@ -56,7 +56,7 @@ import * as Api from '@/utils/Api'
   }
 })
 export default class QuestionListByQuestion extends Vue {
-  @Prop() private questionGroups!: QuestionGroupDto[]
+  @Prop() private questionGroups!: ExtendedQuestionGroupDto[]
 
   private selectedQuestion: QuestionDto | null = null
   private isBackPending: boolean = false
@@ -74,7 +74,7 @@ export default class QuestionListByQuestion extends Vue {
     }
   }
 
-  getQuestionLabel(questionGroup: QuestionGroupDto, index: number) {
+  getQuestionLabel(questionGroup: ExtendedQuestionGroupDto, index: number) {
     return questionGroup.name || `Fråga ${index + 1}`
   }
 

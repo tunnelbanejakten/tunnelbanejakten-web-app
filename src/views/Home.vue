@@ -38,7 +38,7 @@ import QuestionListByGroup from '@/views/question-list/QuestionListByGroup.vue'
 import QuestionListByQuestion from '@/views/question-list/QuestionListByQuestion.vue'
 import * as Analytics from '@/utils/Analytics'
 import * as Api from '@/utils/Api'
-import { QuestionDto, QuestionGroupDto } from '@/components/common/question/model'
+import { FormDto, QuestionGroupDto, ExtendedQuestionGroupDto } from '@/components/common/question/model'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
 import store, { QuestionGrouping } from '@/store'
 
@@ -56,7 +56,7 @@ const apiHost = process.env.VUE_APP_API_HOST
   }
 })
 export default class Home extends Vue {
-  private questionGroups: QuestionGroupDto[] = []
+  private questionGroups: ExtendedQuestionGroupDto[] = []
   private isLoadingQuestions = false
 
   private message = ''
@@ -71,10 +71,13 @@ export default class Home extends Vue {
       })
       const payload = resp.payload
       this.questionGroups = []
-      payload.forEach((formView: any) => {
-        formView.question_groups.forEach((questionGroupView: any) => {
+      payload.forEach((formView: FormDto) => {
+        formView.question_groups.forEach((questionGroupView: QuestionGroupDto) => {
           if (questionGroupView.questions && questionGroupView.questions.length) {
-            this.questionGroups.push(questionGroupView)
+            this.questionGroups.push({
+              ...questionGroupView,
+              isReadOnly: formView.is_read_only
+            })
           }
         })
       })

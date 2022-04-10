@@ -25,6 +25,7 @@
         <QuestionForm
           :question="question"
           :question-id="question.id"
+          :read-only="questionGroup.isReadOnly"
           @submit-success="onSubmitSuccess"
           @post-view-event-success="onPostViewEventSuccess"
           @question-fetched="onQuestionFetched"
@@ -36,7 +37,7 @@
 
 <script lang="ts">
 import { Component, Vue, Prop } from 'vue-property-decorator'
-import { QuestionDto, QuestionGroupDto } from '@/components/common/question/model'
+import { QuestionDto, ExtendedQuestionGroupDto } from '@/components/common/question/model'
 import Card from '@/components/layout/Card.vue'
 import QuestionForm from '@/components/QuestionForm.vue'
 
@@ -47,7 +48,7 @@ import QuestionForm from '@/components/QuestionForm.vue'
   }
 })
 export default class QuestionGroupForm extends Vue {
-  @Prop() private questionGroup!: QuestionGroupDto
+  @Prop() private questionGroup!: ExtendedQuestionGroupDto
 
   questionKey(question: QuestionDto) {
     return JSON.stringify({

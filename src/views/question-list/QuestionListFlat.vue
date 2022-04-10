@@ -11,7 +11,7 @@
 
 <script lang="ts">
 import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
-import { QuestionDto, QuestionGroupDto } from '@/components/common/question/model'
+import { QuestionDto, ExtendedQuestionGroupDto } from '@/components/common/question/model'
 import QuestionGroupForm from '@/components/QuestionGroupForm.vue'
 
 @Component({
@@ -20,7 +20,7 @@ import QuestionGroupForm from '@/components/QuestionGroupForm.vue'
   }
 })
 export default class QuestionListFlat extends Vue {
-  @Prop() private questionGroups!: QuestionGroupDto[]
+  @Prop() private questionGroups!: ExtendedQuestionGroupDto[]
 
   get groups() {
     return this.questionGroups || []
