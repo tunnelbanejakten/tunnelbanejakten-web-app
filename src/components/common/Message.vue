@@ -91,7 +91,7 @@ export default class Message extends Vue {
 .message-container {
   border: 1px solid #000;
   padding: 15px;
-  margin: 10px 0;
+  margin: 15px 0;
   display: flex;
   border-radius: 10px;
 }

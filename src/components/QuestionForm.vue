@@ -466,9 +466,11 @@ export default class QuestionForm extends Vue {
         message: `Http error when submitting answer to question ${this.questionId}. Reason: ${error.message}.`,
         status: `Http response ${error.status}.`
       })
+      const errorPayload = error?.payload || {}
       const specificErrorMessage: string =
-        error?.payload[`tuja_formshortcode__response__${this.questionId}`]
-        || error?.payload['__']
+        errorPayload[`tuja_formshortcode__response__${this.questionId}`]
+        || errorPayload['__']
+        || errorPayload['error']
         || ''
 
       if (specificErrorMessage) {
