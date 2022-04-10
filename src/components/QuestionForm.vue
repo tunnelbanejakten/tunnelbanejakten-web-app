@@ -64,7 +64,7 @@
             Kom ihåg att spara!
           </p>
           <p v-if="isAutoSaveEnabled">
-            <span v-if="isDirty && !isSubmitting">
+            <span v-if="isAutoSavePending">
               Sparar snart...
             </span>
             <span v-if="isSubmitting">
@@ -231,7 +231,7 @@ export default class QuestionForm extends Vue {
     this.isSubmitting = false
 
     const responsePayload = event.response.payload
-    this.isDirty = false
+    this.submitRequestKey = ''
     this.onSubmitSuccess({ ...responsePayload, id: this.questionId })
   }
 
@@ -239,6 +239,7 @@ export default class QuestionForm extends Vue {
     if (event.key !== this.submitRequestKey) return // The event concerns another question
     this.isSubmitting = false
 
+    this.submitRequestKey = ''
     this.onSubmitFailure(event.error)
   }
 
@@ -338,6 +339,10 @@ export default class QuestionForm extends Vue {
     return `question-form-${this.fullScreen ? 'fullscreen' : 'compact'} question-form-${this.isQuestionLoading ? 'loading' : 'loaded'}`
   }
 
+  get isAutoSavePending(): boolean {
+    return !this.isSubmitting && !!this.submitRequestKey
+  }
+
   async fetchQuestion() {
     try {
       this.isQuestionLoading = true
@@ -429,10 +434,10 @@ export default class QuestionForm extends Vue {
         // User wants to save NOW but saving is also scheduled for later.
         // Remove the queued request and save the current value no matter what.
         Api.dequeue(this.submitRequestKey)
+        this.submitRequestKey = ''
       }
       const resp = await Api.call(this.getApiRequest())
       const responsePayload = resp.payload
-      this.isDirty = false
       this.onSubmitSuccess({ ...responsePayload, id: this.questionId })
     } catch (e) {
       this.onSubmitFailure(e)
@@ -442,6 +447,7 @@ export default class QuestionForm extends Vue {
 
   @Emit('submit-success')
   onSubmitSuccess(updatedQuestionData: QuestionDto) {
+    this.isDirty = false
     this.loadedQuestion = updatedQuestionData
     Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'submitted', 'answer', {
       message: `Submitted answer to question ${this.questionId}.`
