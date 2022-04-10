@@ -8,12 +8,10 @@
         class="question"
         v-if="!isQuestionAvailable"
       >
-        <div
-          v-if="name"
-          class="name"
-        >
-          Uppgift {{ name }}:
-        </div>
+        <QuestionName
+          :name="name"
+          :scoreMax="scoreMax"
+        />
 
         <p>
           Tidsbegränsad uppgift.
@@ -104,6 +102,7 @@ import { Component, Vue, Emit, Prop, Watch } from 'vue-property-decorator'
 import Question from '@/components/common/question/Question.vue'
 import Message, { Type as MessageType } from '@/components/common/Message.vue'
 import Loader from '@/components/common/Loader.vue'
+import QuestionName from '@/components/common/QuestionName.vue'
 import Button, { Type as ButtonType } from '@/components/common/Button.vue'
 import { FormUpdate, FormUpdateField, QuestionDto } from './common/question/model'
 import * as Analytics from '@/utils/Analytics'
@@ -118,6 +117,7 @@ const apiHost = process.env.VUE_APP_API_HOST
     Button,
     Question,
     Message,
+    QuestionName,
     Loader
   }
 })
@@ -278,6 +278,10 @@ export default class QuestionForm extends Vue {
 
   get name() {
     return this.loadedQuestion?.config?.name
+  }
+
+  get scoreMax(): number {
+    return this.loadedQuestion?.config?.score_max || 0
   }
 
   updateTimeLeft() {
@@ -566,13 +570,5 @@ p.time-status {
 .save-button-wrapper p {
   margin-top: 0px;
   margin-left: 10px;
-}
-
-div.name {
-  float: left;
-  box-sizing: border-box;
-  margin: 0px 0.5em 0px 0px;
-  padding: 0px;
-  font-weight: bold;
 }
 </style>

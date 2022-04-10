@@ -1,11 +1,9 @@
 <template>
   <div>
-    <div
-      v-if="name"
-      class="name"
-    >
-      Uppgift {{ name }}:
-    </div>
+    <QuestionName
+      :name="name"
+      :scoreMax="scoreMax"
+    />
 
     <div
       class="text"
@@ -35,6 +33,7 @@ import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import { FormUpdate, QuestionResponseDto } from './model'
 import Button from '@/components/common/Button.vue'
 import Loader from '@/components/common/Loader.vue'
+import QuestionName from '@/components/common/QuestionName.vue'
 import OptionsQuestion from '@/components/common/question/OptionsQuestion.vue'
 import TextQuestion from '@/components/common/question/TextQuestion.vue'
 import ImagesQuestion from '@/components/common/question/ImagesQuestion.vue'
@@ -47,6 +46,7 @@ import NumberQuestion from '@/components/common/question/NumberQuestion.vue'
     TextQuestion,
     ImagesQuestion,
     NumberQuestion,
+    QuestionName,
     Loader
   }
 })
@@ -77,6 +77,10 @@ export default class Question extends Vue {
   get textHint() {
     return this.questionConfig?.text_hint
   }
+
+  get scoreMax(): number {
+    return this.questionConfig?.score_max || 0
+  }
 }
 </script>
 
@@ -90,12 +94,5 @@ p.text-hint {
 }
 div.text >>> p {
   margin: 0 0 10px 0;
-}
-div.name {
-  float: left;
-  box-sizing: border-box;
-  margin: 0px 0.5em 0px 0px;
-  padding: 0px;
-  font-weight: bold;
 }
 </style>
