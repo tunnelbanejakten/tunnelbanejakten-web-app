@@ -20,8 +20,9 @@
         />
         <div v-if="!isLoading && !groupKey">
           <Message
-            header="Oj då"
-            message="Kunde inte hitta information om ditt lag."
+            type="failure"
+            header="Inget lag"
+            message="Vi kunde inte hitta information om ditt lag. Du är nog inte inloggad."
           />
         </div>
       </Card>

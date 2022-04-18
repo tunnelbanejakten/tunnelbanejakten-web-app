@@ -19,6 +19,16 @@
           v-model="autoSave"
         >Spara automatiskt</label>
     </div>
+    <div
+      class="buttons"
+      v-if="isLoggedIn"
+    >
+      <Button
+        @click="onLogOut"
+        label="Logga ut"
+        type="secondary"
+      />
+    </div>
     <p v-if="groupKey">Om Kundtjänst frågar så är erat grupp-id <code @click="toggleFullGroupIdShown">{{ groupId }}</code>.</p>
   </div>
 </template>
@@ -26,10 +36,13 @@
 <script lang="ts">
 import { Component, Vue, Prop, Watch } from 'vue-property-decorator'
 import * as Analytics from '@/utils/Analytics'
+import Button from '@/components/common/Button.vue'
 import store from '@/store'
+import * as AuthUtils from '@/utils/Auth'
 
 @Component({
   components: {
+    Button
   }
 })
 export default class Settings extends Vue {
@@ -44,11 +57,7 @@ export default class Settings extends Vue {
   get groupId() {
     const groupKey = this.groupKey
     const deviceId = Analytics.getDeviceId() ?? ''
-    return this.isFullGroupIdShown ? `${groupKey}-${deviceId}` : `${groupKey.substring(0,5).toUpperCase()}-${deviceId.substring(0,5).toUpperCase()}`
-  }
-
-  get deviceId() {
-    return 
+    return this.isFullGroupIdShown ? `${groupKey}-${deviceId}` : `${groupKey.substring(0, 5).toUpperCase()}-${deviceId.substring(0, 5).toUpperCase()}`
   }
 
   get debugConsole() {
@@ -71,8 +80,19 @@ export default class Settings extends Vue {
     store.setDebugConsole(value)
   }
 
+  get isLoggedIn(): boolean {
+    return !!AuthUtils.getTokenCookie()
+  }
+
   toggleFullGroupIdShown() {
     this.isFullGroupIdShown = !this.isFullGroupIdShown
+  }
+
+  onLogOut() {
+    if (confirm('Vill du logga ut?')) {
+      AuthUtils.unsetTokenCookie()
+      this.$router.push({ path: '/' })
+    }
   }
 }
 </script>
@@ -83,5 +103,9 @@ div.option label {
   width: 100%;
   line-height: 36px;
   padding: 0 5px;
+}
+
+div.buttons {
+  margin: 10px 0 0 0;
 }
 </style>
