@@ -29,7 +29,8 @@
         type="secondary"
       />
     </div>
-    <p v-if="groupKey">Om Kundtjänst frågar så är erat grupp-id <code @click="toggleFullGroupIdShown">{{ groupId }}</code>.</p>
+    <p>App-version: <code>{{ appVersion }}</code></p>
+    <p v-if="groupKey">Felsöknings-id: <code @click="toggleFullGroupIdShown">{{ groupId }}</code></p>
   </div>
 </template>
 
@@ -39,6 +40,8 @@ import * as Analytics from '@/utils/Analytics'
 import Button from '@/components/common/Button.vue'
 import store from '@/store'
 import * as AuthUtils from '@/utils/Auth'
+
+const APP_VERSION = process.env.VUE_APP_VERSION
 
 @Component({
   components: {
@@ -82,6 +85,10 @@ export default class Settings extends Vue {
 
   get isLoggedIn(): boolean {
     return !!AuthUtils.getTokenCookie()
+  }
+
+  get appVersion() : string {
+    return APP_VERSION
   }
 
   toggleFullGroupIdShown() {
