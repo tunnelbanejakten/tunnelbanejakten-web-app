@@ -84,7 +84,7 @@ export default class Settings extends Vue {
   }
 
   get isLoggedIn(): boolean {
-    return !!AuthUtils.getTokenCookie()
+    return AuthUtils.isLoggedIn()
   }
 
   get appVersion() : string {

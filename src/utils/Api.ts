@@ -50,6 +50,9 @@ export class ApiError extends Error {
 }
 
 export class NotSignedInError extends Error {
+    constructor() {
+        super("User not signed in")
+    }
 }
 
 const emitter = mitt<Events>()
