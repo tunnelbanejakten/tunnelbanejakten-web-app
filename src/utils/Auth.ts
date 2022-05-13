@@ -14,6 +14,10 @@ export const getTokenCookie = (): string | null => {
   return LocalSettings.get(SETTING_NAME)
 }
 
+export const isLoggedIn = (): boolean => {
+  return !!getTokenCookie()
+}
+
 // Credits: https://stackoverflow.com/a/38552302
 function parseJwt(token: string) {
   var base64Url = token.split('.')[1];
