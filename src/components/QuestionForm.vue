@@ -1,7 +1,7 @@
 <template>
   <div :class="wrapperClasses">
     <div v-if="isQuestionLoading">
-      <Loader message="Läser in uppgift" />
+      <Loader />
     </div>
     <div v-if="!isQuestionLoading && !!loadedQuestion">
       <div

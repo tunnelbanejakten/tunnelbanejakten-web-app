@@ -4,7 +4,7 @@
       class="no-questions"
       v-if="isLoadingQuestions"
     >
-      <Loader message="Hämtar frågor" />
+      <Loader />
     </div>
     <div v-if="!isLoadingQuestions">
       <div class="map-link-wrapper">

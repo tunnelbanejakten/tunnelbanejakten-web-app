@@ -5,7 +5,7 @@
       v-if="!isAppVisible"
       id="bootstrapping"
     >
-      <Loader message="Vi måste bara kolla en grej..." />
+      <Loader />
     </div>
     <div
       v-if="isAppVisible && isUpdatePending"
