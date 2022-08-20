@@ -499,6 +499,7 @@ export default class Map extends Vue {
                     colour: stationTicket.colour,
                     word: stationTicket.word,
                     stationName: stationTicket.station.name,
+                    markerName: String(name),
                     // Technically, the isUsed flag is not the same as the isDone flag since the isDone flag ALSO captures
                     // if points has been awarded without the team actually having a ticket. This shouldn't happen, but it might.
                     isUsed: stationTicket.is_used

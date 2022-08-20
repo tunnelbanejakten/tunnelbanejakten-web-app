@@ -7,7 +7,7 @@
       class="ticket"
       :style="{ 'background-color': ticket.colour }"
     >
-      <p class="station-name">Biljett till kontroll <strong>{{ ticket.stationName }}</strong>:</p>
+      <p class="station-name">Biljett till kontroll <strong>{{ ticket.stationName }}</strong><span v-if="ticket.markerName"> vid <strong>{{ ticket.markerName }}</strong></span>:</p>
       <p class="ticket-word-explanation">När ni kommer till kontrollen ska ni visa den här biljetten på er mobil eller säga detta lösen:</p>
       <p
         class="ticket-word"
@@ -33,6 +33,7 @@ export type TicketData = {
   key: string
   colour: string
   stationName: string
+  markerName?: string
   word: string
   isUsed: boolean
 }

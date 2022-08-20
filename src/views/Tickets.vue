@@ -90,14 +90,16 @@ export default class Tickets extends Vue {
   private redeemErrorMessage: string = ''
   private password: string = ''
   private tickets: TicketData[] = []
+  private markersPayload: any[] = []
   private redeemSuccessMessage: string = ''
 
-  mapTicketsResponse(ticketsPayload: any[]): TicketData[] {
+  mapTicketsResponse(ticketsPayload: any[], markersPayload: any[]): TicketData[] {
     return ticketsPayload.map((ticket: any) => ({
       key: ticket.station.random_id,
       colour: ticket.colour,
       word: ticket.word,
       stationName: ticket.station.name,
+      markerName: markersPayload.find((marker: any) => marker.link_station_id === ticket.station.id)?.name,
       isUsed: ticket.is_used
     }) as TicketData)
   }
@@ -105,11 +107,22 @@ export default class Tickets extends Vue {
   async mounted() {
     this.isLoading = true
     try {
-      const ticketsResp = await Api.call({
-        endpoint: `${apiHost}/wp-json/tuja/v1/tickets`
-      })
-      const ticketsPayload = await ticketsResp.payload
-      this.tickets = this.mapTicketsResponse(ticketsPayload)
+      const responses = await Promise.all([
+        Api.call({
+          endpoint: `${apiHost}/wp-json/tuja/v1/tickets`
+        }),
+        Api.call({
+          endpoint: `${apiHost}/wp-json/tuja/v1/map/markers`
+        })
+      ])
+      const [ticketsResp, markersResp] = responses
+      if (markersResp.status === 204) {
+        this.listError = 'Ert lag har inte blivit tilldelad en karta, och ni måste ha en karta för att kunna se era biljetter. Kontakta kundtjänst så löser de detta.'
+        this.markersPayload = []
+      } else {
+        this.markersPayload = markersResp.payload
+      }
+      this.tickets = this.mapTicketsResponse(ticketsResp.payload, this.markersPayload)
     } catch (e: any) {
     }
     this.isLoading = false
@@ -136,7 +149,7 @@ export default class Tickets extends Vue {
         this.redeemErrorTitle = 'Inga nya biljetter'
         this.redeemErrorMessage = 'Detta bör betyda att ni redan fått alla biljetter som går att få. Kontakta kundtjänst om något verkar galet.'
       }
-      this.tickets = this.mapTicketsResponse(respBody.all_tickets)
+      this.tickets = this.mapTicketsResponse(respBody.all_tickets, this.markersPayload)
       this.password = ''
     } catch (e: any) {
       if (e instanceof Api.ApiError) {
