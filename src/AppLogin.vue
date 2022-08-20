@@ -1,8 +1,10 @@
 <template>
-  <Page title="Logga in">
-    <Card :verticalMargin="false">
+  <div id="app-login">
+    <div v-if="isSubmitting">
+      <Loader message="Loggar in..." />
+    </div>
+    <Card v-if="!isSubmitting">
       <h2>Inloggning</h2>
-      <p v-if="authStatus">{{ authStatus }}</p>
       <div v-if="!isGroupKeySet">
         <p>Be någon som är inloggad att gå till Info-sidan. Koden visas där.</p>
         <div class="input-wrapper">
@@ -19,16 +21,22 @@
           label="Logga in"
           type="primary"
         />
+        <Message
+          v-if="errorMessage"
+          :message="errorMessage"
+          type="failure"
+        />
       </div>
     </Card>
-  </Page>
+  </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
-import Page from '@/components/layout/Page.vue'
-import Card from '@/components/layout/Card.vue'
 import Button from '@/components/common/Button.vue'
+import Loader from '@/components/common/Loader.vue'
+import Message from '@/components/common/Message.vue'
+import Card from '@/components/layout/Card.vue'
 import * as AuthUtils from '@/utils/Auth'
 import * as Api from '@/utils/Api'
 import * as Analytics from '@/utils/Analytics'
@@ -43,30 +51,21 @@ enum GetTokenStatus {
 }
 
 @Component({
+  name: 'AppLogin',
   components: {
-    Page,
+    Button,
+    Loader,
     Card,
-    Button
+    Message,
   }
 })
-export default class Auth extends Vue {
-  private tokenStatus: GetTokenStatus = GetTokenStatus.NOT_STARTED;
+export default class AppLogin extends Vue {
   private password: string = ''
-  private isSubmitting: boolean = false
+  private tokenStatus: GetTokenStatus = GetTokenStatus.NOT_STARTED;
+  private errorMessage: string = ''
 
-  get authStatus(): string {
-    switch (this.tokenStatus) {
-      case GetTokenStatus.NOT_STARTED:
-        return ''
-      case GetTokenStatus.PENDING:
-        return 'Loggar in...'
-      case GetTokenStatus.SUCCESS:
-        return 'Inloggningen gick bra.'
-      case GetTokenStatus.FAILURE:
-        return 'Något gick fel.'
-      default:
-        return 'UNKNOWN'
-    }
+  get isSubmitting(): boolean {
+    return this.tokenStatus === GetTokenStatus.PENDING
   }
 
   get isGroupKeySet() {
@@ -75,10 +74,6 @@ export default class Auth extends Vue {
 
   async onSubmitPassword() {
     await this.logIn(this.password)
-  }
-
-  get nextRoute(): string {
-    return String(this.$route.query.newPath)
   }
 
   setToken(token: string | null) {
@@ -90,9 +85,9 @@ export default class Auth extends Vue {
   }
 
   async logIn(id: string) {
-    this.isSubmitting = true
+    this.errorMessage = ''
+    this.tokenStatus = GetTokenStatus.PENDING
     try {
-      this.tokenStatus = GetTokenStatus.PENDING
       const resp = await Api.call({
         endpoint: `${apiHost}/wp-json/tuja/v1/tokens`,
         method: 'POST',
@@ -101,7 +96,6 @@ export default class Auth extends Vue {
       })
       const payload = resp.payload
       this.setToken(payload.token)
-      this.tokenStatus = GetTokenStatus.SUCCESS
 
       const profileResp = await Api.call({
         endpoint: `${apiHost}/wp-json/tuja/v1/profile`
@@ -112,27 +106,36 @@ export default class Auth extends Vue {
         group_name: profilePayload.name
       })
 
-      if (this.nextRoute) {
-        await this.$router.push({ path: this.nextRoute })
-      }
-    } catch (e) {
+      this.tokenStatus = GetTokenStatus.SUCCESS
+      this.$emit('success')
+    } catch (e: any) {
       if (e instanceof Api.ApiError) {
         this.setToken(null)
       }
       this.tokenStatus = GetTokenStatus.FAILURE
+      this.errorMessage = 'Något gick fel. ' + e.message
+      this.$emit('failure')
     }
-    this.isSubmitting = false
   }
 
-  mounted() {
-    if (this.$route.query.id) {
-      this.logIn(String(this.$route.query.id))
+  async mounted() {
+    const authId = String(this.$route.params.authId || '')
+    if (authId) {
+      await this.logIn(authId)
     }
   }
 }
 </script>
 
 <style scoped>
+#app-login {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
 input {
   box-sizing: border-box;
   width: 100%;
