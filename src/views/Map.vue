@@ -295,13 +295,17 @@ export default class Map extends Vue {
     })
   }
 
-  toAccuracyLevel(value: string) {
-    return {
-      'HIGHEST': LocationUtils.AccuracyLevel.HIGHEST,
-      'HIGH': LocationUtils.AccuracyLevel.HIGH,
-      'MEDIUM': LocationUtils.AccuracyLevel.MEDIUM,
-      'LOW': LocationUtils.AccuracyLevel.LOW,
-    }[value]
+  toAccuracyLevel(value: string): LocationUtils.AccuracyLevel {
+    if (value === 'HIGHEST') {
+      return LocationUtils.AccuracyLevel.HIGHEST
+    } else if (value === 'HIGH') {
+      return LocationUtils.AccuracyLevel.HIGH
+    } else if (value === 'MEDIUM') {
+      return LocationUtils.AccuracyLevel.MEDIUM
+    } else if (value === 'LOW') {
+      return LocationUtils.AccuracyLevel.LOW
+    }
+    return LocationUtils.AccuracyLevel.LOW // Fallback
   }
 
   get isCheckpointSelectorShown() {
