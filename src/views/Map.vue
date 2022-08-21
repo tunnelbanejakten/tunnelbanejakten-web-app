@@ -255,7 +255,7 @@ export default class Map extends Vue {
   private positioningState: PositioningState = PositioningState.NOT_REQUESTED;
   private positioningStateMessage: string = 'Startar GPS';
 
-  private watchId = 0;
+  private geolocationWatchId = 0;
   private checkpointView: CheckpointView = CheckpointView.NONE
   private lastApproxAccuracy = -1;
   private isLowAccuracyAllowed = false;
@@ -263,6 +263,7 @@ export default class Map extends Vue {
   private staleUserPositionTimeoutId = 0;
 
   private markers: Marker[] = [];
+  private markersPollingTimeoutId = 0
   private nearbyCheckpointMarkers: Marker[] = [];
   private currentPosition: UserPositionMarker = {
     longitude: 0,
@@ -585,7 +586,6 @@ export default class Map extends Vue {
             }
           )
           this.updateMarkersState(MarkersState.LOADED, 'Vi har hämtat kartmarkörerna.')
-          return true
         } else {
           this.updateMarkersState(MarkersState.FAILED,
             'Det finns inga kontroller att visa på kartan.'
@@ -605,7 +605,6 @@ export default class Map extends Vue {
         this.updateMarkersState(MarkersState.FAILED, 'Kunde inte läsa in kontroller.')
       }
     }
-    return false
   }
 
   logAccuracy(accuracy: number) {
@@ -672,12 +671,12 @@ export default class Map extends Vue {
         PositioningState.LOADING,
         'Försöker hittar dig på kartan.'
       )
-      if (this.watchId) {
-        navigator.geolocation.clearWatch(this.watchId)
+      if (this.geolocationWatchId) {
+        navigator.geolocation.clearWatch(this.geolocationWatchId)
       }
       this.stopLowAccuracyTimer()
       this.stopStaleUserPositionTimer()
-      this.watchId = navigator.geolocation.watchPosition(
+      this.geolocationWatchId = navigator.geolocation.watchPosition(
         position => {
           const {
             coords: { accuracy, latitude, longitude }
@@ -734,7 +733,7 @@ export default class Map extends Vue {
           }
 
           const positioningStatusMessage = isPositionAccurate
-            ? 'Vi har hittat dig på kartan.'
+            ? 'Bra GPS-mottagning.'
             : (this.isLowAccuracyAllowed
               ? 'Din GPS är inte tillräckligt exakt just nu. Kontakta kundtjänst för att få hjälp.'
               : 'Vi är osäkra på din position. Stå still ett litet tag så löser det sig säkert.')
@@ -787,11 +786,22 @@ export default class Map extends Vue {
     }
   }
 
+  async pollMarkers() {
+    await this.loadMarkers()
+
+    const pollInterval = (store.state.configuration.updates.configPollInterval || 60)
+
+    console.log(`Will fetch markers in ${pollInterval} seconds.`)
+    this.markersPollingTimeoutId = setTimeout(this.pollMarkers, pollInterval * 1000)
+  }
+
+  async initMarkersPolling() {
+    await this.pollMarkers()
+  }
+
   async mounted() {
-    const markersLoaded = await this.loadMarkers()
-    if (markersLoaded) {
-      this.initLocationListener()
-    }
+    await this.initMarkersPolling()
+    this.initLocationListener()
   }
 
   stopLowAccuracyTimer() {
@@ -802,15 +812,23 @@ export default class Map extends Vue {
   }
 
   stopLocationListener() {
-    if (this.watchId) {
-      navigator.geolocation.clearWatch(this.watchId)
+    if (this.geolocationWatchId) {
+      navigator.geolocation.clearWatch(this.geolocationWatchId)
     }
     this.stopLowAccuracyTimer()
     this.stopStaleUserPositionTimer()
   }
 
+  stopMarkersPolling() {
+    if (this.markersPollingTimeoutId) {
+      clearTimeout(this.markersPollingTimeoutId)
+      this.markersPollingTimeoutId = 0
+    }
+  }
+
   beforeDestroy() {
     this.stopLocationListener()
+    this.stopMarkersPolling()
   }
 }
 </script>
