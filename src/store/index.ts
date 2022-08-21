@@ -32,6 +32,7 @@ export type Configuration = {
     showUnavailableStations: boolean
     highAccuracyThreshold: number
     highAccuracyTimeout: number
+    stalePositionTimeout: number
   },
   uploads: {
     maxFileSize: number
@@ -86,7 +87,8 @@ const state: State = {
     positioning: {
       showUnavailableStations: false,
       highAccuracyThreshold: 100,
-      highAccuracyTimeout: 30
+      highAccuracyTimeout: 30,
+      stalePositionTimeout: 120
     },
     uploads: {
       maxFileSize: 5

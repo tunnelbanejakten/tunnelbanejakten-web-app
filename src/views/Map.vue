@@ -10,7 +10,7 @@
       />
       <div class="overlay-container">
         <div
-          v-if="activeMarkers.length"
+          v-if="nearbyCheckpointMarkers.length"
           class="task-status"
         >
           <div class="task-message">
@@ -73,7 +73,7 @@
         @close="onCloseCheckpointSelector"
       >
         <CheckpointSelector
-          :markers="activeMarkers"
+          :markers="nearbyCheckpointMarkers"
           @selected="onSelectCheckpoint"
         />
       </Fullscreen>
@@ -260,9 +260,10 @@ export default class Map extends Vue {
   private lastApproxAccuracy = -1;
   private isLowAccuracyAllowed = false;
   private lowAccuracyTimeoutId = 0;
+  private staleUserPositionTimeoutId = 0;
 
   private markers: Marker[] = [];
-  private activeMarkers: Marker[] = [];
+  private nearbyCheckpointMarkers: Marker[] = [];
   private currentPosition: UserPositionMarker = {
     longitude: 0,
     latitude: 0,
@@ -293,6 +294,10 @@ export default class Map extends Vue {
       state: PositioningState[this.positioningState],
       message: this.positioningStateMessage
     })
+
+    if (newState === PositioningState.FAILED) {
+      this.nearbyCheckpointMarkers = []
+    }
   }
 
   toAccuracyLevel(value: string): LocationUtils.AccuracyLevel {
@@ -336,10 +341,10 @@ export default class Map extends Vue {
   }
 
   get atLocationText(): string {
-    if (this.activeMarkers.length === 1) {
+    if (this.nearbyCheckpointMarkers.length === 1) {
       return 'Du befinner dig vid en kontroll.'
     } else {
-      return `Du befinner dig vid ${this.activeMarkers.length} kontroller.`
+      return `Du befinner dig vid ${this.nearbyCheckpointMarkers.length} kontroller.`
     }
   }
 
@@ -347,11 +352,11 @@ export default class Map extends Vue {
     if (marker instanceof UserPositionMarker) {
       // console.log('User clicked their own position marker.')
     } else if (marker instanceof CheckpointMarker) {
-      const isActiveMarker = this.activeMarkers
+      const isNearbyCheckpoint = this.nearbyCheckpointMarkers
         .filter((activeMarker: Marker) => activeMarker instanceof CheckpointMarker)
         .some((activeMarker: Marker) => (activeMarker as CheckpointMarker).key === marker.key)
       if (!marker.submitted) {
-        if (isActiveMarker) {
+        if (isNearbyCheckpoint) {
           // console.log('User clicked a checkpoint which they have NOT submitted an answer to and which they are currently close to. SHOW CHECKPOINT.')
           this.showCheckpoint(marker, false)
         } else {
@@ -363,7 +368,7 @@ export default class Map extends Vue {
           }
         }
       } else {
-        if (isActiveMarker) {
+        if (isNearbyCheckpoint) {
           // console.log('User clicked a checkpoint which they HAVE submitted an answer to and which they are currently close to. SHOW CHECKPOINT.')
           this.showCheckpoint(marker, false)
         } else {
@@ -433,14 +438,14 @@ export default class Map extends Vue {
     return isAccuracyEnough
   }
 
-  updateActiveMarkers(markers: Marker[], position: Marker) {
+  updateNearbyCheckpointMarkers(markers: Marker[], position: Marker) {
     const isPositionAccurate = this.isAccurateEnough(position.meterAccuracy)
     if (!isPositionAccurate) {
-      this.activeMarkers = []
+      this.nearbyCheckpointMarkers = []
       return
     }
-    const isMarkerActiveBefore = this.activeMarkers.length > 0
-    this.activeMarkers = markers
+    const wasCloseToCheckpoint = this.nearbyCheckpointMarkers.length > 0
+    this.nearbyCheckpointMarkers = markers
       .filter((marker: Marker) => !(marker instanceof StartPositionMarker))
       .filter(removeUnavailableStationsFilter)
       .filter((marker: Marker) => {
@@ -458,27 +463,27 @@ export default class Map extends Vue {
         const isWithinMarker = distance - marginOfError <= 0
         return isWithinMarker
       })
-    const isMarkerActiveAfter = this.activeMarkers.length > 0
-    if (!isMarkerActiveBefore && isMarkerActiveAfter) {
+    const isCloseToCheckpoint = this.nearbyCheckpointMarkers.length > 0
+    if (!wasCloseToCheckpoint && isCloseToCheckpoint) {
       // User has walked into a "checkpoint region" (as opposed to walking out of it or walking around inside of it)
       Analytics.logEvent(
         Analytics.AnalyticsEventType.MAP,
         'arrive',
         'checkpoint',
         {
-          message: this.activeMarkers
+          message: this.nearbyCheckpointMarkers
             .map((marker: Marker) => marker.label)
             .join(', ')
         }
       )
-    } else if (isMarkerActiveBefore && !isMarkerActiveAfter) {
+    } else if (wasCloseToCheckpoint && !isCloseToCheckpoint) {
       // User has walked out of a "checkpoint region" (as opposed to walking into it or walking around inside of it).
     }
   }
 
   openCheckpointView() {
-    if (this.activeMarkers.length === 1) {
-      this.onSelectCheckpoint(this.activeMarkers[0])
+    if (this.nearbyCheckpointMarkers.length === 1) {
+      this.onSelectCheckpoint(this.nearbyCheckpointMarkers[0])
     } else {
       this.checkpointView = CheckpointView.SELECT
     }
@@ -486,12 +491,12 @@ export default class Map extends Vue {
 
   @Watch('curPos')
   onPositionChange(newPosition: Marker) {
-    this.updateActiveMarkers(this.markers, newPosition)
+    this.updateNearbyCheckpointMarkers(this.markers, newPosition)
   }
 
   @Watch('markers')
   onMarkersChange(newMarkers: Marker[]) {
-    this.updateActiveMarkers(newMarkers, this.currentPosition)
+    this.updateNearbyCheckpointMarkers(newMarkers, this.currentPosition)
   }
 
   get mapObjects(): Marker[] {
@@ -635,6 +640,30 @@ export default class Map extends Vue {
     if (this.userPositions.length > userPositionsHistoryLimit) {
       this.userPositions.splice(0, this.userPositions.length - userPositionsHistoryLimit)
     }
+
+    this.restartStaleUserPositionTimeout()
+  }
+
+  get stalePositionTimeoutMilliseconds() {
+    const configuredTimeout = store.state.configuration.positioning.stalePositionTimeout
+    const defaultTimeout = parseInt(process.env.VUE_APP_STALE_POSITION_TIMEOUT || '120', 10)
+    const stalePositionTimeout = configuredTimeout || defaultTimeout
+
+    return stalePositionTimeout * 1000
+  }
+
+  restartStaleUserPositionTimeout() {
+    this.stopStaleUserPositionTimer()
+
+    this.staleUserPositionTimeoutId = setTimeout(() => {
+      this.updatePositioningState(PositioningState.FAILED, 'Vi är osäkra på var du befinner dig. Din GPS har inte gett oss din position på ett tag.')
+    }, this.stalePositionTimeoutMilliseconds)
+  }
+
+  stopStaleUserPositionTimer() {
+    if (this.staleUserPositionTimeoutId) {
+      clearInterval(this.staleUserPositionTimeoutId)
+    }
   }
 
   initLocationListener() {
@@ -647,19 +676,24 @@ export default class Map extends Vue {
         navigator.geolocation.clearWatch(this.watchId)
       }
       this.stopLowAccuracyTimer()
+      this.stopStaleUserPositionTimer()
       this.watchId = navigator.geolocation.watchPosition(
         position => {
           const {
             coords: { accuracy, latitude, longitude }
           } = position
-
           if (this.userPositions.length) {
             const lastLoggedPosition = this.userPositions[this.userPositions.length - 1]
-            if (lastLoggedPosition.meterAccuracy === accuracy && lastLoggedPosition.latitude === latitude && lastLoggedPosition.longitude === longitude) {
+            const lastPositionAge = Date.now() - lastLoggedPosition.timestamp
+            const isLastReportedPositionStale = lastPositionAge > this.stalePositionTimeoutMilliseconds
+            if (!isLastReportedPositionStale
+              && lastLoggedPosition.meterAccuracy === accuracy
+              && lastLoggedPosition.latitude === latitude
+              && lastLoggedPosition.longitude === longitude) {
               console.log('🙈 Ignoring duplicate measurement. Maybe this only happens during debugging?')
               return
             }
-            const isShortlyAfterLastReportedPosition = (Date.now() - lastLoggedPosition.timestamp) < IGNORE_LOCATION_UPDATE_TIMEFRAME_MS
+            const isShortlyAfterLastReportedPosition = lastPositionAge < IGNORE_LOCATION_UPDATE_TIMEFRAME_MS
             const distanceTravelled = coordinateDistance(lastLoggedPosition, { longitude, latitude } as Coord)
             const isSmallDistanceTravelled = distanceTravelled < IGNORE_LOCATION_UPDATE_DISTANCE_METERS
             if (isShortlyAfterLastReportedPosition && isSmallDistanceTravelled) {
@@ -690,7 +724,7 @@ export default class Map extends Vue {
 
                 // Check right away (instead of waiting for next coordinate update from browser) if the
                 // lowered accuracy requirement means that checkpoints are now close enough to be shown.
-                this.updateActiveMarkers(this.markers, this.currentPosition)
+                this.updateNearbyCheckpointMarkers(this.markers, this.currentPosition)
               }, accuracyTimeout * 1000)
             }
           }
@@ -772,6 +806,7 @@ export default class Map extends Vue {
       navigator.geolocation.clearWatch(this.watchId)
     }
     this.stopLowAccuracyTimer()
+    this.stopStaleUserPositionTimer()
   }
 
   beforeDestroy() {

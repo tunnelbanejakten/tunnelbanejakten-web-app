@@ -20,7 +20,8 @@ const questionGroupingMapper: Record<string, QuestionGrouping> = {
             positioning: {
                 showUnavailableStations: confPayload.app.positioning.show_unavailable_stations,
                 highAccuracyThreshold: confPayload.app.positioning.high_accuracy_threshold,
-                highAccuracyTimeout: confPayload.app.positioning.high_accuracy_timeout
+                highAccuracyTimeout: confPayload.app.positioning.high_accuracy_timeout,
+                stalePositionTimeout: confPayload.app.positioning.stale_position_timeout
             },
             uploads: {
                 maxFileSize: confPayload.app.uploads.max_file_size
