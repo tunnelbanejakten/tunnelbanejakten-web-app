@@ -330,7 +330,7 @@ export default class Map extends Vue {
     return this.checkpointView === CheckpointView.SHOW_PREVIEW
   }
 
-  get curPos() {
+  get curPos(): UserPositionMarker | null {
     return this.userPositions.length ? { ...this.userPositions[this.userPositions.length - 1] } : null
   }
 
@@ -439,7 +439,16 @@ export default class Map extends Vue {
     return isAccuracyEnough
   }
 
-  updateNearbyCheckpointMarkers(markers: Marker[], position: Marker) {
+  isPositionStale(position: UserPositionMarker): boolean {
+    const positionAge = Date.now() - position.timestamp
+    return positionAge > this.stalePositionTimeoutMilliseconds
+  }
+
+  updateNearbyCheckpointMarkers(markers: Marker[], position: UserPositionMarker) {
+    if (this.isPositionStale(position)) {
+      this.nearbyCheckpointMarkers = []
+      return
+    }
     const isPositionAccurate = this.isAccurateEnough(position.meterAccuracy)
     if (!isPositionAccurate) {
       this.nearbyCheckpointMarkers = []
@@ -491,8 +500,10 @@ export default class Map extends Vue {
   }
 
   @Watch('curPos')
-  onPositionChange(newPosition: Marker) {
-    this.updateNearbyCheckpointMarkers(this.markers, newPosition)
+  onPositionChange(newPosition: UserPositionMarker | null) {
+    if (newPosition) {
+      this.updateNearbyCheckpointMarkers(this.markers, newPosition)
+    }
   }
 
   @Watch('markers')
@@ -683,15 +694,14 @@ export default class Map extends Vue {
           } = position
           if (this.userPositions.length) {
             const lastLoggedPosition = this.userPositions[this.userPositions.length - 1]
-            const lastPositionAge = Date.now() - lastLoggedPosition.timestamp
-            const isLastReportedPositionStale = lastPositionAge > this.stalePositionTimeoutMilliseconds
-            if (!isLastReportedPositionStale
+            if (!this.isPositionStale(lastLoggedPosition)
               && lastLoggedPosition.meterAccuracy === accuracy
               && lastLoggedPosition.latitude === latitude
               && lastLoggedPosition.longitude === longitude) {
               console.log('🙈 Ignoring duplicate measurement. Maybe this only happens during debugging?')
               return
             }
+            const lastPositionAge = Date.now() - lastLoggedPosition.timestamp
             const isShortlyAfterLastReportedPosition = lastPositionAge < IGNORE_LOCATION_UPDATE_TIMEFRAME_MS
             const distanceTravelled = coordinateDistance(lastLoggedPosition, { longitude, latitude } as Coord)
             const isSmallDistanceTravelled = distanceTravelled < IGNORE_LOCATION_UPDATE_DISTANCE_METERS
