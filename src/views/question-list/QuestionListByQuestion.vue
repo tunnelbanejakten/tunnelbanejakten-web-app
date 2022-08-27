@@ -74,8 +74,8 @@ export default class QuestionListByQuestion extends Vue {
     }
   }
 
-  getQuestionLabel(questionGroup: ExtendedQuestionGroupDto, index: number) {
-    return questionGroup.name || `Fråga ${index + 1}`
+  getQuestionLabel(question: QuestionDto, index: number) {
+    return `Uppgift ${question?.config?.name ?? (index + 1)}`
   }
 
   onSelect(question: QuestionDto) {
