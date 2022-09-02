@@ -2,17 +2,20 @@
   <div>
     <h2>Logga in resten av laget</h2>
     <p>Skicka denna länk till dina lagkompisar:</p>
-    <div class="auth-link-field">
-      <input
-        type="text"
-        readonly
-        :value="authLink"
-      >
+    <p class="auth-link">
+      {{ authLink }}
+    </p>
+    <div class="buttons">
       <Button
         label="Kopiera"
-        type="secondary"
+        type="primary"
         @click="copyAuthLink"
-      ></Button>
+      />
+      <Button
+        label="Visa QR-kod"
+        type="primary"
+        @click="openQrCodeScreen"
+      />
     </div>
     <Message
       v-if="copySucceeded"
@@ -20,21 +23,43 @@
       message="Öppna en chattapp och klistra in den i ett meddelande."
       type="info"
     />
-    <p>Ert lags PIN-kod: <code>{{ authCode }}</code></p>
+    <Fullscreen
+      v-if="showQrCode"
+      @close="closeQrCodeScreen"
+    >
+      <div class="qr-code-container">
+        <div class="qr-code">
+          <QrcodeVue
+            :value="authLink"
+            size="200"
+          />
+          <p class="note auth-link">{{ authLink }}</p>
+        </div>
+        <div>
+          <p>På din kompis mobil: Starta kameran. Rikta den mot QR-koden. Mobilen borde upptäcka QR-koden efter några sekunder.</p>
+        </div>
+      </div>
+    </Fullscreen>
+    <h3>Er PIN-kod:</h3>
+    <div><code>{{ authCode }}</code></div>
     <p class="note">PIN-koden behövs ibland vid inloggning.</p>
   </div>
 </template>
 
 <script lang="ts">
 import copy from 'copy-to-clipboard';
+import QrcodeVue from 'qrcode.vue'
 
 import { Component, Vue, Prop } from 'vue-property-decorator'
+import Fullscreen from '@/components/common/Fullscreen.vue'
 import Button from '@/components/common/Button.vue'
 import Message from '@/components/common/Message.vue'
 
 @Component({
   components: {
     Button,
+    QrcodeVue,
+    Fullscreen,
     Message
   }
 })
@@ -42,9 +67,17 @@ export default class Share extends Vue {
   @Prop({ default: '' }) private readonly authLink!: string
   @Prop({ default: '' }) private readonly authCode!: string
   private copySucceeded: boolean = false
+  private showQrCode: boolean = false
 
   copyAuthLink() {
     this.copySucceeded = copy(this.authLink)
+  }
+
+  openQrCodeScreen() {
+    this.showQrCode = true
+  }
+  closeQrCodeScreen() {
+    this.showQrCode = false
   }
 }
 </script>
@@ -55,24 +88,32 @@ p.note {
   font-style: italic;
   margin: 10px 0 0 0;
 }
-.auth-link-field {
+
+.auth-link {
+  word-break: break-all;
+}
+.qr-code {
+  width: 100%;
   display: flex;
+  justify-content: center;
+  flex-direction: column;
   align-items: center;
 }
-.auth-link-field button {
-  margin-left: 10px;
-}
-.auth-link-field input {
-  flex: 1;
-  background-color: #eee;
-
-  box-sizing: border-box;
+.qr-code-container {
   width: 100%;
-  margin: 5px 0px 5px 0px;
-  padding: 10px;
-  border: 1px solid #bbb;
-  border-radius: 5px;
-
-  font: 16px/1.4 "Open Sans", Tahoma, Verdana, Segoe, sans-serif;
+  display: flex;
+  justify-content: space-evenly;
+  height: 100%;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 20px;
+}
+.buttons {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.buttons button {
+  margin-right: 10px;
 }
 </style>
