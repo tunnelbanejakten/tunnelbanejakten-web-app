@@ -1,11 +1,12 @@
 {
   "name": "tunnelbanejakten-web-app",
-  "version": "0.18.1",
+  "version": "0.18.2",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
     "serve:https": "vue-cli-service serve --https",
-    "serve:prod": "vue-cli-service serve --mode production",
+    "serve:prod": "vue-cli-service serve --https --mode production",
+    "serve:prod:build": "yarn build && npx http-server ./dist -p 8081 -c0",
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
     "test:e2e": "vue-cli-service test:e2e",
