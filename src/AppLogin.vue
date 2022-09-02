@@ -51,6 +51,11 @@ enum GetTokenStatus {
   FAILURE,
 }
 
+type LoginParams = {
+  code?: string
+  id?: string
+}
+
 @Component({
   name: 'AppLogin',
   components: {
@@ -74,7 +79,7 @@ export default class AppLogin extends Vue {
   }
 
   async onSubmitPassword() {
-    await this.logIn(this.password)
+    await this.logIn({ code: this.password })
   }
 
   setToken(token: string | null) {
@@ -85,14 +90,14 @@ export default class AppLogin extends Vue {
     }
   }
 
-  async logIn(code: string) {
+  async logIn(params: LoginParams) {
     this.errorMessage = ''
     this.tokenStatus = GetTokenStatus.PENDING
     try {
       const resp = await Api.call({
         endpoint: `${apiHost}/wp-json/tuja/v1/tokens`,
         method: 'POST',
-        payload: { code },
+        payload: params,
         unauthenticated: true
       })
       const payload = resp.payload
@@ -134,7 +139,7 @@ export default class AppLogin extends Vue {
   async mounted() {
     const authId = String(this.$route.params.authId || '')
     if (authId) {
-      await this.logIn(authId)
+      await this.logIn({ id: authId })
     }
   }
 }
