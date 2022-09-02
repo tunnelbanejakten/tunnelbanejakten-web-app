@@ -2,7 +2,10 @@
   <div id="app">
     <DebugPopup v-if="isDebugPopupEnabled" />
 
-    <AppUpdatePending v-if="isUpdatePending" />
+    <AppUpdatePending
+      v-if="isUpdatePending"
+      @update-clicked="onUpdateApp"
+    />
 
     <AppLogin
       v-if="isLoginMode"
@@ -16,7 +19,10 @@
       @failure="onBootstrapFailure"
     />
 
-    <AppMain v-if="isMainMode" />
+    <AppMain
+      v-if="isMainMode"
+      @poll-interval-update="onPollIntervalUpdate"
+    />
   </div>
 </template>
 
@@ -62,6 +68,14 @@ export default class App extends Mixins(ServiceWorkerMixin) {
 
   get isMainMode() {
     return this.mode === Mode.MAIN
+  }
+
+  onUpdateApp() {
+    this.refreshApplication() // Inherited from ServiceWorkerMixin
+  }
+
+  onPollIntervalUpdate(pollInterval: number) {
+    this.setCheckUpdateInterval(pollInterval) // Inherited from ServiceWorkerMixin
   }
 
   onLoginSuccess() {

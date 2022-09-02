@@ -39,8 +39,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator'
-import ServiceWorkerMixin from '@/mixins/ServiceWorkerMixin'
+import { Component, Vue } from 'vue-property-decorator'
 import Button from '@/components/common/Button.vue'
 import Loader from '@/components/common/Loader.vue'
 import DebugPopup from '@/components/DebugPopup.vue'
@@ -56,7 +55,7 @@ import store from '@/store'
     DebugPopup
   }
 })
-export default class AppMain extends Mixins(ServiceWorkerMixin) {
+export default class AppMain extends Vue {
   private confPollTimer = 0
 
   routerPathPrefix() {
@@ -101,7 +100,7 @@ export default class AppMain extends Mixins(ServiceWorkerMixin) {
 
     const pollInterval = (store.state.configuration.updates.configPollInterval || 60)
 
-    this.setCheckUpdateInterval(pollInterval)
+    this.$emit('poll-interval-update', pollInterval)
 
     console.log(`Will fetch configuration in ${pollInterval} seconds.`)
     this.confPollTimer = setTimeout(this.pollJob, pollInterval * 1000)

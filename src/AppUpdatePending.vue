@@ -13,10 +13,9 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator'
+import { Component, Vue } from 'vue-property-decorator'
 import Loader from '@/components/common/Loader.vue'
 import Button from '@/components/common/Button.vue'
-import ServiceWorkerMixin from '@/mixins/ServiceWorkerMixin'
 
 @Component({
   name: 'AppUpdatePending',
@@ -25,11 +24,12 @@ import ServiceWorkerMixin from '@/mixins/ServiceWorkerMixin'
     Button,
   }
 })
-export default class AppUpdatePending extends Mixins(ServiceWorkerMixin) {
+export default class AppUpdatePending extends Vue {
   private isUpdateClicked: boolean = false
+
   onUpdateApp() {
     this.isUpdateClicked = true
-    this.refreshApplication()
+    this.$emit('update-clicked')
   }
 }
 </script>
