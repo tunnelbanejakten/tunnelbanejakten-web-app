@@ -1,6 +1,6 @@
 <template>
   <div>
-    <p>Felsökning:</p>
+    <h2>Felsökning mm.</h2>
     <div class="option">
       <label><input
           type="checkbox"

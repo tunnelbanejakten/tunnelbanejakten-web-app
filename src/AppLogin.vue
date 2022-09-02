@@ -9,8 +9,9 @@
         <p>Be någon som är inloggad att gå till Info-sidan. Koden visas där.</p>
         <div class="input-wrapper">
           <input
-            placeholder="Inloggningskod"
-            type="text"
+            placeholder="Lagets PIN-kod"
+            type="number"
+            pattern="[0-9]*"
             v-model="password"
           >
         </div>
@@ -84,14 +85,14 @@ export default class AppLogin extends Vue {
     }
   }
 
-  async logIn(id: string) {
+  async logIn(code: string) {
     this.errorMessage = ''
     this.tokenStatus = GetTokenStatus.PENDING
     try {
       const resp = await Api.call({
         endpoint: `${apiHost}/wp-json/tuja/v1/tokens`,
         method: 'POST',
-        payload: { id },
+        payload: { code },
         unauthenticated: true
       })
       const payload = resp.payload
@@ -111,9 +112,21 @@ export default class AppLogin extends Vue {
     } catch (e: any) {
       if (e instanceof Api.ApiError) {
         this.setToken(null)
+        this.tokenStatus = GetTokenStatus.FAILURE
+        switch (e.status) {
+          case 400:
+            this.errorMessage = 'Något stämmer inte. Har du rätt antal siffror?'
+            break;
+          case 401:
+            this.errorMessage = 'Det gick inte att logga in. Dubbelkolla PIN-koden.'
+            break;
+          default:
+            this.errorMessage = 'Något gick fel. Kontakta kundtjänst om det händer igen.'
+            break;
+        }
+      } else {
+        this.errorMessage = 'Något gick fel. ' + e.message
       }
-      this.tokenStatus = GetTokenStatus.FAILURE
-      this.errorMessage = 'Något gick fel. ' + e.message
       this.$emit('failure')
     }
   }

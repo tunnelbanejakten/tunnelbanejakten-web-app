@@ -1,5 +1,6 @@
 <template>
   <div>
+    <h2>Ditt lag</h2>
     <table>
       <tbody>
         <tr>
@@ -9,10 +10,6 @@
         <tr>
           <td>Tävlingsklass:</td>
           <td>{{ categoryName }}</td>
-        </tr>
-        <tr>
-          <td>Inloggningskod:</td>
-          <td><code>{{ groupKey }}</code></td>
         </tr>
         <tr>
           <td>Antal tävlande:</td>
@@ -48,7 +45,6 @@ import { Component, Vue, Prop } from 'vue-property-decorator'
   }
 })
 export default class Profile extends Vue {
-  @Prop({ default: '' }) private readonly groupKey!: string
   @Prop({ default: '' }) private readonly groupName!: string
   @Prop({ default: '' }) private readonly categoryName!: string
   @Prop({ default: '' }) private readonly countCompeting!: string
