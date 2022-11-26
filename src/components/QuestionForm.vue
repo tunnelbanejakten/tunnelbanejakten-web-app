@@ -19,6 +19,9 @@
         <p>
           Ni har {{ timeLimitHumanReadable }} på er från att uppgiften visas.
         </p>
+        <p v-if="timeLimitPreparation">
+          {{ timeLimitPreparation }}
+        </p>
         <div class="buttons">
           <Button
             label="Visa uppgift"
@@ -325,6 +328,10 @@ export default class QuestionForm extends Vue {
 
   get timeLimit(): number {
     return this.loadedQuestion.time_limit?.duration || 0
+  }
+
+  get timeLimitPreparation(): string {
+    return this.loadedQuestion.config?.text_preparation || ''
   }
 
   get timeLimitHumanReadable(): string {
