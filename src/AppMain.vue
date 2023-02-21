@@ -22,6 +22,12 @@
         Biljetter
       </router-link>
       <router-link
+        :to="routerPathPrefix() + '/duels'"
+        v-if="isDuelsPageEnabled"
+      >
+        Dueller
+      </router-link>
+      <router-link
         :to="routerPathPrefix() + '/devicetest'"
         v-if="isDeviceTestPageEnabled"
       >
@@ -80,6 +86,10 @@ export default class AppMain extends Vue {
 
   get isTicketsPageEnabled() {
     return store.state.configuration.views.tickets
+  }
+
+  get isDuelsPageEnabled() {
+    return store.state.configuration.views.duels
   }
 
   get isInfoPageEnabled() {

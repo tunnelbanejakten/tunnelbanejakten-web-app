@@ -47,6 +47,7 @@ export type Configuration = {
     answer: boolean
     map: boolean
     tickets: boolean
+    duels: boolean
     deviceTest: boolean
     info: boolean
   },
@@ -103,6 +104,7 @@ const state: State = {
       answer: true,
       map: true,
       tickets: true,
+      duels: true,
       deviceTest: true,
       info: true
     },

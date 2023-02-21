@@ -1,7 +1,7 @@
 <template>
   <div id="app-login">
     <div v-if="isSubmitting">
-      <Loader message="Loggar in..." />
+      <Loader message="Vänta lite..." />
     </div>
     <Card v-if="!isSubmitting">
       <h2>Inloggning</h2>
