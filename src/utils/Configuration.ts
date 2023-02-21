@@ -36,6 +36,7 @@ const questionGroupingMapper: Record<string, QuestionGrouping> = {
                 answer: confPayload.app.views.answer,
                 map: confPayload.app.views.map,
                 tickets: confPayload.app.views.tickets,
+                duels: confPayload.app.views.duels,
                 deviceTest: confPayload.app.views.device_test,
                 info: confPayload.app.views.info
             },

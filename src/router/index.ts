@@ -4,6 +4,7 @@ import About from '../views/About.vue'
 import DeviceTest from '../views/DeviceTest.vue'
 import Tickets from '../views/Tickets.vue'
 import Map from '../views/Map.vue'
+import Duels from '../views/Duels.vue'
 import Home from '../views/Home.vue'
 
 Vue.use(VueRouter)
@@ -28,6 +29,11 @@ const routes: Array<RouteConfig> = [
     path: '/:authId?/map',
     name: 'Map',
     component: Map
+  },
+  {
+    path: '/:authId?/duels',
+    name: 'Duels',
+    component: Duels
   },
   {
     path: '/:authId?',
