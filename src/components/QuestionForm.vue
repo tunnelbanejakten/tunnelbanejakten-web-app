@@ -13,6 +13,14 @@
           :scoreMax="scoreMax"
         />
 
+        <div v-if="!!duelName">
+          <p>
+            Här ska ni genomföra <strong>duell {{ duelName }}</strong> tillsammans med (minst) ett annat lag.
+          </p>
+          <p class="note">
+            Stäng denna popup och titta på Dueller-sidan för att se vilka ni ska möta.
+          </p>
+        </div>
         <p>
           Tidsbegränsad uppgift.
         </p>
@@ -127,6 +135,7 @@ const apiHost = process.env.VUE_APP_API_HOST
 export default class QuestionForm extends Vue {
   @Prop() private question!: QuestionDto | null;
   @Prop() private questionId!: string;
+  @Prop() private duelName!: string;
   @Prop() private readOnly!: boolean;
   @Prop() private fullScreen!: boolean;
 
@@ -577,5 +586,11 @@ p.time-status {
 .save-button-wrapper p {
   margin-top: 0px;
   margin-left: 10px;
+}
+
+p.note {
+  font-size: 90%;
+  font-style: italic;
+  margin: 0;
 }
 </style>

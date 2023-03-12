@@ -81,6 +81,26 @@ const iconPersonSubmitted = L.icon({
   popupAnchor: [0, -34]
 })
 
+// Icon for PERSON (MANNED CHECK POINT):
+//   hhttps://www.mappity.org/marker_icons/street-view/
+//   Purple icon colour: #794794
+const iconDuel = L.icon({
+  iconUrl: require('../../assets/map-markers/angle-double-down-purple-highres.png'),
+  iconSize: [48, 48],
+  iconAnchor: [24, 24],
+  popupAnchor: [0, -34]
+})
+
+// Icon for PERSON (MANNED CHECK POINT) SUBMITTED:
+//   https://www.mappity.org/marker_icons/check/
+//   Purple icon colour: #794794
+const iconDuelSubmitted = L.icon({
+  iconUrl: require('../../assets/map-markers/checkmark-green-highres.png'),
+  iconSize: [48, 48],
+  iconAnchor: [24, 24],
+  popupAnchor: [0, -34]
+})
+
 // Icon for START:
 //   https://www.mappity.org/marker_icons/home/
 //   Black icon colour: #000000
@@ -133,6 +153,7 @@ export class CheckpointMarker extends Marker {
   id: string = '' // Assumed to be unique
   submitted: boolean = false
   isStation: boolean = false
+  duelName?: string
   stationTicket?: TicketData
 
   get key(): string {
@@ -197,6 +218,20 @@ export default class Map extends Vue {
     }
   }
 
+  markerIcon(marker: CheckpointMarker) {
+    if (this.isDuelCheckpoint(marker)) {
+      return marker.submitted ? iconDuelSubmitted : iconDuel
+    } else if (marker.isStation) {
+      return marker.submitted ? iconPersonSubmitted : iconPerson
+    } else {
+      return marker.submitted ? iconCheckpointSubmitted : iconCheckpoint
+    }
+  }
+
+  isDuelCheckpoint(marker: CheckpointMarker) {
+    return !!marker.duelName
+  }
+
   updateCheckpointMarkers(checkpointMarkers: CheckpointMarker[]) {
     const currentKeys: string[] = []
     for (const checkpointMarker of checkpointMarkers) {
@@ -210,9 +245,7 @@ export default class Map extends Vue {
       const existingMapObject = this.mapObjects[key]
       if (!existingMapObject) {
         // First time this checkpoint is rendered
-        const icon = checkpointMarker.submitted
-          ? (checkpointMarker.isStation ? iconPersonSubmitted : iconCheckpointSubmitted)
-          : (checkpointMarker.isStation ? (checkpointMarker.stationTicket ? iconPerson : iconBlocked) : iconCheckpoint)
+        const icon = this.markerIcon(checkpointMarker)
         const mapMarker = L.marker(latLong, {
           icon,
           zIndexOffset: 500

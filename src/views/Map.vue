@@ -91,6 +91,13 @@
             message="För att se den här uppgiften måste ni tar er till denna plats."
             type="info"
           />
+          <Message
+            v-if="!!selectedCheckpoint.duelName"
+            headerIcon="angle-double-down"
+            :header="duelInfoTitle(selectedCheckpoint)"
+            :message="duelInfoMessage(selectedCheckpoint)"
+            type="info"
+          />
         </div>
         <CheckpointStation
           v-if="selectedCheckpoint.isStation"
@@ -106,6 +113,7 @@
         <CheckpointQuestion
           v-if="!selectedCheckpoint.isStation"
           :question-id="selectedCheckpoint.id"
+          :duel-name="selectedCheckpoint.duelName"
           :read-only="isCheckpointReadOnly"
           @submit-success="onCheckpointSuccess"
           @submit-failure="onCheckpointFailure"
@@ -186,6 +194,10 @@ type ApiMarker = {
   link_station_ticket: any;
   // eslint-disable-next-line camelcase
   is_done: boolean;
+  // eslint-disable-next-line camelcase
+  link_duel_group_id: number;
+  // eslint-disable-next-line camelcase
+  link_duel_group_name: string;
 };
 
 // Credits: https://stackoverflow.com/a/27943
@@ -536,6 +548,14 @@ export default class Map extends Vue {
     return LocationUtils.getAccuracyLevel(this.currentPosition.meterAccuracy)
   }
 
+  duelInfoTitle(checkpoint: CheckpointMarker) {
+    return `Duell ${checkpoint.duelName}`
+  }
+
+  duelInfoMessage(checkpoint: CheckpointMarker) {
+    return `Här ska ni genomföra duellen ${checkpoint.duelName} tillsammans med (minst) ett annat lag. Stäng denna popup och titta på Dueller-sidan för att se vilka ni ska möta.`
+  }
+
   async loadMarkers() {
     this.updateMarkersState(MarkersState.LOADING, 'Hämtar karta')
     try {
@@ -556,6 +576,8 @@ export default class Map extends Vue {
               link_form_question_id: questionId,
               link_station_id: stationId,
               link_station_ticket: stationTicket,
+              link_duel_group_id: duelGroupId,
+              link_duel_group_name: duelGroupName,
               is_done: isDone
             }: ApiMarker): Marker => {
               let marker
@@ -566,6 +588,7 @@ export default class Map extends Vue {
                 marker.id = String(questionId || stationId)
                 const isStation = stationId > 0
                 marker.isStation = isStation
+                marker.duelName = duelGroupName
                 marker.submitted = isDone
                 marker.showAccuracyCircle = store.state.debugSettings.map
                 if (isStation && stationTicket) {

@@ -2,6 +2,7 @@
   <div class="checkpoint-container">
     <QuestionForm
       :question-id="questionId"
+      :duel-name="duelName"
       :read-only="readOnly"
       :fullScreen="true"
       @submit-success="onSubmitSuccess"
@@ -22,6 +23,7 @@ import { QuestionDto } from '@/components/common/question/model'
 })
 export default class CheckpointQuestion extends Vue {
   @Prop() private readonly questionId!: string
+  @Prop() private readonly duelName!: string
   @Prop() private readonly readOnly!: boolean
 
   @Emit('submit-success')
