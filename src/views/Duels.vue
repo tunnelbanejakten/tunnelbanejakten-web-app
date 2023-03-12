@@ -24,7 +24,7 @@
           :verticalMargin="true"
           :key="duel.name"
         >
-          <h2>Duellen "{{ duel.name }}"</h2>
+          <h2>{{ duel.name }} kl. {{ toLocalTime(duel.duel_at) }}</h2>
           <div
             v-for="(opponent, index) in duel.opponents"
             :key="opponent.group_name"
@@ -148,6 +148,10 @@ export default class Duels extends Vue {
 
   toggleHowToDuel() {
     this.isHowToDuelOpen = !this.isHowToDuelOpen
+  }
+
+  toLocalTime(isoDateString: string) {
+    return new Date(isoDateString).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
   }
 }
 </script>
