@@ -1,44 +1,77 @@
 <template>
   <div id="app-main-wrapper">
-    <div
-      id="nav"
-    >
-      <router-link
-        :to="routerPathPrefix() + '/'"
-        v-if="isAnswerPageEnabled"
+    <div id="nav-container" @click="onMenuChildClick">
+      <div id="nav-items">
+        <router-link
+          :to="routerPathPrefix() + '/answers'"
+          v-if="isAnswerPageEnabled"
+        >
+          Svara
+        </router-link>
+        <router-link
+          :to="routerPathPrefix() + '/map'"
+          v-if="isMapPageEnabled"
+        >
+          Karta
+        </router-link>
+        <router-link
+          :to="routerPathPrefix() + '/tickets'"
+          v-if="isTicketsPageEnabled"
+        >
+          Biljetter
+        </router-link>
+        <router-link
+          :to="routerPathPrefix() + '/duels'"
+          v-if="isDuelsPageEnabled"
+        >
+          Dueller
+        </router-link>
+        <router-link
+          :to="routerPathPrefix() + '/devicetest'"
+          v-if="isDeviceTestPageEnabled"
+        >
+          Mobiltest
+        </router-link>
+      </div>
+      <div
+        id="nav-more"
+        :class="showMoreButtonClass"
+        @click="toggleShowMore"
       >
-        Svara
-      </router-link>
-      <router-link
-        :to="routerPathPrefix() + '/map'"
-        v-if="isMapPageEnabled"
+        <font-awesome-icon
+          icon="bars"
+          :style="{ color: 'white' }"
+          size="1x"
+        />
+      </div>
+      <div
+        v-if="showMore"
+        id="nav-more-container"
       >
-        Karta
-      </router-link>
-      <router-link
-        :to="routerPathPrefix() + '/tickets'"
-        v-if="isTicketsPageEnabled"
-      >
-        Biljetter
-      </router-link>
-      <router-link
-        :to="routerPathPrefix() + '/duels'"
-        v-if="isDuelsPageEnabled"
-      >
-        Dueller
-      </router-link>
-      <router-link
-        :to="routerPathPrefix() + '/devicetest'"
-        v-if="isDeviceTestPageEnabled"
-      >
-        Mobiltest
-      </router-link>
-      <router-link
-        :to="routerPathPrefix() + '/about'"
-        v-if="isInfoPageEnabled"
-      >
-        Info
-      </router-link>
+        <div
+          id="nav-more-cover"
+          @click="toggleShowMore"
+        />
+        <div id="nav-more-items">
+          <div>
+            <router-link
+              tag='div'
+              :to="routerPathPrefix() + '/about'"
+              v-if="isInfoPageEnabled"
+            >
+              Info
+            </router-link>
+          </div>
+          <div>
+            <router-link
+              tag='div'
+              :to="routerPathPrefix() + '/'"
+            >
+              Startsidan
+            </router-link>
+          </div>
+        </div>
+      </div>
     </div>
     <router-view />
   </div>
@@ -48,7 +81,6 @@
 import { Component, Vue } from 'vue-property-decorator'
 import Button from '@/components/common/Button.vue'
 import Loader from '@/components/common/Loader.vue'
-import DebugPopup from '@/components/DebugPopup.vue'
 import * as AuthUtils from '@/utils/Auth'
 import * as ConfigurationUtils from '@/utils/Configuration'
 import store from '@/store'
@@ -58,11 +90,11 @@ import store from '@/store'
   components: {
     Button,
     Loader,
-    DebugPopup
   }
 })
 export default class AppMain extends Vue {
   private confPollTimer = 0
+  private showMore = false
 
   routerPathPrefix() {
     const groupKey = AuthUtils.getGroupKey()
@@ -94,6 +126,21 @@ export default class AppMain extends Vue {
 
   get isInfoPageEnabled() {
     return store.state.configuration.views.info
+  }
+
+  get showMoreButtonClass() {
+    return this.showMore ? 'show' : 'hide'
+  }
+
+  toggleShowMore() {
+    this.showMore = !this.showMore
+  }
+
+  onMenuChildClick(event: any) {
+    if (event.target.classList.contains('router-link-active')) {
+      // Router Link was clicked. Hide menu.
+      this.showMore = false
+    }
   }
 
   async fetchConfiguration() {
@@ -140,18 +187,67 @@ export default class AppMain extends Vue {
   width: 100%;
 }
 
-#nav {
+#nav-container {
   display: flex;
-  justify-content: space-evenly;
-
   /* Theme from tunnelbanejakten.se: */
-  padding: 0px;
+  margin: 0px;
+  padding: 0;
   cursor: pointer;
   background-color: #738489;
-  padding: 15px 0;
 }
 
-#nav a {
+#nav-items {
+  justify-content: space-evenly;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  height: 50px;
+}
+
+#nav-more {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#nav-more-cover,
+#nav-more-container {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+}
+
+#nav-more-container {
+  z-index: 10001; /* <-- higher than any z-index used by map component. */
+  top: 50px;
+
+  margin: 0;
+  padding: 0;
+
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+#nav-more-items {
+  z-index: 10002; /* <-- higher than any z-index used by map component. */
+  position: absolute;
+  top: 0;
+  right: 0;
+
+  margin: 0;
+  padding: 0;
+}
+
+#nav-more-items,
+#nav-more.show {
+  background-color: #5a676b;
+}
+
+#nav-more-items div div,
+#nav-items a {
   display: block;
 
   /* Theme from tunnelbanejakten.se: */
@@ -159,6 +255,14 @@ export default class AppMain extends Vue {
   text-transform: uppercase;
   color: #fff;
 }
+
+#nav-more-items > div {
+  height: 50px;
+  line-height: 50px;
+  padding: 0 15px;
+  vertical-align: middle;
+}
+
 /*
 #nav a.router-link-exact-active {
 }

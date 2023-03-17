@@ -20,7 +20,8 @@ import {
   faExclamationTriangle,
   faInfoCircle,
   faGlobe,
-  faAngleDoubleDown
+  faAngleDoubleDown,
+  faBars
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
@@ -40,6 +41,7 @@ library.add(faExclamationTriangle)
 library.add(faInfoCircle)
 library.add(faGlobe)
 library.add(faAngleDoubleDown)
+library.add(faBars)
 
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 

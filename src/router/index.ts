@@ -6,6 +6,7 @@ import Tickets from '../views/Tickets.vue'
 import Map from '../views/Map.vue'
 import Duels from '../views/Duels.vue'
 import Home from '../views/Home.vue'
+import Answer from '../views/Answer.vue'
 
 Vue.use(VueRouter)
 
@@ -34,6 +35,11 @@ const routes: Array<RouteConfig> = [
     path: '/:authId?/duels',
     name: 'Duels',
     component: Duels
+  },
+  {
+    path: '/:authId?/answers',
+    name: 'Answer',
+    component: Answer
   },
   {
     path: '/:authId?',
