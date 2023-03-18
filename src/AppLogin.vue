@@ -6,7 +6,7 @@
     <Card v-if="!isSubmitting">
       <h2>Inloggning</h2>
       <div v-if="!isGroupKeySet">
-        <p>Be någon som är inloggad att gå till Info-sidan. Koden visas där.</p>
+        <p>Be någon som är inloggad att gå till sidan Mitt lag i appen. Koden visas där.</p>
         <div class="input-wrapper">
           <input
             placeholder="Lagets PIN-kod"

@@ -57,7 +57,6 @@
 import { Component, Vue } from 'vue-property-decorator'
 import Page from '@/components/layout/Page.vue'
 import Card from '@/components/layout/Card.vue'
-import Profile from './about/Profile.vue'
 import store from '@/store'
 import * as Api from '@/utils/Api'
 import Loader from '@/components/common/Loader.vue'
@@ -71,7 +70,6 @@ const apiHost = process.env.VUE_APP_API_HOST
   components: {
     Page,
     Card,
-    Profile,
     Loader,
     Message,
     Button,

@@ -23,6 +23,13 @@
       message="Öppna en chattapp och klistra in den i ett meddelande."
       type="info"
     />
+    <p>Om länken eller QR-koden inte fungerar så kan du be lagkompisarna surfa till denna adress och ange er PIN-kod:</p>
+    <p class="auth-link">
+      {{ baseLink }}
+    </p>
+    <p></p>
+    <h3>PIN-kod:</h3>
+    <div><code>{{ authCode }}</code></div>
     <Fullscreen
       v-if="showQrCode"
       @close="closeQrCodeScreen"
@@ -40,9 +47,6 @@
         </div>
       </div>
     </Fullscreen>
-    <h3>Er PIN-kod:</h3>
-    <div><code>{{ authCode }}</code></div>
-    <p class="note">PIN-koden behövs ibland vid inloggning.</p>
   </div>
 </template>
 
@@ -65,6 +69,7 @@ import Message from '@/components/common/Message.vue'
 })
 export default class Share extends Vue {
   @Prop({ default: '' }) private readonly authLink!: string
+  @Prop({ default: '' }) private readonly baseLink!: string
   @Prop({ default: '' }) private readonly authCode!: string
   private copySucceeded: boolean = false
   private showQrCode: boolean = false
@@ -83,12 +88,6 @@ export default class Share extends Vue {
 </script>
 
 <style scoped>
-p.note {
-  font-size: 90%;
-  font-style: italic;
-  margin: 10px 0 0 0;
-}
-
 .auth-link {
   word-break: break-all;
 }

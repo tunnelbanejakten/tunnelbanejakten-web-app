@@ -7,6 +7,8 @@ import Map from '../views/Map.vue'
 import Duels from '../views/Duels.vue'
 import Home from '../views/Home.vue'
 import Answer from '../views/Answer.vue'
+import Settings from '../views/Settings.vue'
+import Profile from '../views/Profile.vue'
 
 Vue.use(VueRouter)
 
@@ -40,6 +42,16 @@ const routes: Array<RouteConfig> = [
     path: '/:authId?/answers',
     name: 'Answer',
     component: Answer
+  },
+  {
+    path: '/:authId?/settings',
+    name: 'Settings',
+    component: Settings
+  },
+  {
+    path: '/:authId?/profile',
+    name: 'Profile',
+    component: Profile
   },
   {
     path: '/:authId?',

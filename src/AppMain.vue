@@ -56,10 +56,26 @@
           <div>
             <router-link
               tag='div'
+              :to="routerPathPrefix() + '/profile'"
+            >
+              Mitt lag
+            </router-link>
+          </div>
+          <div>
+            <router-link
+              tag='div'
               :to="routerPathPrefix() + '/about'"
               v-if="isInfoPageEnabled"
             >
-              Info
+              Om tävlingen
+            </router-link>
+          </div>
+          <div>
+            <router-link
+              tag='div'
+              :to="routerPathPrefix() + '/settings'"
+            >
+              Inställningar
             </router-link>
           </div>
           <div>
