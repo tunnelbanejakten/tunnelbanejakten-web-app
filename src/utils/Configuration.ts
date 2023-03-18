@@ -30,7 +30,8 @@ const questionGroupingMapper: Record<string, QuestionGrouping> = {
                 configPollInterval: confPayload.app.updates.config_poll_interval
             },
             messages: {
-                infoPageContent: confPayload.app.messages.info_page_content
+                infoPageContent: confPayload.app.messages.info_page_content,
+                startPageContent: confPayload.app.messages.start_page_content
             },
             views: {
                 answer: confPayload.app.views.answer,

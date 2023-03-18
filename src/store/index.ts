@@ -42,6 +42,7 @@ export type Configuration = {
   },
   messages: {
     infoPageContent: string
+    startPageContent: string
   },
   views: {
     answer: boolean
@@ -98,7 +99,8 @@ const state: State = {
       configPollInterval: 5
     },
     messages: {
-      infoPageContent: 'Ingen information just nu.'
+      infoPageContent: 'Ingen information just nu.',
+      startPageContent: 'Ingen information just nu.'
     },
     views: {
       answer: true,
