@@ -1,5 +1,5 @@
 <template>
-  <Page title="Om tävlingen">
+  <Page title="Info &amp; Hjälp">
     <Card
       :verticalMargin="false"
       v-html="bodyText"

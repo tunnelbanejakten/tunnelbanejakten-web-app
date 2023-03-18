@@ -62,12 +62,26 @@ type Debug = {
   console: boolean
 }
 
+export type Profile = {
+  groupKey: null
+  authCode: null
+  groupName: null
+  groupPortalLink: null
+  groupAppLink: null
+  baseAppLink: null
+  categoryName: null
+  countCompeting: number | null
+  countFollower: number | null
+  countTeamContact: number | null
+}
+
 type State = {
   deviceTest: Record<string, DeviceTestStatus>
   configuration: Configuration
   eventLog: EventLog
   debugSettings: Debug
   autoSave: boolean
+  profile: Profile
 }
 
 type EventLog = {
@@ -125,7 +139,19 @@ const state: State = {
     map: LocalSettings.get(LOCALSETTING_DEBUG_MAP) === VALUE_TRUE,
     console: LocalSettings.get(LOCALSETTING_DEBUG_CONSOLE) === VALUE_TRUE
   },
-  autoSave: LocalSettings.get(LOCALSETTING_FORM_AUTO_SAVE) === VALUE_TRUE
+  autoSave: LocalSettings.get(LOCALSETTING_FORM_AUTO_SAVE) === VALUE_TRUE,
+  profile: {
+    groupKey: null,
+    authCode: null,
+    groupName: null,
+    groupPortalLink: null,
+    groupAppLink: null,
+    baseAppLink: null,
+    categoryName: null,
+    countCompeting: null,
+    countFollower: null,
+    countTeamContact: null
+  }
 }
 
 const store = {
@@ -141,6 +167,9 @@ const store = {
   },
   setConfiguration(updatedConf: Configuration) {
     this.state.configuration = updatedConf
+  },
+  setProfile(updatedProfile: Profile) {
+    this.state.profile = updatedProfile
   },
   // Insert event and move cursor to the next position.
   addEvent(event: Analytics.AppEvent) {

@@ -1,6 +1,9 @@
 <template>
   <div id="app-main-wrapper">
-    <div id="nav-container" @click="onMenuChildClick">
+    <div
+      id="nav-container"
+      @click="onMenuChildClick"
+    >
       <div id="nav-items">
         <router-link
           :to="routerPathPrefix() + '/answers'"
@@ -58,6 +61,10 @@
               tag='div'
               :to="routerPathPrefix() + '/profile'"
             >
+              <font-awesome-icon
+                icon="users"
+                size="1x"
+              />
               Mitt lag
             </router-link>
           </div>
@@ -67,7 +74,11 @@
               :to="routerPathPrefix() + '/about'"
               v-if="isInfoPageEnabled"
             >
-              Om tävlingen
+              <font-awesome-icon
+                icon="info-circle"
+                size="1x"
+              />
+              Info &amp; Hjälp
             </router-link>
           </div>
           <div>
@@ -75,6 +86,10 @@
               tag='div'
               :to="routerPathPrefix() + '/settings'"
             >
+              <font-awesome-icon
+                icon="cog"
+                size="1x"
+              />
               Inställningar
             </router-link>
           </div>
@@ -83,6 +98,10 @@
               tag='div'
               :to="routerPathPrefix() + '/'"
             >
+              <font-awesome-icon
+                icon="home"
+                size="1x"
+              />
               Startsidan
             </router-link>
           </div>
@@ -153,7 +172,8 @@ export default class AppMain extends Vue {
   }
 
   onMenuChildClick(event: any) {
-    if (event.target.classList.contains('router-link-active')) {
+    const routerLinkElement = event.target.closest('div.router-link-active')
+    if (routerLinkElement) {
       // Router Link was clicked. Hide menu.
       this.showMore = false
     }
@@ -247,6 +267,10 @@ export default class AppMain extends Vue {
   background-color: rgba(255, 255, 255, 0.7);
 }
 
+#nav-more-items::v-deep svg {
+  margin-right: 10px;
+}
+
 #nav-more-items {
   z-index: 10002; /* <-- higher than any z-index used by map component. */
   position: absolute;
@@ -268,7 +292,6 @@ export default class AppMain extends Vue {
 
   /* Theme from tunnelbanejakten.se: */
   text-decoration: none;
-  text-transform: uppercase;
   color: #fff;
 }
 

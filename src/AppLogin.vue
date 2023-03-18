@@ -112,14 +112,6 @@ export default class AppLogin extends Vue {
       const payload = resp.payload
       this.setToken(payload.token)
 
-      const profileResp = await Api.call({
-        endpoint: `${apiHost}/wp-json/tuja/v1/profile`
-      })
-      const profilePayload = profileResp.payload
-      Analytics.setUserProperties({
-        group_key: profilePayload.key,
-        group_name: profilePayload.name
-      })
 
       this.tokenStatus = GetTokenStatus.SUCCESS
       this.$emit('success')

@@ -1,18 +1,13 @@
 <template>
   <Page title="Mitt lag">
-    <div v-if="isLoading">
-      <Loader />
-    </div>
-    <div v-if="!isLoading && !groupKey">
+    <div v-if="!groupKey">
       <Message
         type="failure"
         header="Inget lag"
         message="Vi kunde inte hitta information om ditt lag. Du är nog inte inloggad."
       />
     </div>
-    <Card
-      v-if="!isLoading && groupKey"
-    >
+    <Card v-if="groupKey">
       <Profile
         :groupName="groupName"
         :categoryName="categoryName"
@@ -22,7 +17,7 @@
       />
     </Card>
     <Card
-      v-if="!isLoading && groupKey"
+      v-if="groupKey"
       :verticalMargin="true"
     >
       <Share
@@ -40,9 +35,11 @@ import Page from '@/components/layout/Page.vue'
 import Card from '@/components/layout/Card.vue'
 import Message from '@/components/common/Message.vue'
 import Loader from '@/components/common/Loader.vue'
+import Share from '@/components/Share.vue'
 import Profile from './profile/Profile.vue'
-import Share from './profile/Share.vue'
-import * as Api from '@/utils/Api'
+import store from '@/store'
+import * as Analytics from '@/utils/Analytics'
+import * as ProfileUtils from '@/utils/Profile'
 
 const apiHost = process.env.VUE_APP_API_HOST
 
@@ -57,41 +54,49 @@ const apiHost = process.env.VUE_APP_API_HOST
   }
 })
 export default class Settings extends Vue {
-  private isLoading: boolean = false
-  private groupKey: string | null = null
-  private authCode: string | null = null
-  private groupName: string | null = null
-  private groupPortalLink: string | null = null
-  private groupAppLink: string | null = null
-  private baseAppLink: string | null = null
-  private categoryName: string | null = null
-  private countCompeting: number | null = null
-  private countFollower: number | null = null
-  private countTeamContact: number | null = null
+  get groupKey() {
+    return store.state.profile.groupKey
+  }
+  get groupName() {
+    return store.state.profile.groupName
+  }
+  get categoryName() {
+    return store.state.profile.categoryName
+  }
+  get countCompeting() {
+    return store.state.profile.countCompeting
+  }
+  get countFollower() {
+    return store.state.profile.countFollower
+  }
+  get groupPortalLink() {
+    return store.state.profile.groupPortalLink
+  }
+  get authCode() {
+    return store.state.profile.authCode
+  }
+  get groupAppLink() {
+    return store.state.profile.groupAppLink
+  }
+  get baseAppLink() {
+    return store.state.profile.baseAppLink
+  }
+
+  async fetchProfile() {
+    const profile = await ProfileUtils.fetchProfile()
+    Analytics.setUserProperties({
+      group_key: profile.groupKey ?? this.groupKey ?? 'unknown',
+      group_name: profile.groupName ?? this.groupName ?? 'unknown'
+    })
+    store.setProfile(profile)
+  }
 
   async mounted() {
-    this.isLoading = true
-    this.groupName = null
-
     try {
-      const profileResp = await Api.call({
-        endpoint: `${apiHost}/wp-json/tuja/v1/profile`
-      })
-      const profilePayload = profileResp.payload
-      this.groupKey = profilePayload.key ?? ''
-      this.authCode = profilePayload.auth_code ?? ''
-      this.groupName = profilePayload.name
-      this.groupPortalLink = profilePayload.portal_link
-      this.groupAppLink = profilePayload.app_link
-      this.baseAppLink = profilePayload.app_base_link
-      this.categoryName = profilePayload.category_name
-      this.countCompeting = profilePayload.count_competing
-      this.countFollower = profilePayload.count_follower
-      this.countTeamContact = profilePayload.count_team_contact
+      await this.fetchProfile() // Refresh in background
     } catch (e: any) {
-
+      // Silently ignore error. We don't care
     }
-    this.isLoading = false
   }
 }
 </script>
