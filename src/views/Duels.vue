@@ -1,5 +1,5 @@
 <template>
-  <Page title="Info">
+  <Page title="Dueller">
     <div>
       <div v-if="isLoading">
         <Loader />
@@ -97,9 +97,6 @@
 import { Component, Vue } from 'vue-property-decorator'
 import Page from '@/components/layout/Page.vue'
 import Card from '@/components/layout/Card.vue'
-import Profile from './about/Profile.vue'
-import Settings from './about/Settings.vue'
-import Share from './about/Share.vue'
 import Loader from '@/components/common/Loader.vue'
 import Message from '@/components/common/Message.vue'
 import Button from '@/components/common/Button.vue'
@@ -112,9 +109,6 @@ const apiHost = process.env.VUE_APP_API_HOST
   components: {
     Page,
     Card,
-    Profile,
-    Settings,
-    Share,
     Loader,
     Button,
     Fullscreen,

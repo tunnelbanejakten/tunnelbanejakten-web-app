@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page" :title="title">
     <div :class="bodyClasses">
       <slot name="default" />
     </div>

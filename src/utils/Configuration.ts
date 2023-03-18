@@ -5,9 +5,9 @@ import { Configuration, QuestionGrouping } from '@/store'
 const questionGroupingMapper: Record<string, QuestionGrouping> = {
     by_group: QuestionGrouping.BY_QUESTION_GROUP,
     by_question: QuestionGrouping.BY_QUESTION
-  }
-  
-  export const fetchConfiguration = async (): Promise<Configuration> => {
+}
+
+export const fetchConfiguration = async (): Promise<Configuration> => {
     try {
         const apiHost = process.env.VUE_APP_API_HOST
 
@@ -15,7 +15,7 @@ const questionGroupingMapper: Record<string, QuestionGrouping> = {
             endpoint: `${apiHost}/wp-json/tuja/v1/configuration`
         })
 
-        const confPayload = await confResp.payload
+        const confPayload = confResp.payload
         const conf: Configuration = {
             positioning: {
                 showUnavailableStations: confPayload.app.positioning.show_unavailable_stations,
@@ -30,7 +30,8 @@ const questionGroupingMapper: Record<string, QuestionGrouping> = {
                 configPollInterval: confPayload.app.updates.config_poll_interval
             },
             messages: {
-                infoPageContent: confPayload.app.messages.info_page_content
+                infoPageContent: confPayload.app.messages.info_page_content,
+                startPageContent: confPayload.app.messages.start_page_content
             },
             views: {
                 answer: confPayload.app.views.answer,
@@ -47,12 +48,12 @@ const questionGroupingMapper: Record<string, QuestionGrouping> = {
         return conf
     } catch (e: any) {
         if (e instanceof Api.ApiError) {
-            Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'app_configuration', {
+            Analytics.logEvent(Analytics.AnalyticsEventType.APP, 'failed', 'app_configuration', {
                 message: 'Could not fetch app configuration. Reason: Non-ok http response.',
                 status: `Http response ${e.status}.`
             })
         } else {
-            Analytics.logEvent(Analytics.AnalyticsEventType.FORM, 'failed', 'app_configuration', {
+            Analytics.logEvent(Analytics.AnalyticsEventType.APP, 'failed', 'app_configuration', {
                 message: `Could not fetch app configuration. Reason: ${e.message}.`
             })
         }

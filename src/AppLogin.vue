@@ -1,12 +1,20 @@
 <template>
   <div id="app-login">
     <div v-if="isSubmitting">
-      <Loader message="Vänta lite..." />
+      <Loader
+        v-if="!errorMessage"
+        message="Vänta lite..."
+      />
+      <Message
+        v-if="errorMessage"
+        :message="errorMessage"
+        type="failure"
+      />
     </div>
     <Card v-if="!isSubmitting">
       <h2>Inloggning</h2>
       <div v-if="!isGroupKeySet">
-        <p>Be någon som är inloggad att gå till Info-sidan. Koden visas där.</p>
+        <p>Be någon som är inloggad att gå till sidan Mitt lag i appen. Koden visas där.</p>
         <div class="input-wrapper">
           <input
             placeholder="Lagets PIN-kod"
@@ -93,6 +101,7 @@ export default class AppLogin extends Vue {
   async logIn(params: LoginParams) {
     this.errorMessage = ''
     this.tokenStatus = GetTokenStatus.PENDING
+    const analyticsEventObject = params.code ? 'login_with_pin' : 'login_with_link'
     try {
       const resp = await Api.call({
         endpoint: `${apiHost}/wp-json/tuja/v1/tokens`,
@@ -103,17 +112,11 @@ export default class AppLogin extends Vue {
       const payload = resp.payload
       this.setToken(payload.token)
 
-      const profileResp = await Api.call({
-        endpoint: `${apiHost}/wp-json/tuja/v1/profile`
-      })
-      const profilePayload = profileResp.payload
-      Analytics.setUserProperties({
-        group_key: profilePayload.key,
-        group_name: profilePayload.name
-      })
 
       this.tokenStatus = GetTokenStatus.SUCCESS
       this.$emit('success')
+
+      Analytics.logEvent(Analytics.AnalyticsEventType.AUTH, 'succeeded', analyticsEventObject)
     } catch (e: any) {
       if (e instanceof Api.ApiError) {
         this.setToken(null)
@@ -130,8 +133,11 @@ export default class AppLogin extends Vue {
             break;
         }
       } else {
-        this.errorMessage = 'Något gick fel. ' + e.message
+        this.errorMessage = 'Något gick fel. ' + (e.message ? `Fel: ${e.message}` : '')
       }
+      Analytics.logEvent(Analytics.AnalyticsEventType.AUTH, 'failed', analyticsEventObject, {
+        message: this.errorMessage,
+      })
       this.$emit('failure')
     }
   }
