@@ -1,5 +1,8 @@
 <template>
-  <div id="app">
+  <div
+    id="app"
+    @click="onGenericLinkClick"
+  >
     <DebugPopup v-if="isDebugPopupEnabled" />
 
     <AppUpdatePending
@@ -68,6 +71,21 @@ export default class App extends Mixins(ServiceWorkerMixin) {
 
   get isMainMode() {
     return this.mode === Mode.MAIN
+  }
+
+  onGenericLinkClick({ srcElement }: any) {
+    const href = srcElement?.href
+    if (href) {
+      const protocol = href.match(/^(?<proto>[a-z]+):/)?.groups?.proto ?? 'unknown'
+      const page = srcElement.closest('div.page')?.title ?? 'unknown'
+      const text = srcElement.textContent
+      Analytics.logEvent(Analytics.AnalyticsEventType.MISC, 'click', 'link', {
+        href,
+        protocol,
+        page,
+        text
+      })
+    }
   }
 
   onUpdateApp() {

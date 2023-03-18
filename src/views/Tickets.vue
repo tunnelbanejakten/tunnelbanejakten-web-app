@@ -1,5 +1,5 @@
 <template>
-  <Page title="Info">
+  <Page title="Biljetter">
     <div>
       <Card :verticalMargin="false">
         <div class="input-wrapper">

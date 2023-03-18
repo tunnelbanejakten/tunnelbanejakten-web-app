@@ -1,5 +1,5 @@
 <template>
-  <Page title="Info">
+  <Page title="Dueller">
     <div>
       <div v-if="isLoading">
         <Loader />
