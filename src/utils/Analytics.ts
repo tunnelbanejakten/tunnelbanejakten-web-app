@@ -10,7 +10,8 @@ export enum AnalyticsEventType {
   LOCATION,
   MAP,
   FORM,
-  CAMERA
+  CAMERA,
+  AUTH
 }
 
 export enum LogLevel {
