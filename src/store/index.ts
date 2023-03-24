@@ -1,3 +1,4 @@
+import { ExtendedQuestionGroupDto } from '@/components/common/question/model'
 import * as Analytics from '@/utils/Analytics'
 import * as LocalSettings from '@/utils/LocalSettings'
 import Vue from 'vue'
@@ -75,6 +76,11 @@ export type Profile = {
   countTeamContact: number | null
 }
 
+type Answers = {
+  questionGroups: ExtendedQuestionGroupDto[]
+  lastFetchTimestamp: number
+}
+
 type State = {
   deviceTest: Record<string, DeviceTestStatus>
   configuration: Configuration
@@ -82,6 +88,7 @@ type State = {
   debugSettings: Debug
   autoSave: boolean
   profile: Profile
+  answers: Answers
 }
 
 type EventLog = {
@@ -151,6 +158,10 @@ const state: State = {
     countCompeting: null,
     countFollower: null,
     countTeamContact: null
+  },
+  answers: {
+    questionGroups: [],
+    lastFetchTimestamp: 0
   }
 }
 
@@ -201,6 +212,12 @@ const store = {
   setFormAutoSave(value: boolean) {
     this.state.autoSave = value
     LocalSettings.set(LOCALSETTING_FORM_AUTO_SAVE, value ? VALUE_TRUE : VALUE_FALSE)
+  },
+  setQuestionGroupsCheckedNow() {
+    this.state.answers.lastFetchTimestamp = Date.now()
+  },
+  setAnswerQuestionGroups(data: ExtendedQuestionGroupDto[]) {
+    this.state.answers.questionGroups = data
   }
 }
 

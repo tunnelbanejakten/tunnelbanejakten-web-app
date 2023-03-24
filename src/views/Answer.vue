@@ -5,7 +5,7 @@
   >
     <div
       class="no-questions"
-      v-if="isLoadingQuestions"
+      v-if="isLoadingForFirstTime"
     >
       <Loader />
     </div>
@@ -23,7 +23,7 @@
       <div><small>Spara dina svar först.</small></div>
     </div>
     <div
-      v-if="!isLoadingQuestions"
+      v-if="!isLoadingForFirstTime"
       class="container"
     >
       <div class="map-link-wrapper">
@@ -85,7 +85,6 @@ const apiHost = process.env.VUE_APP_API_HOST
   }
 })
 export default class Answer extends Vue {
-  private questionGroups: ExtendedQuestionGroupDto[] = []
   private isLoadingQuestions = false
 
   private message = ''
@@ -98,17 +97,24 @@ export default class Answer extends Vue {
     this.isLoadingQuestions = true
     this.message = ''
 
-    try {
-      this.questionGroups = await this.loadQuestionGroups()
-      this.schedulePoll()
-    } catch (e: any) {
-      this.message = e.message
-      this.messageType = MessageType.FAILURE
-    }
-    this.isLoadingQuestions = false
+      const firstPollingDelay = Math.max(0, this.pollingInterval - this.secondsSinceLastPoll)
+      this.schedulePoll(firstPollingDelay)
+  }
+
+  get isLoadingForFirstTime() {
+    return store.state.answers.lastFetchTimestamp === 0
+  }
+
+  get questionGroups() {
+    return store.state.answers.questionGroups
+  }
+
+  get secondsSinceLastPoll() {
+    return (Date.now() - store.state.answers.lastFetchTimestamp) / 1000
   }
 
   async loadQuestionGroups(): Promise<ExtendedQuestionGroupDto[]> {
+    this.isLoadingQuestions = true
     try {
       const questionGroups: ExtendedQuestionGroupDto[] = []
       const resp = await Api.call({
@@ -136,6 +142,8 @@ export default class Answer extends Vue {
         message: `Could not fetch questions. Reason: ${e.message}.`
       })
       throw e
+    } finally {
+      this.isLoadingQuestions = false
     }
   }
 
@@ -154,6 +162,7 @@ export default class Answer extends Vue {
   }
 
   async pollUpdates() {
+    this.message = ''
     try {
       const pendingQuestionGroups = await this.loadQuestionGroups()
       const currentDigest = this.getDigest(this.questionGroups)
@@ -166,17 +175,21 @@ export default class Answer extends Vue {
           this.onUpdateView()
         }
       }
+      store.setQuestionGroupsCheckedNow()
     } catch (e: any) {
+      this.message = e.message
+      this.messageType = MessageType.FAILURE
     }
 
-    this.schedulePoll()
+    this.schedulePoll(this.pollingInterval)
   }
 
-  schedulePoll() {
-    const pollInterval = (store.state.configuration.updates.configPollInterval || 60)
+  get pollingInterval() {
+    return store.state.configuration.updates.configPollInterval || 60
+  }
 
-    console.log(`Will fetch questions in ${pollInterval} seconds.`)
-    this.pollingTimeoutId = setTimeout(this.pollUpdates, pollInterval * 1000)
+  schedulePoll(delay: number) {
+    this.pollingTimeoutId = setTimeout(this.pollUpdates, delay * 1000)
   }
 
   stopPolling() {
@@ -192,10 +205,10 @@ export default class Answer extends Vue {
 
   onUpdateView() {
     if (this.pendingQuestionGroups) {
-      this.questionGroups = []
+      store.setAnswerQuestionGroups([])
       setTimeout(() => {
         if (this.pendingQuestionGroups) {
-          this.questionGroups = [...this.pendingQuestionGroups]
+          store.setAnswerQuestionGroups([...this.pendingQuestionGroups])
           this.pendingQuestionGroups = null
         }
       }, 0);
@@ -203,7 +216,6 @@ export default class Answer extends Vue {
   }
 
   get isUpdateAvailable(): boolean {
-    console.log('isUpdateAvailable', this.pendingQuestionGroups !== null, this.pendingQuestionGroups)
     return this.pendingQuestionGroups !== null
   }
 
