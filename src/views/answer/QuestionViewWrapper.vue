@@ -26,12 +26,6 @@
       v-if="!isLoadingForFirstTime"
       class="container"
     >
-      <div class="map-link-wrapper">
-        Ni hittar också uppgifter på
-        <router-link to="/map">
-          <span>kartan</span>
-        </router-link>.
-      </div>
       <div v-if="!!message">
         <Message
           header="Oj då"
@@ -46,45 +40,36 @@
           type="info"
         />
       </div>
-      <component
-        v-if="!isQuestionListEmpty"
-        :is="currentComponent"
-        :question-groups="questionGroups"
-      />
+
+      <div v-if="!isQuestionListEmpty">
+        <slot name="default" />
+      </div>
     </div>
   </Page>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator'
+import { Component, Vue, Emit } from 'vue-property-decorator'
 import Loader from '@/components/common/Loader.vue'
 import Button from '@/components/common/Button.vue'
 import Page from '@/components/layout/Page.vue'
-import QuestionForm from '@/components/QuestionForm.vue'
-import QuestionListFlat from '@/views/question-list/QuestionListFlat.vue'
-import QuestionListByGroup from '@/views/question-list/QuestionListByGroup.vue'
-import QuestionListByQuestion from '@/views/question-list/QuestionListByQuestion.vue'
+import Message, { Type as MessageType } from '@/components/common/Message.vue'
 import * as Analytics from '@/utils/Analytics'
 import * as Api from '@/utils/Api'
 import { FormDto, QuestionGroupDto, ExtendedQuestionGroupDto } from '@/components/common/question/model'
-import Message, { Type as MessageType } from '@/components/common/Message.vue'
-import store, { QuestionGrouping } from '@/store'
+import store from '@/store'
 
 const apiHost = process.env.VUE_APP_API_HOST
 
 @Component({
   components: {
     Page,
-    QuestionForm,
     Loader,
     Button,
-    Message,
-    QuestionListFlat,
-    QuestionListByGroup,
-    QuestionListByQuestion
+    Message
   }
 })
-export default class Answer extends Vue {
+export default class QuestionViewWrapper extends Vue {
   private isLoadingQuestions = false
 
   private message = ''
@@ -94,11 +79,8 @@ export default class Answer extends Vue {
   private pendingQuestionGroups: ExtendedQuestionGroupDto[] | null = null
 
   async mounted() {
-    this.isLoadingQuestions = true
-    this.message = ''
-
-      const firstPollingDelay = Math.max(0, this.pollingInterval - this.secondsSinceLastPoll)
-      this.schedulePoll(firstPollingDelay)
+    const firstPollingDelay = Math.max(0, this.pollingInterval - this.secondsSinceLastPoll)
+    this.schedulePoll(firstPollingDelay)
   }
 
   get isLoadingForFirstTime() {
@@ -144,20 +126,6 @@ export default class Answer extends Vue {
       throw e
     } finally {
       this.isLoadingQuestions = false
-    }
-  }
-
-  get questionGrouping() {
-    return store.state.configuration.answer.questionGrouping
-  }
-
-  get currentComponent() {
-    if (this.questionGrouping === QuestionGrouping.BY_QUESTION_GROUP) {
-      return 'QuestionListByGroup'
-    } else if (this.questionGrouping === QuestionGrouping.BY_QUESTION) {
-      return 'QuestionListByQuestion'
-    } else {
-      return 'QuestionListFlat'
     }
   }
 
@@ -238,39 +206,17 @@ export default class Answer extends Vue {
     digestInput.sort()
     return digestInput.join()
   }
-
 }
 </script>
-
 <style scoped>
+.container {
+  margin: 10px;
+}
 .no-questions {
   display: flex;
   height: 100%;
   width: 100%;
   justify-content: center;
   align-items: center;
-}
-
-div.map-link-wrapper {
-  font-size: 90%;
-  font-style: italic;
-}
-
-.container {
-  margin: 10px;
-}
-
-.updates-available-container {
-  padding: 0 10px;
-  text-align: center;
-  background-color: #eedfaf;
-  border-bottom: 1px solid #c8bb92;
-}
-.updates-available-container div {
-  padding: 10px 0;
-}
-.updates-available-container small {
-  font-size: 80%;
-  opacity: 0.4;
 }
 </style>

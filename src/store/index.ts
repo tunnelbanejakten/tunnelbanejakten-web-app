@@ -1,6 +1,7 @@
-import { ExtendedQuestionGroupDto } from '@/components/common/question/model'
+import { QuestionDto, ExtendedQuestionGroupDto } from '@/components/common/question/model'
 import * as Analytics from '@/utils/Analytics'
 import * as LocalSettings from '@/utils/LocalSettings'
+import * as Api from '@/utils/Api'
 import Vue from 'vue'
 
 const VALUE_TRUE = 'true'
@@ -9,6 +10,14 @@ const VALUE_FALSE = 'false'
 const LOCALSETTING_DEBUG_MAP = 'debug-map'
 const LOCALSETTING_DEBUG_CONSOLE = 'debug-console'
 const LOCALSETTING_FORM_AUTO_SAVE = 'form-auto-save'
+
+const CALLER_KEY_PREFIX = 'post_answer__'
+
+const getQuestionIdFromEventCallerKey = (callerKey: string): number => {
+  return callerKey.startsWith(CALLER_KEY_PREFIX) ? parseInt(callerKey.substring(CALLER_KEY_PREFIX.length)) : 0
+}
+
+export const postAnwserCallerKey = (questionId: string) => CALLER_KEY_PREFIX + questionId
 
 export enum Status {
   PENDING,
@@ -216,9 +225,28 @@ const store = {
   setQuestionGroupsCheckedNow() {
     this.state.answers.lastFetchTimestamp = Date.now()
   },
+  updateQuestion(updatedQuestionData: QuestionDto) {
+    for (const questionGroup of this.state.answers.questionGroups) {
+      const index = questionGroup.questions.findIndex(q => q.id === updatedQuestionData.id)
+      if (index !== -1) {
+        questionGroup.questions.splice(index, 1, updatedQuestionData)
+        return
+      }
+    }
+  },
   setAnswerQuestionGroups(data: ExtendedQuestionGroupDto[]) {
     this.state.answers.questionGroups = data
   }
 }
+
+Api.addQueueListeners({
+  onSuccess: (event) => {
+    const postAnswerQuestionId = getQuestionIdFromEventCallerKey(event.callerKey || '')
+    if (postAnswerQuestionId) {
+      const updatedQuestionData = (event.response.payload as QuestionDto)
+      store.updateQuestion({ ...updatedQuestionData, id: postAnswerQuestionId })
+    }
+  }
+})
 
 export default store

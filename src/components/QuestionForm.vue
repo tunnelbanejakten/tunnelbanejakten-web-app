@@ -119,7 +119,7 @@ import { FormUpdate, FormUpdateField, QuestionDto } from './common/question/mode
 import * as Analytics from '@/utils/Analytics'
 import * as Api from '@/utils/Api'
 import { QueuedRequestEvent, QueuedRequestFailedEvent, QueuedRequestSucceededEvent } from '@/utils/Api'
-import store from '@/store'
+import store, { postAnwserCallerKey } from '@/store'
 
 const apiHost = process.env.VUE_APP_API_HOST
 
@@ -430,7 +430,8 @@ export default class QuestionForm extends Vue {
     return {
       endpoint: `${apiHost}/wp-json/tuja/v1/questions/${this.questionId}/answer`,
       method: 'POST',
-      payload
+      payload,
+      callerKey: postAnwserCallerKey(this.questionId) // The store listens for API events and uses callerKey to know how to process the events.
     } as Api.ApiRequest
   }
 
