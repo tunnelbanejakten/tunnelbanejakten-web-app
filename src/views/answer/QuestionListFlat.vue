@@ -10,9 +10,10 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
-import { QuestionDto, ExtendedQuestionGroupDto } from '@/components/common/question/model'
+import { Component, Vue } from 'vue-property-decorator'
+import { QuestionDto } from '@/components/common/question/model'
 import QuestionGroupForm from '@/components/QuestionGroupForm.vue'
+import store from '@/store'
 
 @Component({
   components: {
@@ -20,15 +21,13 @@ import QuestionGroupForm from '@/components/QuestionGroupForm.vue'
   }
 })
 export default class QuestionListFlat extends Vue {
-  @Prop() private questionGroups!: ExtendedQuestionGroupDto[]
 
   get groups() {
-    return this.questionGroups || []
+    return store.state.answers.questionGroups || []
   }
 
-  @Emit('submit-success')
   onSubmitSuccess(updatedQuestionData: QuestionDto) {
-    return updatedQuestionData
+    store.updateQuestion(updatedQuestionData)
   }
 }
 </script>

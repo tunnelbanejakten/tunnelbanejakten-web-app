@@ -36,7 +36,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from 'vue-property-decorator'
+import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import { QuestionDto, ExtendedQuestionGroupDto } from '@/components/common/question/model'
 import Card from '@/components/layout/Card.vue'
 import QuestionForm from '@/components/QuestionForm.vue'
@@ -57,11 +57,11 @@ export default class QuestionGroupForm extends Vue {
     })
   }
 
+  @Emit('submit-success')
   onSubmitSuccess(updatedQuestionData: QuestionDto) {
     const index = this.questionGroup.questions.findIndex(q => q.id === updatedQuestionData.id)
     if (index !== -1) {
-      const updatedQuestion = updatedQuestionData
-      this.questionGroup.questions.splice(index, 1, updatedQuestion)
+      this.questionGroup.questions.splice(index, 1, updatedQuestionData)
     }
     return updatedQuestionData
   }

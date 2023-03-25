@@ -10,6 +10,7 @@ type Events = {
 
 export type QueuedRequestEvent = {
     key: string
+    callerKey?: string
 }
 
 export type QueuedRequestSucceededEvent = QueuedRequestEvent & {
@@ -31,6 +32,7 @@ export type ApiRequest = {
     method?: string
     payload?: any
     unauthenticated?: boolean
+    callerKey?: string
 }
 
 
@@ -146,18 +148,17 @@ export const processQueue = async () => {
     clearTimer()
     const entries = queuedRequests.entries()
     for (const [key, request] of entries) {
-        emitter.emit('start', { key } as QueuedRequestEvent)
+        const baseEvent = {
+            key,
+            callerKey: request.callerKey
+        } as QueuedRequestEvent
+
+        emitter.emit('start', baseEvent)
         try {
             const response = await call(request)
-            emitter.emit('succeeded', {
-                key,
-                response
-            } as QueuedRequestSucceededEvent)
+            emitter.emit('succeeded', { ...baseEvent, response } as QueuedRequestSucceededEvent)
         } catch (e: any) {
-            emitter.emit('failed', {
-                key,
-                error: e
-            } as QueuedRequestFailedEvent)
+            emitter.emit('failed', { ...baseEvent, error: e } as QueuedRequestFailedEvent)
         }
         queuedRequests.delete(key)
     }
