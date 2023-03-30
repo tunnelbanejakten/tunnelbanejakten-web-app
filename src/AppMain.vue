@@ -6,6 +6,12 @@
     >
       <div id="nav-items">
         <router-link
+          :to="routerPathPrefix() + '/checkin'"
+          v-if="isCheckinPageEnabled"
+        >
+          Incheckning
+        </router-link>
+        <router-link
           :to="routerPathPrefix() + '/answers'"
           v-if="isAnswerPageEnabled"
         >
@@ -141,6 +147,10 @@ export default class AppMain extends Vue {
 
   get isAnswerPageEnabled() {
     return store.state.configuration.views.answer
+  }
+  
+  get isCheckinPageEnabled() {
+    return store.state.configuration.views.checkin
   }
 
   get isMapPageEnabled() {

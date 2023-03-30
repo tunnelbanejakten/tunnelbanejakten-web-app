@@ -11,6 +11,7 @@ import Profile from '../views/Profile.vue'
 import AnswerSingleQuestion from '../views/AnswerSingleQuestion.vue'
 import AnswerMainPage from '../views/AnswerMainPage.vue'
 import AnswerQuestionGroup from '../views/AnswerQuestionGroup.vue'
+import Checkin from '../views/Checkin.vue'
 
 Vue.use(VueRouter)
 
@@ -64,6 +65,11 @@ const routes: Array<RouteConfig> = [
     path: '/:authId?/profile',
     name: 'Profile',
     component: Profile
+  },
+  {
+    path: '/:authId?/checkin/:stepNumber?',
+    name: 'Checkin',
+    component: Checkin
   },
   {
     path: '/:authId?',

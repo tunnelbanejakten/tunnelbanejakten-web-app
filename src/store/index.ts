@@ -55,6 +55,7 @@ export type Configuration = {
     startPageContent: string
   },
   views: {
+    checkin: boolean
     answer: boolean
     map: boolean
     tickets: boolean
@@ -133,6 +134,7 @@ const state: State = {
       startPageContent: 'Ingen information just nu.'
     },
     views: {
+      checkin: false,
       answer: true,
       map: true,
       tickets: true,
