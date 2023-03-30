@@ -109,10 +109,12 @@ div.option {
   border-width: 1px 1px 0 1px;
 }
 div.option:first-child {
-  border-radius: 5px 5px 0 0;
+  border-top-right-radius: 5px;
+  border-top-left-radius: 5px;
 }
 div.option:last-child {
-  border-radius: 0 0 5px 5px;
+  border-bottom-right-radius: 5px;
+  border-bottom-left-radius: 5px;
   border-width: 1px 1px 1px 1px;
 }
 </style>

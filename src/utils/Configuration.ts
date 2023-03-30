@@ -34,6 +34,7 @@ export const fetchConfiguration = async (): Promise<Configuration> => {
                 startPageContent: confPayload.app.messages.start_page_content
             },
             views: {
+                checkin: confPayload.app.views.checkin,
                 answer: confPayload.app.views.answer,
                 map: confPayload.app.views.map,
                 tickets: confPayload.app.views.tickets,
