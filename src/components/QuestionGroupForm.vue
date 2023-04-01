@@ -10,10 +10,9 @@
       >
         {{ questionGroup.name }}
       </div>
-      <div
+      <Bodytext
         v-if="questionGroup.description"
-        v-html="questionGroup.description"
-        class="description"
+        :html="questionGroup.description"
       />
     </div>
     <div class="question-group-questions">
@@ -40,10 +39,12 @@ import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
 import { QuestionDto, ExtendedQuestionGroupDto } from '@/components/common/question/model'
 import Card from '@/components/layout/Card.vue'
 import QuestionForm from '@/components/QuestionForm.vue'
+import Bodytext from '@/components/common/Bodytext.vue'
 
 @Component({
   components: {
     QuestionForm,
+    Bodytext,
     Card
   }
 })
@@ -92,14 +93,9 @@ div.question-group-header {
   border-bottom: 5px solid #ddd;
   margin-bottom: 15px;
 }
-div.question-group-header div.name,
-div.question-group-header div.description::v-deep p {
+div.question-group-header div.name {
   margin: 0;
   padding: 0 0 20px 0;
-}
-div.question-group-header::v-deep .description img,
-div.question-group-questions::v-deep .description img {
-  max-width: 100%;
 }
 div.question {
   border-top: 5px solid #ddd;

@@ -5,10 +5,7 @@
       :scoreMax="scoreMax"
     />
 
-    <div
-      class="text"
-      v-html="text"
-    />
+    <Bodytext :html="text" />
 
     <p
       class="text-hint"
@@ -38,6 +35,7 @@ import OptionsQuestion from '@/components/common/question/OptionsQuestion.vue'
 import TextQuestion from '@/components/common/question/TextQuestion.vue'
 import ImagesQuestion from '@/components/common/question/ImagesQuestion.vue'
 import NumberQuestion from '@/components/common/question/NumberQuestion.vue'
+import Bodytext from '@/components/common/Bodytext.vue'
 
 @Component({
   components: {
@@ -46,6 +44,7 @@ import NumberQuestion from '@/components/common/question/NumberQuestion.vue'
     TextQuestion,
     ImagesQuestion,
     NumberQuestion,
+    Bodytext,
     QuestionName,
     Loader
   }
@@ -85,14 +84,8 @@ export default class Question extends Vue {
 </script>
 
 <style scoped>
-div.text >>> img {
-  width: 100%;
-}
 p.text-hint {
   font-size: 90%;
   font-style: italic;
-}
-div.text >>> p {
-  margin: 0 0 10px 0;
 }
 </style>
