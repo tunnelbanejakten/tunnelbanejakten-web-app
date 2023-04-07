@@ -58,7 +58,7 @@ export default class AnswerQuestionGroup extends Vue {
     store.updateQuestion(updatedQuestionData)
   }
 
-get questionGroup(): ExtendedQuestionGroupDto | null {
+  get questionGroup(): ExtendedQuestionGroupDto | null {
     return store.state.answers.questionGroups
       .find((questionGroup: ExtendedQuestionGroupDto) => questionGroup.id === this.questionGroupId) ?? null
   }
